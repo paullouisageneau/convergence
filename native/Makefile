@@ -4,7 +4,7 @@ DESTDIR=
 CC=gcc
 CXX=g++
 RM=rm -f
-CPPFLAGS=-pthread -std=c++14 -Wall -Wno-sign-compare -Og -g -DSPDLOG_TRACE_ON
+CPPFLAGS=-pthread -std=c++14 -Wall -Wno-sign-compare -Og -g
 LDFLAGS=-pthread
 LDLIBS=$(shell pkg-config --libs glib-2.0 gobject-2.0 nice) -lGL -lGLEW -lglfw -lnettle -lhogweed -lgmp -lgnutls -largon2
 
