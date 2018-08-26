@@ -1,0 +1,6 @@
+[submodule "native/librtcdcpp"]
+	path = native/librtcdcpp
+	url = https://github.com/paullouisageneau/librtcdcpp
+[submodule "glm"]
+	path = glm
+	url = https://github.com/g-truc/glm.git
