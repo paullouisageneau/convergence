@@ -21,14 +21,14 @@
 #ifndef CONVERGENCE_SURFACE_H
 #define CONVERGENCE_SURFACE_H
 
-#include "p3d/include.hpp"
-#include "p3d/mesh.hpp"
-#include "p3d/object.hpp"
-#include "p3d/collidable.hpp"
-#include "p3d/context.hpp"
-#include "p3d/program.hpp"
-#include "p3d/shader.hpp"
-#include "p3d/perlinnoise.hpp"
+#include "pla/include.hpp"
+#include "pla/mesh.hpp"
+#include "pla/object.hpp"
+#include "pla/collidable.hpp"
+#include "pla/context.hpp"
+#include "pla/program.hpp"
+#include "pla/shader.hpp"
+#include "pla/perlinnoise.hpp"
 
 using pla::vec3;
 using pla::vec4;

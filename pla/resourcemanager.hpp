@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2015-2016 by Paul-Louis Ageneau                         *
+ *   Copyright (C) 2006-2016 by Paul-Louis Ageneau                         *
  *   paul-louis (at) ageneau (dot) org                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -18,63 +18,49 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef CONVERGENCE_GAME_H
-#define CONVERGENCE_GAME_H
+#ifndef RESOURCEMANAGER_H
+#define RESOURCEMANAGER_H
 
-#include "src/include.hpp"
-#include "src/peer.hpp"
-#include "src/messagebus.hpp"
-#include "src/island.hpp"
+#include "pla/include.hpp"
+#include "pla/resource.hpp"
+#include "pla/string.hpp"
 
-#include "pla/engine.hpp"
-#include "pla/context.hpp"
-#include "pla/program.hpp"
-#include "pla/shader.hpp"
-
-#include "net/websocket.hpp"
-
-namespace convergence
+namespace pla
 {
 
-using pla::string;
-using pla::Engine;
-using pla::Context;
-using pla::Program;
-using pla::VertexShader;
-using pla::FragmentShader;
-using net::WebSocket;
-using net::Channel;
-using std::shared_ptr;
-template<typename T> using sptr = shared_ptr<T>;
-
-class Game : public Engine::State
+class ResourceManager
 {
-public:
-	Game(void);
-	~Game(void);
+public :
+	// Recupere une ressource
+	template <class T> sptr<T> get(const string& name) const;
 
-	void onInit(Engine *engine);
-	void onCleanup(Engine *engine);
-		
-	bool onUpdate(Engine *engine, double time);
-	int  onDraw(Engine *engine);
-	
-	void onKey(Engine *engine, int key, bool down);
-	void onMouse(Engine *engine, int button, bool down);
-	void onInput(Engine *engine, string text);
+	// Ajoute une ressource
+	void add(const string& name, sptr<Resource> resource);
 
-private:
-	shared_ptr<MessageBus> mSignaling;
-	shared_ptr<Peer> mPeer;
-	Island mIsland;
-	
-	vec3 mPosition;
-	float mYaw, mPitch;
-	float mGravity;
-	float mAccumulator;
+	// Retire une ressource
+	void remove(const string& name);
+
+	// Retire les ressources
+	void flush(void);
+
+private :
+	//Table contenant les ressources associees a leur nom de fichier
+	std::map<string, sptr<Resource> > mResources;
 };
+
+// Renvoie un pointeur sur une ressource déjà chargée (NULL si non trouvée)
+template <class T>
+inline sptr<T> ResourceManager::get(const string &name) const
+{
+    // Recherche de la ressource
+    auto it = mResources.find(name);
+
+    // Si on l'a trouvée on la renvoie, sinon on renvoie NULL
+    if (it != mResources.end()) return std::dynamic_pointer_cast<T>(it->second);
+    else return NULL;
+}
 
 }
 
-#endif
+#endif // RESOURCEMANAGER_H
 

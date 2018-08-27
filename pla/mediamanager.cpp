@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2015-2016 by Paul-Louis Ageneau                         *
+ *   Copyright (C) 2006-2016 by Paul-Louis Ageneau                         *
  *   paul-louis (at) ageneau (dot) org                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -18,63 +18,53 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef CONVERGENCE_GAME_H
-#define CONVERGENCE_GAME_H
+#include "pla/mediamanager.hpp"
 
-#include "src/include.hpp"
-#include "src/peer.hpp"
-#include "src/messagebus.hpp"
-#include "src/island.hpp"
-
-#include "pla/engine.hpp"
-#include "pla/context.hpp"
-#include "pla/program.hpp"
-#include "pla/shader.hpp"
-
-#include "net/websocket.hpp"
-
-namespace convergence
+namespace pla
 {
 
-using pla::string;
-using pla::Engine;
-using pla::Context;
-using pla::Program;
-using pla::VertexShader;
-using pla::FragmentShader;
-using net::WebSocket;
-using net::Channel;
-using std::shared_ptr;
-template<typename T> using sptr = shared_ptr<T>;
-
-class Game : public Engine::State
+MediaManager::MediaManager(sptr<ResourceManager> resourceManager) :
+	mResourceManager(resourceManager)
 {
-public:
-	Game(void);
-	~Game(void);
+	mPaths.insert("");	// current directory
+}
 
-	void onInit(Engine *engine);
-	void onCleanup(Engine *engine);
-		
-	bool onUpdate(Engine *engine, double time);
-	int  onDraw(Engine *engine);
-	
-	void onKey(Engine *engine, int key, bool down);
-	void onMouse(Engine *engine, int button, bool down);
-	void onInput(Engine *engine, string text);
-
-private:
-	shared_ptr<MessageBus> mSignaling;
-	shared_ptr<Peer> mPeer;
-	Island mIsland;
-	
-	vec3 mPosition;
-	float mYaw, mPitch;
-	float mGravity;
-	float mAccumulator;
-};
+MediaManager::~MediaManager(void)
+{
 
 }
 
-#endif
+// Ajoute un repertoire de recherche pour les medias
+void MediaManager::addPath(string path)
+{
+	if(path.empty()) return;
+	std::replace(path.begin(), path.end(), '\\', '/');
+	
+	if(*path.rbegin() == '/') 
+		mPaths.insert(path);
+	else 
+		mPaths.insert(path + "/");
+}
 
+// Cherche un fichier dans les repertoires de recherche
+string MediaManager::findMedia(string filename) const
+{
+    std::replace(filename.begin(), filename.end(), '\\', '/');
+	
+	// Parcours de la liste des chemins de recherche
+    for (std::set<string>::const_iterator it = mPaths.begin(); it != mPaths.end(); ++it)
+    {
+		string fullname = *it + filename;
+		std::ifstream test(fullname.c_str());	// teste l'ouverture
+
+		if(test.is_open()) {
+			test.close();
+			return fullname;
+		}
+    }
+
+    // Si le fichier est introuvable, on lance une exception
+    throw std::runtime_error(string("File not found: ") + filename);
+}
+
+}

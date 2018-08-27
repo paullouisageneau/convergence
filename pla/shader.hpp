@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2015-2016 by Paul-Louis Ageneau                         *
+ *   Copyright (C) 2006-2016 by Paul-Louis Ageneau                         *
  *   paul-louis (at) ageneau (dot) org                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -18,63 +18,50 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef CONVERGENCE_GAME_H
-#define CONVERGENCE_GAME_H
+#ifndef PLA_SHADER_H
+#define PLA_SHADER_H
 
-#include "src/include.hpp"
-#include "src/peer.hpp"
-#include "src/messagebus.hpp"
-#include "src/island.hpp"
+#include "pla/include.hpp"
+#include "pla/opengl.hpp"
+#include "pla/resource.hpp"
 
-#include "pla/engine.hpp"
-#include "pla/context.hpp"
-#include "pla/program.hpp"
-#include "pla/shader.hpp"
-
-#include "net/websocket.hpp"
-
-namespace convergence
+namespace pla
 {
 
-using pla::string;
-using pla::Engine;
-using pla::Context;
-using pla::Program;
-using pla::VertexShader;
-using pla::FragmentShader;
-using net::WebSocket;
-using net::Channel;
-using std::shared_ptr;
-template<typename T> using sptr = shared_ptr<T>;
-
-class Game : public Engine::State
-{
+class Shader : public Resource
+{  
 public:
-	Game(void);
-	~Game(void);
-
-	void onInit(Engine *engine);
-	void onCleanup(Engine *engine);
-		
-	bool onUpdate(Engine *engine, double time);
-	int  onDraw(Engine *engine);
+	// type = GL_VERTEX_SHADER or GL_FRAGMENT_SHADER
+	Shader(GLenum type = GL_VERTEX_SHADER);
+	virtual ~Shader(void);
 	
-	void onKey(Engine *engine, int key, bool down);
-	void onMouse(Engine *engine, int button, bool down);
-	void onInput(Engine *engine, string text);
-
+	void setSource(const std::string &source);
+	void loadFile(const std::string &filename);
+	void compile(void);
+	
 private:
-	shared_ptr<MessageBus> mSignaling;
-	shared_ptr<Peer> mPeer;
-	Island mIsland;
+	GLuint mShader;
+	GLenum mType;
 	
-	vec3 mPosition;
-	float mYaw, mPitch;
-	float mGravity;
-	float mAccumulator;
+	friend class Program;
+};
+
+class VertexShader : public Shader
+{  
+public:
+	VertexShader(const std::string &filename = "") : Shader(GL_VERTEX_SHADER)
+		{ if(!filename.empty()) loadFile(filename); }
+	~VertexShader(void) {}
+};
+
+class FragmentShader : public Shader
+{  
+public:
+	FragmentShader(const std::string &filename = "") : Shader(GL_FRAGMENT_SHADER)
+		{ if(!filename.empty()) loadFile(filename); }
+	~FragmentShader(void) {}
 };
 
 }
 
 #endif
-
