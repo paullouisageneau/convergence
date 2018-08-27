@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2015-2016 by Paul-Louis Ageneau                         *
+ *   Copyright (C) 2006-2016 by Paul-Louis Ageneau                         *
  *   paul-louis (at) ageneau (dot) org                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -18,63 +18,71 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef CONVERGENCE_GAME_H
-#define CONVERGENCE_GAME_H
+#include "pla/bufferobject.hpp"
 
-#include "src/include.hpp"
-#include "src/peer.hpp"
-#include "src/messagebus.hpp"
-#include "src/island.hpp"
-
-#include "pla/engine.hpp"
-#include "pla/context.hpp"
-#include "pla/program.hpp"
-#include "pla/shader.hpp"
-
-#include "net/websocket.hpp"
-
-namespace convergence
+namespace pla
 {
 
-using pla::string;
-using pla::Engine;
-using pla::Context;
-using pla::Program;
-using pla::VertexShader;
-using pla::FragmentShader;
-using net::WebSocket;
-using net::Channel;
-using std::shared_ptr;
-template<typename T> using sptr = shared_ptr<T>;
-
-class Game : public Engine::State
+BufferObject::BufferObject(GLenum type, GLenum usage, bool readable) :
+	mType(type),
+	mUsage(usage),
+	mReadable(readable)
 {
-public:
-	Game(void);
-	~Game(void);
-
-	void onInit(Engine *engine);
-	void onCleanup(Engine *engine);
-		
-	bool onUpdate(Engine *engine, double time);
-	int  onDraw(Engine *engine);
-	
-	void onKey(Engine *engine, int key, bool down);
-	void onMouse(Engine *engine, int button, bool down);
-	void onInput(Engine *engine, string text);
-
-private:
-	shared_ptr<MessageBus> mSignaling;
-	shared_ptr<Peer> mPeer;
-	Island mIsland;
-	
-	vec3 mPosition;
-	float mYaw, mPitch;
-	float mGravity;
-	float mAccumulator;
-};
-
+	glGenBuffers(1, &mBuffer);
 }
 
-#endif
+BufferObject::~BufferObject(void)
+{
+	glDeleteBuffers(1, &mBuffer);
+	delete mCache;
+}
 
+size_t BufferObject::size(void) const
+{
+	return mSize;
+}
+
+void BufferObject::bind(void)
+{
+	glBindBuffer(mType, mBuffer);
+}
+
+void *BufferObject::offset(size_t offset)
+{
+	return reinterpret_cast<void*>(offset);
+}
+
+void BufferObject::fill(const void *ptr, size_t size)
+{
+	if(size == mSize) {
+		replace(0, ptr, size);
+		return;
+	}
+	
+	mSize=size;
+	glBindBuffer(mType, mBuffer);
+	glBufferData(mType, size, ptr, mUsage);
+	
+	if(mReadable) {
+		delete mCache;
+		mCache = new char[size];
+		std::memcpy(mCache, ptr, size);
+	}
+}
+
+void BufferObject::replace(size_t offset, const void *ptr, size_t size)
+{
+	if(size == 0) return;
+	
+	glBindBuffer(mType, mBuffer);
+	glBufferSubData(mType, offset, size, ptr);
+	
+	if(mCache) std::memcpy(mCache + offset, ptr, size);
+}
+
+void *BufferObject::data(size_t offset, size_t size)
+{
+	return mCache;
+}
+
+}

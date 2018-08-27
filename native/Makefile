@@ -8,7 +8,7 @@ CPPFLAGS=-pthread -std=c++14 -Wall -Wno-sign-compare -Og -g
 LDFLAGS=-pthread
 LDLIBS=$(shell pkg-config --libs glib-2.0 gobject-2.0 nice) -lGL -lGLEW -lglfw -lnettle -lhogweed -lgmp -lgnutls -largon2
 
-SRCS=$(shell printf "%s " net/*.cpp pla/*.cpp ../pla/*.cpp ../p3d/*.cpp ../src/*.cpp *.cpp)
+SRCS=$(shell printf "%s " net/*.cpp pla/*.cpp ../pla/*.cpp ../src/*.cpp *.cpp)
 OBJS=$(subst .cpp,.o,$(SRCS))
 
 OUTPUT=convergence
@@ -28,10 +28,10 @@ librtcdcpp/librtcdcpp.a:
 
 clean:
 	cd librtcdcpp && $(MAKE) dist-clean
-	$(RM) net/*.o net/*.d pla/*.o pla/*.d 
-	$(RM) ../pla/*.o ../pla/*.d ../p3d/*.o ../p3d/*.d ../src/*.o ../src/*.d *.o *.d
+	$(RM) pla/*.o pla/*.d net/*.o net/*.d
+	$(RM) ../pla/*.o ../pla/*.d ../src/*.o ../src/*.d *.o *.d
 
 dist-clean: clean
 	$(RM) $(OUTPUT)
-	$(RM) net/*~ pla/*~
-	$(RM) ../pla/*~ ../p3d/*~ ../src/*~
+	$(RM) pla/*~ net/*~
+	$(RM) ../pla/*~ ../src/*~

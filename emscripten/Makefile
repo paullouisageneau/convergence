@@ -7,7 +7,7 @@ CPPFLAGS=-std=c++14 -g -O0 $(EMFLAGS)
 LDFLAGS=-g -O0 $(EMFLAGS)
 LDLIBS=-lpthread -lGL -lglfw --js-library webrtc.js --js-library websocket.js --preload-file ../shader
 
-SRCS=$(shell printf "%s " net/*.cpp ../pla/*.cpp ../p3d/*.cpp ../src/*.cpp *.cpp)
+SRCS=$(shell printf "%s " net/*.cpp ../pla/*.cpp ../src/*.cpp *.cpp)
 OBJS=$(subst .cpp,.o,$(SRCS))
 
 OUTPUT=convergence.html
@@ -24,9 +24,9 @@ $(OUTPUT): $(OBJS) webrtc.js websocket.js ../shader/*
 
 clean:
 	$(RM) net/*.o net/*.d
-	$(RM) ../pla/*.o ../pla/*.d ../p3d/*.o ../p3d/*.d ../src/*.o ../src/*.d *.o *.d
+	$(RM) ../pla/*.o ../pla/*.d ../src/*.o ../src/*.d *.o *.d
 
 dist-clean: clean
 	$(RM) $(OUTPUT)
 	$(RM) net/*~
-	$(RM) ../pla/*~ ../p3d/*~ ../src/*~
+	$(RM) ../pla/*~ ../src/*~

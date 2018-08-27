@@ -25,6 +25,9 @@
 #include "net/channel.hpp"
 #include "pla/websocket.hpp"
 
+#include <thread>
+#include <atomic>
+
 namespace net
 {
 

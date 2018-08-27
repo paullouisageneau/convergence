@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2015-2016 by Paul-Louis Ageneau                         *
+ *   Copyright (C) 2006-2016 by Paul-Louis Ageneau                         *
  *   paul-louis (at) ageneau (dot) org                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -18,63 +18,68 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef CONVERGENCE_GAME_H
-#define CONVERGENCE_GAME_H
+#include "pla/object.hpp"
 
-#include "src/include.hpp"
-#include "src/peer.hpp"
-#include "src/messagebus.hpp"
-#include "src/island.hpp"
-
-#include "pla/engine.hpp"
-#include "pla/context.hpp"
-#include "pla/program.hpp"
-#include "pla/shader.hpp"
-
-#include "net/websocket.hpp"
-
-namespace convergence
+namespace pla
 {
 
-using pla::string;
-using pla::Engine;
-using pla::Context;
-using pla::Program;
-using pla::VertexShader;
-using pla::FragmentShader;
-using net::WebSocket;
-using net::Channel;
-using std::shared_ptr;
-template<typename T> using sptr = shared_ptr<T>;
-
-class Game : public Engine::State
+Object::Object(void)
 {
-public:
-	Game(void);
-	~Game(void);
-
-	void onInit(Engine *engine);
-	void onCleanup(Engine *engine);
-		
-	bool onUpdate(Engine *engine, double time);
-	int  onDraw(Engine *engine);
 	
-	void onKey(Engine *engine, int key, bool down);
-	void onMouse(Engine *engine, int button, bool down);
-	void onInput(Engine *engine, string text);
-
-private:
-	shared_ptr<MessageBus> mSignaling;
-	shared_ptr<Peer> mPeer;
-	Island mIsland;
-	
-	vec3 mPosition;
-	float mYaw, mPitch;
-	float mGravity;
-	float mAccumulator;
-};
-
 }
 
-#endif
+Object::Object(	const index_t *indices,
+		size_t nindices,
+		const float *vertices,
+		size_t nvertices,
+		sptr<Program> program) :
+	Mesh(	indices,
+		nindices,
+		vertices,
+		nvertices)
+{
+	setProgram(program, 0);
+}
 
+Object::~Object(void)
+{
+	
+}
+
+void Object::setProgram(sptr<Program> program, size_t firstIndex)
+{
+	mPrograms.insert(std::make_pair(firstIndex, program));
+}
+
+void Object::unsetProgram(size_t firstIndex)
+{
+	mPrograms.erase(firstIndex);
+}
+
+int Object::draw(const Context &context)
+{
+	int count = 0;
+	auto it = mPrograms.begin();
+	while(it != mPrograms.end())
+	{
+		size_t first = it->first;
+		size_t last = indicesCount();
+		++it;
+		
+		if(it != mPrograms.end())
+			last = it->first;
+		
+		if(it->second)
+		{
+			context.prepare(it->second);
+			
+			it->second->bind();
+			count+= drawElements(first, last-first);
+			it->second->unbind();
+		}
+	}
+	
+	return count;
+}
+	
+}

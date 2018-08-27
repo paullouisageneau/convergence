@@ -53,7 +53,7 @@ Peer::Peer(const identifier &id, shared_ptr<MessageBus> signaling) :
 			});
 		}
 	});
-
+	
 	mPeerConnection->onLocalDescription([this](const PeerConnection::SessionDescription &description) {
 		std::cout << "Local description: " << description.sdp << std::endl;
 		vector<string> fields;

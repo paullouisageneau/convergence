@@ -18,61 +18,64 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef CONVERGENCE_GAME_H
-#define CONVERGENCE_GAME_H
+#ifndef PLA_CONTEXT_H
+#define PLA_CONTEXT_H
 
-#include "src/include.hpp"
-#include "src/peer.hpp"
-#include "src/messagebus.hpp"
-#include "src/island.hpp"
-
-#include "pla/engine.hpp"
-#include "pla/context.hpp"
+#include "pla/include.hpp"
 #include "pla/program.hpp"
-#include "pla/shader.hpp"
+#include "pla/frustum.hpp"
+#include "pla/linalg.hpp"
 
-#include "net/websocket.hpp"
-
-namespace convergence
+namespace pla
 {
 
-using pla::string;
-using pla::Engine;
-using pla::Context;
-using pla::Program;
-using pla::VertexShader;
-using pla::FragmentShader;
-using net::WebSocket;
-using net::Channel;
-using std::shared_ptr;
-template<typename T> using sptr = shared_ptr<T>;
-
-class Game : public Engine::State
+// Rendering context
+class Context
 {
 public:
-	Game(void);
-	~Game(void);
-
-	void onInit(Engine *engine);
-	void onCleanup(Engine *engine);
-		
-	bool onUpdate(Engine *engine, double time);
-	int  onDraw(Engine *engine);
+	Context(const mat4 &projection,  const mat4 &camera);
+	~Context(void);
 	
-	void onKey(Engine *engine, int key, bool down);
-	void onMouse(Engine *engine, int button, bool down);
-	void onInput(Engine *engine, string text);
-
+	const mat4 &projection(void) const;
+	const mat4 &modelview(void) const;
+	const mat4 &transform(void) const;
+	const vec3 &cameraPosition(void) const;
+	const Frustum &frustum(void) const;
+	void prepare(sptr<Program> program) const;	// set uniforms in program
+	
+	template<typename T> void setUniform(const string &name, const T &value);
+	
 private:
-	shared_ptr<MessageBus> mSignaling;
-	shared_ptr<Peer> mPeer;
-	Island mIsland;
+	mat4 mProjection, mModelview, mTransform;
+	vec3 mCameraPosition;
+	Frustum mFrustum;
 	
-	vec3 mPosition;
-	float mYaw, mPitch;
-	float mGravity;
-	float mAccumulator;
+	class UniformContainer
+	{
+	public:
+		virtual void apply(const string &name, sptr<Program> program) const = 0;
+	};
+	
+	template<typename T>
+	class UniformContainerImpl : public UniformContainer
+	{
+	public:
+		UniformContainerImpl(const T &v) { value = v; }
+		void apply(const string &name, sptr<Program> program) const { program->setUniform(name, value); }
+		
+	private:
+		T value;
+	};
+	
+	std::map<string, sptr<UniformContainer> > mUniforms;
 };
+
+template<typename T> 
+void Context::setUniform(const string &name, const T &value)
+{
+	sptr<UniformContainer> p = std::make_shared<UniformContainerImpl<T> >(value);
+	mUniforms.insert(std::make_pair(name, p));
+}
 
 }
 

@@ -1,6 +1,6 @@
 /***************************************************************************
- *   Copyright (C) 2015-2016 by Paul-Louis Ageneau                         *
- *   paul-louis (at) ageneau (dot) org                                     *
+ *   Copyright (C) 2006-2010 by Paul-Louis Ageneau                         *
+ *   paul-louis (at) ageneau (dot) org                               *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -18,63 +18,37 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef CONVERGENCE_GAME_H
-#define CONVERGENCE_GAME_H
+#ifndef OBJECT_H
+#define OBJECT_H
 
-#include "src/include.hpp"
-#include "src/peer.hpp"
-#include "src/messagebus.hpp"
-#include "src/island.hpp"
-
-#include "pla/engine.hpp"
-#include "pla/context.hpp"
+#include "pla/include.hpp"
+#include "pla/mesh.hpp"
 #include "pla/program.hpp"
-#include "pla/shader.hpp"
+#include "pla/context.hpp"
 
-#include "net/websocket.hpp"
-
-namespace convergence
+namespace pla
 {
 
-using pla::string;
-using pla::Engine;
-using pla::Context;
-using pla::Program;
-using pla::VertexShader;
-using pla::FragmentShader;
-using net::WebSocket;
-using net::Channel;
-using std::shared_ptr;
-template<typename T> using sptr = shared_ptr<T>;
-
-class Game : public Engine::State
+class Object : public Mesh
 {
 public:
-	Game(void);
-	~Game(void);
-
-	void onInit(Engine *engine);
-	void onCleanup(Engine *engine);
-		
-	bool onUpdate(Engine *engine, double time);
-	int  onDraw(Engine *engine);
+	Object(void);
+	Object(	const index_t *indices,
+		size_t nindices,
+		const float *vertices,
+		size_t nvertices,
+		sptr<Program> program);
+	virtual ~Object(void);
 	
-	void onKey(Engine *engine, int key, bool down);
-	void onMouse(Engine *engine, int button, bool down);
-	void onInput(Engine *engine, string text);
-
-private:
-	shared_ptr<MessageBus> mSignaling;
-	shared_ptr<Peer> mPeer;
-	Island mIsland;
+	void setProgram(sptr<Program> program, size_t firstIndex = 0);
+	void unsetProgram(size_t firstIndex = 0);
 	
-	vec3 mPosition;
-	float mYaw, mPitch;
-	float mGravity;
-	float mAccumulator;
+	virtual int draw(const Context &context);
+	
+protected:
+	std::map<size_t, sptr<Program> > mPrograms;
 };
 
 }
 
 #endif
-

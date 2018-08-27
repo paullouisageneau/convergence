@@ -2,7 +2,7 @@
 #include <iostream>
 #include <emscripten/emscripten.h>
  
-#include "p3d/engine.hpp"
+#include "pla/engine.hpp"
 #include "src/game.hpp"
 
 #include "net/webrtc.hpp"

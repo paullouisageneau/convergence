@@ -18,63 +18,59 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef CONVERGENCE_GAME_H
-#define CONVERGENCE_GAME_H
-
-#include "src/include.hpp"
-#include "src/peer.hpp"
-#include "src/messagebus.hpp"
-#include "src/island.hpp"
-
-#include "pla/engine.hpp"
 #include "pla/context.hpp"
-#include "pla/program.hpp"
-#include "pla/shader.hpp"
 
-#include "net/websocket.hpp"
-
-namespace convergence
+namespace pla
 {
 
-using pla::string;
-using pla::Engine;
-using pla::Context;
-using pla::Program;
-using pla::VertexShader;
-using pla::FragmentShader;
-using net::WebSocket;
-using net::Channel;
-using std::shared_ptr;
-template<typename T> using sptr = shared_ptr<T>;
-
-class Game : public Engine::State
+Context::Context(const mat4 &projection, const mat4 &camera) :
+	mProjection(projection),
+	mModelview(glm::inverse(camera)),
+	mTransform(mProjection * mModelview),
+	mCameraPosition(camera*vec4(0.f, 0.f, 0.f, 1.f)),
+	mFrustum(mProjection)
 {
-public:
-	Game(void);
-	~Game(void);
-
-	void onInit(Engine *engine);
-	void onCleanup(Engine *engine);
-		
-	bool onUpdate(Engine *engine, double time);
-	int  onDraw(Engine *engine);
-	
-	void onKey(Engine *engine, int key, bool down);
-	void onMouse(Engine *engine, int button, bool down);
-	void onInput(Engine *engine, string text);
-
-private:
-	shared_ptr<MessageBus> mSignaling;
-	shared_ptr<Peer> mPeer;
-	Island mIsland;
-	
-	vec3 mPosition;
-	float mYaw, mPitch;
-	float mGravity;
-	float mAccumulator;
-};
-
+	setUniform("projection", mProjection);
+	setUniform("modelview", mModelview);
+	setUniform("transform", mTransform);
 }
 
-#endif
+Context::~Context(void)
+{
+	
+}
+	
+const mat4 &Context::projection(void) const
+{
+	return mProjection;
+}
 
+const mat4 &Context::modelview(void) const
+{
+	return mModelview;
+}
+
+const mat4 &Context::transform(void) const
+{
+	return mModelview;
+}
+
+const vec3 &Context::cameraPosition(void) const
+{
+	return mCameraPosition;
+}
+
+const Frustum &Context::frustum(void) const
+{
+	return mFrustum;
+}
+
+void Context::prepare(sptr<Program> program) const
+{
+	for(auto p : mUniforms)
+		if(program->hasUniform(p.first))
+			p.second->apply(p.first, program);
+}
+	
+
+}
