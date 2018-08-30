@@ -48,8 +48,14 @@ Peer::Peer(const identifier &id, shared_ptr<MessageBus> signaling) :
 		std::cout << "Got a data channel !" << std::endl;
 		if(dataChannel->label() == "main") {
 			mDataChannel = dataChannel;
+			
 			mDataChannel->onOpen([this]() {
 				std::cout << "Data channel open !" << std::endl;
+			});
+	
+			mDataChannel->onMessage([this](const binary &data) {
+				Message message(data);
+				onMessage(message);
 			});
 		}
 	});
@@ -80,9 +86,20 @@ Peer::~Peer(void)
 void Peer::connect(void)
 {
 	mDataChannel = mPeerConnection->createDataChannel("main");
+	
 	mDataChannel->onOpen([this]() {
 		std::cout << "Data channel open !" << std::endl;
 	});
+	
+	mDataChannel->onMessage([this](const binary &data) {
+		Message message(data);
+		onMessage(message);
+	});
+}
+
+bool Peer::isConnected(void) const
+{
+	return mDataChannel && mDataChannel->isOpen();
 }
 
 void Peer::sendMessage(uint32_t type, const binary &payload)

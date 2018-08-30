@@ -62,9 +62,11 @@ void Game::onInit(Engine *engine)
 	mColorProgram->link();
 	*/
 
-	mPosition.z = 10.f;
+	mPosition.x = 5.f;
+	mPosition.y = 5.f;
+	mPosition.z = 60.f;
 	mYaw = 0.f;
-	mPitch = 0.f;
+	mPitch = -Pi/2;
 	mGravity = 0.f;
 	mAccumulator = 0.f;
 	
@@ -76,32 +78,7 @@ void Game::onInit(Engine *engine)
 	rbe.seed(clock::now().time_since_epoch()/std::chrono::milliseconds(1));
 	std::generate(localId.begin(), localId.end(), std::ref(rbe));
 	
-	auto webSocket = std::make_shared<WebSocket>("ws://127.0.0.1:8080/test");
-	webSocket->onOpen([this, webSocket, localId]() {
-		std::cout << "WebSocket opened" << std::endl;
-		mSignaling = std::make_shared<MessageBus>(localId);
-		
-		mSignaling->onPeer([this](const identifier &id) {
-			mPeer = std::make_shared<Peer>(id, mSignaling);
-			mPeer->connect();
-		});
-		
-		mSignaling->onMessage([this](const Message &message) {
-			if(message.type == 0x11) {
-				const identifier &id = message.source;
-				if(!mPeer) {
-					std::cout << "Creating peer " << to_hex(id) << std::endl;
-					mPeer = std::make_shared<Peer>(id, mSignaling);
-				}
-			}
-		});
-		
-		mSignaling->addChannel(webSocket);
-	});
-	
-	webSocket->onError([this](const string &error) {
-		std::cerr << "WebSocket error: " << error << std::endl;
-	});
+	mNetworking = std::make_shared<Networking>("ws://127.0.0.1:8080/test");
 }
 
 void Game::onCleanup(Engine *engine)

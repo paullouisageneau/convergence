@@ -18,42 +18,29 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef CONVERGENCE_PEER_H
-#define CONVERGENCE_PEER_H
+#ifndef CONVERGENCE_NETWORKING_H
+#define CONVERGENCE_NETWORKING_H
 
 #include "src/include.hpp"
+#include "src/peer.hpp"
 #include "src/messagebus.hpp"
-
-#include "net/webrtc.hpp"
 
 namespace convergence
 {
 
-using net::PeerConnection;
-using net::DataChannel;
+using pla::string;
 using std::shared_ptr;
 
-class Peer : protected MessageBus::Listener
+class Networking
 {
 public:
-	Peer(const identifier &id, shared_ptr<MessageBus> signaling);
-	~Peer(void);
-
-	void connect(void);
-	
-	bool isConnected(void) const;
-
-	void sendMessage(uint32_t type, const binary &payload);
-	void processMessage(uint32_t type, const binary &payload);
-
-protected:
-	void onMessage(const Message &message);
+	Networking(const string &url);
+	~Networking(void);
 
 private:
-	identifier mId;
+	identifier mLocalId;
 	shared_ptr<MessageBus> mSignaling;
-	shared_ptr<PeerConnection> mPeerConnection;
-	shared_ptr<DataChannel> mDataChannel;
+	std::map<identifier, shared_ptr<Peer>> mPeers;
 };
 
 }
