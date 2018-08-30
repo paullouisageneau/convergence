@@ -69,7 +69,7 @@ public:
 		int4 operator- (void) const;
 		int4 operator+ (const int4 &i) const;
 		int4 operator- (const int4 &i) const;
-		int4 operator* (const float &f) const;
+		int4 operator* (float f) const;
 
 		int8_t x, y, z, w;
 	};
@@ -77,11 +77,11 @@ public:
 
 	struct value
 	{
-		value(uint8_t t = 0, int8_t w = -128) : type(t), weight(w) {}
-		float w(void) const { return float(weight)/128; }
+		value(uint8_t _type = 0, uint8_t _weight = 0) : type(_type), weight(_weight) {}
+		float w(void) const { return float(weight)/255.f; }
 
 		uint8_t type;
-		int8_t weight;
+		uint8_t weight;
 	};
 
 	Surface(unsigned int seed);
@@ -125,15 +125,12 @@ protected:
 		int polygonizeCell(const int4 &c,
 			std::vector<vec3> &vertices, std::vector<int4> &normals, std::vector<int4> &material,
 			std::vector<index_t> &indices);
-		vec3 interpolate(vec3 p1, vec3 p2, value v1, value v2);
-		int4 interpolate(int4 p1, int4 p2, value v1, value v2);
-		int4 material(value v1, value v2);
+		vec3 interpolate(vec3 p1, vec3 p2, int4 g1, int4 g2, value v1, value v2, int4 &grad, int4 &mat);
 
 		Surface *mSurface;
 		int4 mPos;
 
 		value mCells[Size*Size*Size];
-		int4  mGrads[Size*Size*Size];
 		bool  mChanged;
 
 		friend class Surface;

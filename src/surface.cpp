@@ -53,23 +53,19 @@ Surface::Surface(unsigned int seed)
 				const int d2 = x*x + y*y + z*z;
 				const float noise1 = perlin.noise(x*f1,y*f1,z*f1);
 				const float noise2 = perlin.noise(x*f2,y*f2,z*f2);
-				const float w = (0.30f + noise1*noise1*0.50f + noise2*0.20f)*std::exp(-0.00003f*d2)*std::exp((z > 0 ? -0.0075f*z : 0.f));
-
-				int8_t weight = int8_t(pla::bounds((w-0.5f)*10.f, -0.5f, 0.5f)*255);
-
-				// Material 0 as base
-				uint8_t type = 0;
-
+				const float w = (0.30f + noise1*noise1*0.50f + noise2*0.20f)*std::exp(-0.00003f*d2)*std::exp((z > 0 ? -0.0075f*z : 0.f)) - 0.5f;
+				
+				uint8_t weight = uint8_t(pla::bounds(int(w*10000.f), 0, 255));
+				setValue(int4(x, y, z), value(0, weight));
+				
 				// Material 1 on top
-				if(weight > 0) inside = true;
+				if(weight != 0) inside = true;
 				else if(inside)
 				{
-					type = 1;
-					setType(int4(x, y, z-1), type);
+					setType(int4(x, y, z), 1);
+					setType(int4(x, y, z-1), 1);
 					inside = false;
 				}
-
-				setValue(int4(x, y, z), value(type, weight));
 			}
 		}
 }
@@ -194,7 +190,7 @@ void Surface::addWeight(const vec3 &p, float radius, int weight, int newType)
 				if(t > 0.f)
 				{
 					value v = getValue(i);
-					v.weight = pla::bounds(int(v.weight) + int(weight*t), -128, 127);
+					v.weight = pla::bounds(int(v.weight) + int(weight*t), 0, 255);
 					if(newType >= 0 && t >= 0.1f) v.type = newType;
 					setValue(i, v);
 				}
@@ -332,9 +328,9 @@ Surface::int4 Surface::int4::operator- (const int4 &i) const
 	return int4(x - i.x, y - i.y, z - i.z, w - i.w);
 }
 
-Surface::int4 Surface::int4::operator* (const float &f) const
+Surface::int4 Surface::int4::operator* (float f) const
 {
-	return int4(int(int(x)*f), int(int(y)*f), int(int(z)*f), int(int(w)*f));
+	return int4(int(float(x)*f + 0.5f), int(float(y)*f + 0.5f), int(float(z)*f + 0.5f), int(float(w)*f + 0.5f));
 }
 
 Surface::Block::Block(Surface *grid, const int4 &b) :
@@ -433,17 +429,16 @@ int Surface::Block::polygonizeCell(const int4 &c,
 	g[6] = getGradient(int4(c.x  , c.y  , c.z  ));
 	g[7] = getGradient(int4(c.x-1, c.y  , c.z  ));
 
-	// Determine the index into the edge table which
-	// tells us which vertices are inside the surface
+	// Determine the index into the edge table
 	unsigned index = 0;
-	if(v[0].weight <= 0) index|= 1;
-	if(v[1].weight <= 0) index|= 2;
-	if(v[2].weight <= 0) index|= 4;
-	if(v[3].weight <= 0) index|= 8;
-	if(v[4].weight <= 0) index|= 16;
-	if(v[5].weight <= 0) index|= 32;
-	if(v[6].weight <= 0) index|= 64;
-	if(v[7].weight <= 0) index|= 128;
+	if(v[0].weight == 0) index|= 0x01;
+	if(v[1].weight == 0) index|= 0x02;
+	if(v[2].weight == 0) index|= 0x04;
+	if(v[3].weight == 0) index|= 0x08;
+	if(v[4].weight == 0) index|= 0x10;
+	if(v[5].weight == 0) index|= 0x20;
+	if(v[6].weight == 0) index|= 0x40;
+	if(v[7].weight == 0) index|= 0x80;
 
 	unsigned edge = EdgeTable[index];
 
@@ -454,91 +449,20 @@ int Surface::Block::polygonizeCell(const int4 &c,
 	vec3 vert[12];
 	int4 grad[12];
 	int4 mat[12];
-
-	if(edge & 1)
-	{
-		vert[0] = interpolate(p[0], p[1], v[0], v[1]);
-		grad[0] = interpolate(g[0], g[1], v[0], v[1]);
-		mat[0]  = material(v[0], v[1]);
-	}
-
-	if(edge & 2)
-	{
-		vert[1] = interpolate(p[1], p[2], v[1], v[2]);
-		grad[1] = interpolate(g[1], g[2], v[1], v[2]);
-		mat[1]  = material(v[1], v[2]);
-	}
-
-	if(edge & 4)
-	{
-		vert[2] = interpolate(p[2], p[3], v[2], v[3]);
-		grad[2] = interpolate(g[2], g[3], v[2], v[3]);
-		mat[2]  = material(v[2], v[3]);
-	}
-
-	if(edge & 8)
-	{
-		vert[3] = interpolate(p[3], p[0], v[3], v[0]);
-		grad[3] = interpolate(g[3], g[0], v[3], v[0]);
-		mat[3]  = material(v[3], v[0]);
-	}
-
-	if(edge & 16)
-	{
-		vert[4] = interpolate(p[4], p[5], v[4], v[5]);
-		grad[4] = interpolate(g[4], g[5], v[4], v[5]);
-		mat[4]  = material(v[4], v[5]);
-	}
-
-	if(edge & 32)
-	{
-		vert[5] = interpolate(p[5], p[6], v[5], v[6]);
-		grad[5] = interpolate(g[5], g[6], v[5], v[6]);
-		mat[5]  = material(v[5], v[6]);
-	}
-
-	if(edge & 64)
-	{
-		vert[6] = interpolate(p[6], p[7], v[6], v[7]);
-		grad[6] = interpolate(g[6], g[7], v[6], v[7]);
-		mat[6]  = material(v[6], v[7]);
-	}
-
-	if(edge & 128)
-	{
-		vert[7] = interpolate(p[7], p[4], v[7], v[4]);
-		grad[7] = interpolate(g[7], g[4], v[7], v[4]);
-		mat[7]  = material(v[7], v[4]);
-	}
-
-	if(edge & 256)
-	{
-		vert[8] = interpolate(p[0], p[4], v[0], v[4]);
-		grad[8] = interpolate(g[0], g[4], v[0], v[4]);
-		mat[8]  = material(v[0], v[4]);
-	}
-
-	if(edge & 512)
-	{
-		vert[9] = interpolate(p[1], p[5], v[1], v[5]);
-		grad[9] = interpolate(g[1], g[5], v[1], v[5]);
-		mat[9]  = material(v[1], v[5]);
-	}
-
-	if(edge & 1024)
-	{
-		vert[10] = interpolate(p[2], p[6], v[2], v[6]);
-		grad[10] = interpolate(g[2], g[6], v[2], v[6]);
-		mat[10]  = material(v[2], v[6]);
-	}
-
-	if(edge & 2048)
-	{
-		vert[11] = interpolate(p[3], p[7], v[3], v[7]);
-		grad[11] = interpolate(g[3], g[7], v[3], v[7]);
-		mat[11]  = material(v[3], v[7]);
-	}
-
+	
+	if(edge & 0x001) vert[0]  = interpolate(p[0], p[1], g[0], g[1], v[0], v[1], grad[0],  mat[0]);
+	if(edge & 0x002) vert[1]  = interpolate(p[1], p[2], g[1], g[2], v[1], v[2], grad[1],  mat[1]);
+	if(edge & 0x004) vert[2]  = interpolate(p[2], p[3], g[2], g[3], v[2], v[3], grad[2],  mat[2]);
+	if(edge & 0x008) vert[3]  = interpolate(p[3], p[0], g[3], g[0], v[3], v[0], grad[3],  mat[3]);
+	if(edge & 0x010) vert[4]  = interpolate(p[4], p[5], g[4], g[5], v[4], v[5], grad[4],  mat[4]);
+	if(edge & 0x020) vert[5]  = interpolate(p[5], p[6], g[5], g[6], v[5], v[6], grad[5],  mat[5]);
+	if(edge & 0x040) vert[6]  = interpolate(p[6], p[7], g[6], g[7], v[6], v[7], grad[6],  mat[6]);
+	if(edge & 0x080) vert[7]  = interpolate(p[7], p[4], g[7], g[4], v[7], v[4], grad[7],  mat[7]);
+	if(edge & 0x100) vert[8]  = interpolate(p[0], p[4], g[0], g[4], v[0], v[4], grad[8],  mat[8]);
+	if(edge & 0x200) vert[9]  = interpolate(p[1], p[5], g[1], g[5], v[1], v[5], grad[9],  mat[9]);
+	if(edge & 0x400) vert[10] = interpolate(p[2], p[6], g[2], g[6], v[2], v[6], grad[10], mat[10]);
+	if(edge & 0x800) vert[11] = interpolate(p[3], p[7], g[3], g[7], v[3], v[7], grad[11], mat[11]);
+	
 	// Create the triangles
 	int n = 0;
 	std::map<int, index_t> mapping;
@@ -570,7 +494,7 @@ int Surface::Block::polygonizeCell(const int4 &c,
 
 // Linearly interpolate the position where an isosurface cuts
 // an edge between two vertices, each with their own scalar value
-vec3 Surface::Block::interpolate(vec3 p1, vec3 p2, value v1, value v2)
+vec3 Surface::Block::interpolate(vec3 p1, vec3 p2, int4 g1, int4 g2, value v1, value v2, int4 &grad, int4 &mat)
 {
 	static auto comp = [](const vec3 &a, const vec3 &b)
 	{
@@ -585,34 +509,19 @@ vec3 Surface::Block::interpolate(vec3 p1, vec3 p2, value v1, value v2)
 	if(comp(p1, p2))
 	{
 		std::swap(p1, p2);
+		std::swap(g1, g2);
 		std::swap(v1, v2);
 	}
 
-	if(v1.weight == v2.weight)
-		return p1;
-
-	float mu = v1.w()/(v1.w() - v2.w());
-	return p1 + (p2 - p1)*mu;
-}
-
-Surface::int4 Surface::Block::interpolate(int4 p1, int4 p2, value v1, value v2)
-{
-	if(v1.weight == v2.weight)
-		return p1;
-
-	float mu = v1.w()/(v1.w() - v2.w());
-	return p1 + (p2 - p1)*mu;
-}
-
-Surface::int4 Surface::Block::material(value v1, value v2)
-{
-	if(v1.weight == v2.weight)
-		return int4((v1.type < 4 ? MaterialTable[v1.type]*127.f : vec4(0.f, 0.f, 0.f, 0.f)));
-
-	float mu = v1.w()/(v1.w() - v2.w());
+	float mu = v1.weight == 0 ? 1.f - v2.w() : v1.w();
+	
+	grad = g1 + (g2 - g1)*mu;
+	
 	vec4 m1 = (v1.type < 4 ? MaterialTable[v1.type]*127.f : vec4(0.f, 0.f, 0.f, 0.f));
 	vec4 m2 = (v2.type < 4 ? MaterialTable[v2.type]*127.f : vec4(0.f, 0.f, 0.f, 0.f));
-	return int4(m1 + (m2 - m1)*mu);
+	mat = int4(m1 + (m2 - m1)*mu);
+	
+	return p1 + (p2 - p1)*mu;
 }
 
 Surface::value Surface::Block::getValue(const int4 &p)
@@ -636,8 +545,7 @@ Surface::int4 Surface::Block::getGradient(const int4 &p)
 	if(p.y >= Size) return mSurface->getBlock(int4(mPos.x, mPos.y+1, mPos.z))->getGradient(int4(p.x, p.y-Size, p.z));
 	if(p.z >= Size) return mSurface->getBlock(int4(mPos.x, mPos.y, mPos.z+1))->getGradient(int4(p.x, p.y, p.z-Size));
 
-	if(!mChanged) return mGrads[(p.x*Size + p.y)*Size + p.z];
-	else return computeGradient(p);
+	return computeGradient(p);
 }
 
 Surface::int4 Surface::Block::computeGradient(const int4 &p)
@@ -648,7 +556,6 @@ Surface::int4 Surface::Block::computeGradient(const int4 &p)
 		(getValue(int4(p.x,p.y,p.z+1)).weight - getValue(int4(p.x,p.y,p.z-1)).weight)/2
 	);
 
-	mGrads[(p.x*Size + p.y)*Size + p.z] = grad;
 	return grad;
 }
 
