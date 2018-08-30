@@ -22,16 +22,13 @@
 #define CONVERGENCE_GAME_H
 
 #include "src/include.hpp"
-#include "src/peer.hpp"
-#include "src/messagebus.hpp"
 #include "src/island.hpp"
+#include "src/networking.hpp"
 
 #include "pla/engine.hpp"
 #include "pla/context.hpp"
 #include "pla/program.hpp"
 #include "pla/shader.hpp"
-
-#include "net/websocket.hpp"
 
 namespace convergence
 {
@@ -42,9 +39,8 @@ using pla::Context;
 using pla::Program;
 using pla::VertexShader;
 using pla::FragmentShader;
-using net::WebSocket;
-using net::Channel;
 using std::shared_ptr;
+
 template<typename T> using sptr = shared_ptr<T>;
 
 class Game : public Engine::State
@@ -64,9 +60,9 @@ public:
 	void onInput(Engine *engine, string text);
 
 private:
-	shared_ptr<MessageBus> mSignaling;
-	shared_ptr<Peer> mPeer;
 	Island mIsland;
+	
+	sptr<Networking> mNetworking;
 	
 	vec3 mPosition;
 	float mYaw, mPitch;

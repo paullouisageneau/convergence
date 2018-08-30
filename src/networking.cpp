@@ -18,45 +18,62 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef CONVERGENCE_PEER_H
-#define CONVERGENCE_PEER_H
+#include "src/networking.hpp"
 
-#include "src/include.hpp"
-#include "src/messagebus.hpp"
+#include "net/websocket.hpp"
 
-#include "net/webrtc.hpp"
+#include <random>
+#include <chrono>
 
 namespace convergence
 {
 
-using net::PeerConnection;
-using net::DataChannel;
-using std::shared_ptr;
+using net::WebSocket;
+using pla::to_hex;
 
-class Peer : protected MessageBus::Listener
+Networking::Networking(const string &url)
 {
-public:
-	Peer(const identifier &id, shared_ptr<MessageBus> signaling);
-	~Peer(void);
+	using clock = std::chrono::high_resolution_clock;
+	using random_bytes_engine = std::independent_bits_engine<std::default_random_engine, CHAR_BIT, unsigned char>;
+	random_bytes_engine rbe;
+	rbe.seed(clock::now().time_since_epoch()/std::chrono::milliseconds(1));
+	std::generate(mLocalId.begin(), mLocalId.end(), std::ref(rbe));
 
-	void connect(void);
+	std::cout << "Local peer is " << to_hex(mLocalId) << std::endl;
+
+	auto webSocket = std::make_shared<WebSocket>(url);
+	webSocket->onOpen([this, webSocket]() {
+		std::cout << "WebSocket opened" << std::endl;
+		mSignaling = std::make_shared<MessageBus>(mLocalId);
+		
+		mSignaling->onPeer([this](const identifier &id) {
+			std::cout << "Discovered peer " << to_hex(id) << std::endl;
+			auto peer = std::make_shared<Peer>(id, mSignaling);
+			peer->connect();
+			mPeers[id] = peer;
+		});
+		
+		mSignaling->onMessage([this](const Message &message) {
+			if(message.type == 0x11) {
+				const identifier &id = message.source;
+				std::cout << "Incoming peer " << to_hex(id) << std::endl;
+				auto peer = std::make_shared<Peer>(id, mSignaling);
+				mPeers[id] = peer;
+			}
+		});
+		
+		mSignaling->addChannel(webSocket);
+	});
 	
-	bool isConnected(void) const;
+	webSocket->onError([this](const string &error) {
+		std::cerr << "WebSocket error: " << error << std::endl;
+	});
+}
 
-	void sendMessage(uint32_t type, const binary &payload);
-	void processMessage(uint32_t type, const binary &payload);
-
-protected:
-	void onMessage(const Message &message);
-
-private:
-	identifier mId;
-	shared_ptr<MessageBus> mSignaling;
-	shared_ptr<PeerConnection> mPeerConnection;
-	shared_ptr<DataChannel> mDataChannel;
-};
+Networking::~Networking(void)
+{
 
 }
 
-#endif
+}
 
