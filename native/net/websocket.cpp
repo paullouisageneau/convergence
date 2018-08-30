@@ -61,12 +61,13 @@ void WebSocket::send(const binary &data)
 void WebSocket::run(void)
 {
 	if(mUrl.empty()) return;
-	mWebSocket.connect(mUrl);
-	
-	mConnected = true;
-	triggerOpen();
 	
 	try {
+		mWebSocket.connect(mUrl);
+		
+		mConnected = true;
+		triggerOpen();
+		
 		binary buffer;
 		while(mWebSocket.read(buffer, mMaxPayloadSize))
 			triggerMessage(buffer);
@@ -77,9 +78,9 @@ void WebSocket::run(void)
 	}
 	
 	mWebSocket.close();
-	mConnected = false;
 	
-	triggerClosed();
+	if(mConnected) triggerClosed();
+	mConnected = false;
 }
 
 }
