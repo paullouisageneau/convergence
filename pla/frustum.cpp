@@ -26,52 +26,56 @@ namespace pla
 Frustum::Frustum(const mat4 &proj)
 {
 	// Right plane
-	mPlane[0] = glm::normalize(vec4(
-		proj[3][0] - proj[0][0],
-		proj[3][1] - proj[0][1],
-		proj[3][2] - proj[0][2],
-		proj[3][3] - proj[0][3]
-	));
+	mPlane[0] = vec4(
+		proj[0][3] - proj[0][0],
+		proj[1][3] - proj[1][0],
+		proj[2][3] - proj[2][0],
+		proj[3][3] - proj[3][0]
+	);
 
 	// Left plane
-	mPlane[1] = glm::normalize(vec4(
-		proj[3][0] + proj[0][0],
-		proj[3][1] + proj[0][1],
-		proj[3][2] + proj[0][2],
-		proj[3][3] + proj[0][3]
-	));
+	mPlane[1] = vec4(
+		proj[0][3] + proj[0][0],
+		proj[1][3] + proj[1][0],
+		proj[2][3] + proj[2][0],
+		proj[3][3] + proj[3][0]
+	);
 
 	// Bottom plane
-	mPlane[2] = glm::normalize(vec4(
-		proj[3][0] + proj[1][0],
-		proj[3][1] + proj[1][1],
-		proj[3][2] + proj[1][2],
-		proj[3][3] + proj[1][3]
-	));
+	mPlane[2] = vec4(
+		proj[0][3] + proj[0][1],
+		proj[1][3] + proj[1][1],
+		proj[2][3] + proj[2][1],
+		proj[3][3] + proj[3][1]
+	);
 
-	// Up plane
-	mPlane[3] = glm::normalize(vec4(
-		proj[3][0] - proj[1][0],
-		proj[3][1] - proj[1][1],
-		proj[3][2] - proj[1][2],
-		proj[3][3] - proj[1][3]
-	));
+	// Top plane
+	mPlane[3] = vec4(
+		proj[0][3] - proj[0][1],
+		proj[1][3] - proj[1][1],
+		proj[2][3] - proj[2][1],
+		proj[3][3] - proj[3][1]
+	);
 
 	// Far plane
-	mPlane[4] = glm::normalize(vec4(
-		proj[3][0] - proj[2][0],
-		proj[3][1] - proj[2][1],
-		proj[3][2] - proj[2][2],
-		proj[3][3] - proj[2][3]
-	));
+	mPlane[4] = vec4(
+		proj[0][3] - proj[0][2],
+		proj[1][3] - proj[1][2],
+		proj[2][3] - proj[2][2],
+		proj[3][3] - proj[3][2]
+	);
 
 	// Near plane
-	mPlane[5] = glm::normalize(vec4(
-		proj[3][0] + proj[2][0],
-		proj[3][1] + proj[2][1],
-		proj[3][2] + proj[2][2],
-		proj[3][3] + proj[2][3]
-	));
+	mPlane[5] = vec4(
+		proj[0][3] + proj[0][2],
+		proj[1][3] + proj[1][2],
+		proj[2][3] + proj[2][2],
+		proj[3][3] + proj[3][2]
+	);
+	
+	// Normalize
+	for(int i = 0; i < 6; ++i)
+		mPlane[i]/= glm::length(vec3(mPlane[i]));
 }
 
 Frustum::~Frustum(void)
@@ -82,23 +86,17 @@ Frustum::~Frustum(void)
 bool Frustum::testPoint(const vec3 &p) const
 {
 	for(int i=0; i<6; ++i)
-	{
-		float d = planeDistance(i, p);
-		if(d <= 0.f) 
+		if(planeDistance(i, p) <= 0.f)
 			return false;
-	}
-	
+
 	return true;
 }
 
 bool Frustum::testSphere(const vec3 &center, float radius) const
 {
 	for(int i=0; i<6; ++i)
-	{
-		float d = planeDistance(i, center);
-		if(d <= -radius) 
+		if(planeDistance(i, center) <= -radius)
 			return false;
-	}
 	
 	return true;
 }

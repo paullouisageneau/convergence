@@ -19,7 +19,7 @@ int main()
 		engine.pushState(std::make_shared<convergence::Game>());
 	}
 	catch(const std::exception &e) {
-		std::cout << "Exception: " << e.what() << std::endl;
+		std::cout << "Error: " << e.what() << std::endl;
 		return 1;
 	}
 	
@@ -40,7 +40,7 @@ void loop()
 		std::cout << count << std::endl;
 	}
 	catch(const std::exception &e) {
-		std::cout << "Exception: " << e.what() << std::endl;
+		std::cout << "Error: " << e.what() << std::endl;
 		emscripten_cancel_main_loop();
 	}
 }

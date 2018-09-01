@@ -119,8 +119,10 @@ protected:
 		Block(Surface *surface, const int4 &b);
 		~Block(void);
 
+		int4 position(void) const;
 		vec3 center(void) const;
-
+		bool isChanged(void) const;
+		
 		void setValue(const int4 &p, value v, bool markChanged = true);
 		void setType(const int4 &p, uint8_t t);
 		value getValue(const int4 &p);

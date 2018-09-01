@@ -30,16 +30,25 @@ using convergence::Game;
 
 int main(int argc, char **argv)
 {
-	// TODO
-	//Server server;
-	//server.start();
-	
-	pla::Engine engine;
-	engine.openWindow(1024, 768);
-	engine.pushState(std::make_shared<Game>());	
-	
-	while(engine.update())
-		engine.display();
+	try {
+		// TODO
+		//Server server;
+		//server.start();
+		
+		pla::Engine engine;
+		engine.openWindow(1024, 768);
+		engine.pushState(std::make_shared<Game>());
+		
+		while(engine.update())
+		{
+			int count = engine.display();
+			std::cout << count << std::endl;
+		}
+	}
+	catch(const std::exception &e) {
+		std::cout << "Error: " << e.what() << std::endl;
+		return 1;
+	}
 
 	return 0;
 }
