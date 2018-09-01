@@ -28,7 +28,7 @@ Context::Context(const mat4 &projection, const mat4 &camera) :
 	mModelview(glm::inverse(camera)),
 	mTransform(mProjection * mModelview),
 	mCameraPosition(camera*vec4(0.f, 0.f, 0.f, 1.f)),
-	mFrustum(mProjection)
+	mFrustum(mTransform)
 {
 	setUniform("projection", mProjection);
 	setUniform("modelview", mModelview);

@@ -35,6 +35,7 @@ using glm::mat3;
 using glm::mat4;
 
 extern const float Pi;
+extern const float Sqrt2;
 extern const float Epsilon;
 
 }

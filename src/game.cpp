@@ -159,7 +159,7 @@ int Game::onDraw(Engine *engine)
 	mat4 projection = glm::perspective(
 		glm::radians(45.0f),
 		float(width)/float(height),
-		0.1f, 1000.0f
+		0.1f, 60.0f
 	);
 
 	mat4 camera = mat4(1.0f);

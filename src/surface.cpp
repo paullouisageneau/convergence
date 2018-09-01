@@ -85,33 +85,32 @@ void Surface::update(void)
 
 int Surface::draw(const Context &context)
 {
-	const float distance = 60.f;
-	const float r = distance + Size*std::sqrt(2.f)*0.5f;
-	const float r2 = r*r;
 	const vec3 pos = context.cameraPosition();
-
-	int4 b = int4(pos).block();
+	const int4 b = int4(pos).block();
+	const float d = Size * 0.5f * pla::Sqrt2;
+	
 	std::set<sptr<Block> > blocks, processed;
-	getBlocksRec(b, blocks, processed, [pos, r2](sptr<Block> blk)
+	getBlocksRec(b, blocks, processed, [context, pos, b, d](sptr<Block> blk)
 	{
-		vec3 p0 = blk->center();
-		return glm::distance2(pos, p0) <= r2;
+		if(blk->position() == b) return true;
+		const vec3 p0 = blk->center();
+		return context.frustum().testSphere(p0, d);
 	});
 
 	context.prepare(mProgram);
 
 	mProgram->bind();
 
-	int n = 0;
+	int count = 0;
 	for(auto blk : blocks)
 	{
 		blk->update();
-		n+= blk->drawElements();
+		count+= blk->drawElements();
 	}
 
 	mProgram->unbind();
 	mInit = false;
-	return n;
+	return count;
 }
 
 float Surface::intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *intersection)
@@ -119,7 +118,8 @@ float Surface::intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *
 	const vec3 p1 = pos;
 	const vec3 p2 = pos + move;
 	const vec3 n = glm::normalize(move);
-	const float r = radius + Size*std::sqrt(2.f)*0.5f;
+	const float d = Size * 0.5f * pla::Sqrt2;
+	const float r = d + radius;
 	const float r2 = r*r;
 
 	int4 b = int4(pos).block();
@@ -140,7 +140,7 @@ float Surface::intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *
 	for(auto blk : blocks)
 	{
 		blk->update();
-
+		
 		float t = blk->intersect(pos, move, radius, intersection);
 		if(t < nearest)
 		{
@@ -276,7 +276,8 @@ void Surface::getBlocksRec(const int4 &b, std::set<sptr<Block> > &result, std::s
 	for(int dx=-1; dx<=1; ++dx)
 		for(int dy=-1; dy<=1; ++dy)
 			for(int dz=-1; dz<=1; ++dz)
-				getBlocksRec(int4(b.x+dx, b.y+dy, b.z+dz), result, processed, check);
+				if(dx != 0 || dy != 0 || dz != 0)
+					getBlocksRec(int4(b.x+dx, b.y+dy, b.z+dz), result, processed, check);
 }
 
 int8_t Surface::int4::blockCoord(int8_t v)
@@ -403,11 +404,21 @@ Surface::Block::~Block(void)
 
 }
 
+Surface::int4 Surface::Block::position(void) const
+{
+	return mPos;
+}
+
 vec3 Surface::Block::center(void) const
 {
 	return vec3((float(mPos.x) + 0.5f)*Size,
 			(float(mPos.y) + 0.5f)*Size,
 			(float(mPos.z) + 0.5f)*Size);
+}
+
+bool Surface::Block::isChanged(void) const
+{
+	return mChanged;
 }
 
 int Surface::Block::update(void)

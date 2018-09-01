@@ -24,6 +24,7 @@ namespace pla
 {
 
 const float Pi = M_PI;
+const float Sqrt2 = M_SQRT2;
 const float Epsilon = 0.001f;
 
 }
