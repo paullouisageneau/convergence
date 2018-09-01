@@ -122,7 +122,6 @@ void Mesh::optimize(unsigned layout)
 	const float *vertices = reinterpret_cast<float*>(vertexBuffer->data());
 	index_t *indices = mIndexBuffer->data();
 	
-	index_t newverticesindex = 0;
 	for(index_t i=0; i<mIndexBuffer->count(); ++i)
 	{
 		index_t ii = indices[i];
