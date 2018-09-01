@@ -431,8 +431,10 @@ int Surface::Block::update(void)
 	std::vector<int4> materials;
 	std::vector<index_t> indices;
 
-	vertices.reserve(indicesCount()*2);
-	indices.reserve(vertexAttribCount()*2);
+	vertices.reserve(vertexAttribCount()*2);
+	normals.reserve(vertexAttribCount()*2);
+	materials.reserve(vertexAttribCount()*2);
+	indices.reserve(indicesCount()*2);
 
 	for(int x = 0; x < Size; ++x)
 		for(int y = 0; y < Size; ++y)
@@ -444,6 +446,7 @@ int Surface::Block::update(void)
 	setVertexAttrib(1, reinterpret_cast<char*>(&normals[0]), normals.size()*4, 4, true);
 	setVertexAttrib(2, reinterpret_cast<char*>(&materials[0]), materials.size()*4, 4, true);
 
+	optimize();
 	return indicesCount()/3;
 }
 
