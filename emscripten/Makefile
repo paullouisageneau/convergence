@@ -3,7 +3,7 @@ CC=emcc
 CXX=em++
 RM=rm -f
 EMFLAGS=-D USE_OPENGL_ES -s USE_GLFW=3 -s TOTAL_MEMORY=256MB -s BINARYEN_METHOD=native-wasm
-CPPFLAGS=-std=c++14 -g -O0 $(EMFLAGS)
+CPPFLAGS=-std=c++14 -g -O2 $(EMFLAGS)
 LDFLAGS=-g -O0 $(EMFLAGS)
 LDLIBS=-lpthread -lGL -lglfw --js-library webrtc.js --js-library websocket.js --preload-file ../shader
 

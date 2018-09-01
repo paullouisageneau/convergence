@@ -51,9 +51,14 @@ float Island::intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *i
 	return mSurface.intersect(pos, move, radius, intersection);
 }
 
-void Island::build(const vec3 &p, float radius, int weight)
+void Island::build(const vec3 &p, int weight)
 {
-	mSurface.addWeight(p, radius, weight, 0);
+	mSurface.addWeight(p, weight, 0);
+}
+
+void Island::dig(const vec3 &p, int weight, float radius)
+{
+	mSurface.addWeight(p, weight, radius, -1);
 }
 
 }
