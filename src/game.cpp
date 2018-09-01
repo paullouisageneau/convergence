@@ -20,9 +20,6 @@
 
 #include "src/game.hpp"
 
-#include <random>
-#include <chrono>
-
 using pla::Pi;
 using pla::Epsilon;
 using pla::to_hex;
@@ -70,14 +67,6 @@ void Game::onInit(Engine *engine)
 	mGravity = 0.f;
 	mAccumulator = 0.f;
 	
-	identifier localId;
-	
-	using clock = std::chrono::high_resolution_clock;
-	using random_bytes_engine = std::independent_bits_engine<std::default_random_engine, CHAR_BIT, unsigned char>;
-	random_bytes_engine rbe;
-	rbe.seed(clock::now().time_since_epoch()/std::chrono::milliseconds(1));
-	std::generate(localId.begin(), localId.end(), std::ref(rbe));
-	
 	mNetworking = std::make_shared<Networking>("ws://127.0.0.1:8080/test");
 }
 
@@ -123,14 +112,16 @@ bool Game::onUpdate(Engine *engine, double time)
 		vec3 intersection;
 		if(mIsland.intersect(mPosition, front*20.f, 0.25f, &intersection) <= 1.f)
 		{
-			if(engine->isMouseButtonDown(MOUSE_BUTTON_RIGHT)) mAccumulator+= 500.f*time;
-			else mAccumulator-= 500.f*time;
-
+			bool diggingMode = engine->isMouseButtonDown(MOUSE_BUTTON_RIGHT);
+			if(diggingMode) mAccumulator-= 400.f*time;
+			else mAccumulator+= 200.f*time;
+				
 			int delta = int(mAccumulator);
 			if(delta)
 			{
 				mAccumulator-= float(delta);
-				mIsland.build(intersection, 2.f, delta);
+				if(diggingMode) mIsland.dig(intersection, delta, 2.5f);
+				else mIsland.build(intersection, delta);
 			}
 		}
 	}

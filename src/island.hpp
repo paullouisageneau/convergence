@@ -40,7 +40,8 @@ public:
 	int draw(const Context &context);
 	float intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *intersection = NULL);
 
-	void build(const vec3 &p, float radius, int weight);
+	void build(const vec3 &p, int weight);
+	void dig(const vec3 &p, int weight, float radius);
 
 protected:
 	Surface mSurface;

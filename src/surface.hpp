@@ -57,6 +57,7 @@ public:
 		int4(int8_t _x = 0, int8_t _y = 0, int8_t _z = 0, int8_t _w = 0);
 		int4(const vec4 &v);
 		int4(const vec3 &v);
+		int4(const int4 &block, const int4 &cell);
 
 		int4 block(void) const;
 		int4 cell(void) const;
@@ -69,6 +70,7 @@ public:
 		int4 operator- (void) const;
 		int4 operator+ (const int4 &i) const;
 		int4 operator- (const int4 &i) const;
+		int4 operator* (int i) const;
 		int4 operator* (float f) const;
 
 		int8_t x, y, z, w;
@@ -96,14 +98,20 @@ public:
 	void setType(const int4 &p, uint8_t t);
 	value getValue(const int4 &p);
 	value getValue(const vec3 &p);
+	int4 getGradient(const int4 &p);
+	int4 getGradient(const vec3 &p);
 
-	void addWeight(const vec3 &p, float radius, int weight, int newType = -1);
+	int addWeight(const int4 &p, int weight, int newType = -1);
+	int addWeight(const vec3 &p, int weight, int newType = -1);
+	void addWeight(const vec3 &p, int weight, float radius, int newType = -1);
 
 protected:
-	static const int8_t Size = 8;
+	static const int Size = 8;
+	static const int BlocksSize = 256 / Size;
+
 	static uint16_t EdgeTable[256];
-	static int8_t   TriTable[256][16];
-	static vec4	MaterialTable[4];
+	static int8_t TriTable[256][16];
+	static vec4 MaterialTable[4];
 
 	class Block : public Mesh
 	{
@@ -113,7 +121,7 @@ protected:
 
 		vec3 center(void) const;
 
-		void setValue(const int4 &p, value v);
+		void setValue(const int4 &p, value v, bool markChanged = true);
 		void setType(const int4 &p, uint8_t t);
 		value getValue(const int4 &p);
 		int4 getGradient(const int4 &p);
@@ -140,8 +148,9 @@ protected:
 	sptr<Block> getBlock(const int4 &b);
 	void getBlocksRec(const int4 &b, std::set<sptr<Block> > &result, std::set<sptr<Block> > &processed, std::function<bool(sptr<Block>)> check);
 
-	std::map<int4, sptr<Block> > mBlocks;
+	std::vector<sptr<Block>> mBlocks;
 	sptr<Program> mProgram;
+	bool mInit;
 };
 
 }
