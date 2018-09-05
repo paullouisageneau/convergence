@@ -30,6 +30,9 @@
 #include "pla/shader.hpp"
 #include "pla/perlinnoise.hpp"
 
+#include <vector>
+#include <unordered_set>
+
 using pla::vec3;
 using pla::vec4;
 using pla::Mesh;
@@ -89,7 +92,7 @@ public:
 	Surface(unsigned int seed);
 	~Surface(void);
 
-	void update(void);
+	void update(double time);
 	int draw(const Context &context);
 	float intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *intersection = NULL);
 
@@ -148,7 +151,7 @@ protected:
 
 	void changedBlock(const int4 &b);
 	sptr<Block> getBlock(const int4 &b);
-	void getBlocksRec(const int4 &b, std::set<sptr<Block> > &result, std::set<sptr<Block> > &processed, std::function<bool(sptr<Block>)> check);
+	void getBlocksRec(const int4 &b, std::unordered_set<sptr<Block> > &result, std::unordered_set<sptr<Block> > &processed, std::function<bool(sptr<Block>)> check);
 
 	std::vector<sptr<Block>> mBlocks;
 	sptr<Program> mProgram;

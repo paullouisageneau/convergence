@@ -78,7 +78,7 @@ Surface::~Surface(void)
 
 }
 
-void Surface::update(void)
+void Surface::update(double time)
 {
 
 }
@@ -87,9 +87,9 @@ int Surface::draw(const Context &context)
 {
 	const vec3 pos = context.cameraPosition();
 	const int4 b = int4(pos).block();
-	const float d = Size * 0.5f * pla::Sqrt2;
+	const float d = (float(Size) + 1.f) * 0.5f * pla::Sqrt2;
 	
-	std::set<sptr<Block> > blocks, processed;
+	std::unordered_set<sptr<Block> > blocks, processed;
 	getBlocksRec(b, blocks, processed, [context, pos, b, d](sptr<Block> blk)
 	{
 		if(blk->position() == b) return true;
@@ -118,12 +118,12 @@ float Surface::intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *
 	const vec3 p1 = pos;
 	const vec3 p2 = pos + move;
 	const vec3 n = glm::normalize(move);
-	const float d = Size * 0.5f * pla::Sqrt2;
+	const float d = (float(Size) + 1.f) * 0.5f * pla::Sqrt2;
 	const float r = d + radius;
 	const float r2 = r*r;
 
 	int4 b = int4(pos).block();
-	std::set<sptr<Block> > blocks, processed;
+	std::unordered_set<sptr<Block> > blocks, processed;
 	getBlocksRec(b, blocks, processed, [p1, p2, n, r2](sptr<Block> blk)
 	{
 		vec3 p0 = blk->center();
@@ -262,7 +262,7 @@ sptr<Surface::Block> Surface::getBlock(const int4 &b)
 	return nullptr;
 }
 
-void Surface::getBlocksRec(const int4 &b, std::set<sptr<Block> > &result, std::set<sptr<Block> > &processed, std::function<bool(sptr<Block>)> check)
+void Surface::getBlocksRec(const int4 &b, std::unordered_set<sptr<Block> > &result, std::unordered_set<sptr<Block> > &processed, std::function<bool(sptr<Block>)> check)
 {
 	sptr<Block> block = getBlock(b);
 	if(!block || processed.find(block) != processed.end())
