@@ -18,17 +18,14 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef COELI_ISLAND_H
-#define COELI_ISLAND_H
+#ifndef CONVERGENCE_ISLAND_H
+#define CONVERGENCE_ISLAND_H
 
+#include "src/include.hpp"
 #include "src/surface.hpp"
 
 namespace convergence
 {
-
-using pla::vec3;
-using pla::vec4;
-template<typename T> using sptr = std::shared_ptr<T>;
 
 class Island : public Collidable
 {

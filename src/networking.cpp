@@ -75,5 +75,10 @@ Networking::~Networking(void)
 
 }
 
+identifier Networking::localId(void) const
+{
+	return mLocalId;
+}
+
 }
 

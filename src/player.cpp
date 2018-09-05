@@ -25,12 +25,95 @@ namespace convergence
 
 Player::Player(const identifier &id) : mId(id)
 {
-
+	mYaw = 0.f;
+	mPitch = 0.f;
+	mSpeed = 0.f;
+	mIsOnGround = false;
+	
+	mPosition = vec3(5.f, 5.f, 50.f);
 }
 
 Player::~Player(void)
 {
 
+}
+
+void Player::rotate(float yaw, float pitch)
+{
+	mYaw = yaw;
+	mPitch = pitch;
+}
+
+void Player::jump(void)
+{
+	if(mIsOnGround) mIsJumping = true;
+}
+
+void Player::setSpeed(float speed)
+{
+	mSpeed = speed;
+}
+
+vec3 Player::getPosition(void) const
+{
+	return mPosition;
+}
+
+vec3 Player::getDirection(void) const
+{
+	return vec3(std::sin(-mYaw), std::cos(-mYaw), 0.f) * std::cos(mPitch) + vec3(0.f, 0.f, std::sin(mPitch));
+}
+
+mat4 Player::getTransform(void) const
+{
+	mat4 matrix = mat4(1.0f);
+	matrix = glm::translate(matrix, mPosition);
+	matrix = glm::rotate(matrix, Pi/2, vec3(1, 0, 0));
+	matrix = glm::rotate(matrix, mYaw, vec3(0, 1, 0));
+	matrix = glm::rotate(matrix, mPitch, vec3(1, 0, 0));
+	return matrix;
+}
+
+bool Player::isOnGround(void) const
+{
+	return mIsOnGround;
+}
+
+bool Player::isJumping(void) const
+{
+	return mIsJumping;
+}
+
+void Player::update(sptr<Collidable> terrain, double time)
+{
+	vec3 move(0.f);
+	mGravity+= 10.f*time;
+	if(mIsOnGround && mIsJumping) mGravity-= 10.f;
+	move.z-= mGravity*time;
+	
+	vec3 dir = vec3(std::sin(-mYaw), std::cos(-mYaw), 0.f);
+	move+= dir*float(time)*mSpeed;
+	
+	mIsOnGround = false;
+	vec3 newmove, intersection, normal;
+	if(terrain->collide(mPosition - vec3(0.f, 0.5f, 0.f), move, 1.f, &newmove, &intersection, &normal))
+	{
+		move = newmove;
+		
+		if(normal.z > 0.f)
+		{
+			mIsOnGround = true;
+			mIsJumping = false;
+			mGravity = 0.f;
+		}
+	}
+
+	mPosition+= move;
+}
+
+int Player::draw(const Context &context)
+{
+	return 0;
 }
 
 }

@@ -22,12 +22,29 @@
 #define CONVERGENCE_INCLUDE_H
 
 #include "pla/binary.hpp"
+#include "pla/linalg.hpp"
+
+#include <memory>
 
 namespace convergence
 {
 
+using std::shared_ptr;
+template<typename T> using sptr = shared_ptr<T>;
+
 using pla::string;
 using pla::binary;
+
+using glm::vec2;
+using glm::vec3;
+using glm::vec4;
+using glm::mat2;
+using glm::mat3;
+using glm::mat4;
+
+using pla::Pi;
+using pla::Sqrt2;
+using pla::Epsilon;
 
 class identifier : public binary {
 public:

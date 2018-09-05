@@ -24,11 +24,14 @@
 #include "src/include.hpp"
 #include "src/island.hpp"
 #include "src/networking.hpp"
+#include "src/player.hpp"
 
 #include "pla/engine.hpp"
 #include "pla/context.hpp"
 #include "pla/program.hpp"
 #include "pla/shader.hpp"
+
+#include <map>
 
 namespace convergence
 {
@@ -39,9 +42,6 @@ using pla::Context;
 using pla::Program;
 using pla::VertexShader;
 using pla::FragmentShader;
-using std::shared_ptr;
-
-template<typename T> using sptr = shared_ptr<T>;
 
 class Game : public Engine::State
 {
@@ -60,11 +60,11 @@ public:
 	void onInput(Engine *engine, string text);
 
 private:
-	Island mIsland;
-	
 	sptr<Networking> mNetworking;
+	sptr<Island> mIsland;
+	sptr<Player> mLocalPlayer;
+	std::map<identifier, sptr<Player>> mPlayers;
 	
-	vec3 mPosition;
 	float mYaw, mPitch;
 	float mGravity;
 	float mAccumulator;
