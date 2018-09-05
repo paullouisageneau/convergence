@@ -21,7 +21,8 @@
 #ifndef CONVERGENCE_SURFACE_H
 #define CONVERGENCE_SURFACE_H
 
-#include "pla/include.hpp"
+#include "src/include.hpp"
+
 #include "pla/mesh.hpp"
 #include "pla/object.hpp"
 #include "pla/collidable.hpp"
@@ -33,8 +34,6 @@
 #include <vector>
 #include <unordered_set>
 
-using pla::vec3;
-using pla::vec4;
 using pla::Mesh;
 using pla::Object;
 using pla::Context;
@@ -43,7 +42,6 @@ using pla::Program;
 using pla::VertexShader;
 using pla::FragmentShader;
 using pla::PerlinNoise;
-template<typename T> using sptr = std::shared_ptr<T>;
 
 namespace convergence
 {

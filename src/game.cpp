@@ -24,18 +24,10 @@ using pla::Pi;
 using pla::Epsilon;
 using pla::to_hex;
 
-using glm::vec2;
-using glm::vec3;
-using glm::vec4;
-using glm::mat2;
-using glm::mat3;
-using glm::mat4;
-
 namespace convergence
 {
 
-Game::Game(void) :
-	mIsland(unsigned(time(NULL)))
+Game::Game(void)
 {
 
 }
@@ -59,29 +51,29 @@ void Game::onInit(Engine *engine)
 	mColorProgram->link();
 	*/
 
-	mPosition.x = 5.f;
-	mPosition.y = 5.f;
-	mPosition.z = 60.f;
 	mYaw = 0.f;
 	mPitch = -Pi/2;
-	mGravity = 0.f;
 	mAccumulator = 0.f;
 	
 	mNetworking = std::make_shared<Networking>("ws://127.0.0.1:8080/test");
+	mIsland = std::make_shared<Island>(unsigned(time(NULL)));
+	mLocalPlayer = std::make_shared<Player>(mNetworking->localId());
 }
 
 void Game::onCleanup(Engine *engine)
 {
-
+	mNetworking.reset();
+	mIsland.reset();
+	mLocalPlayer.reset();
+	mPlayers.clear();
 }
 
 bool Game::onUpdate(Engine *engine, double time)
 {
-	if(engine->isKeyDown(KEY_ESCAPE))
-		return false;
+	if(engine->isKeyDown(KEY_ESCAPE)) return false;
 
-	mIsland.update(time);
-
+	mIsland->update(time);
+	
 	const float mouseSensitivity = 0.025f;
 	double mx, my;
 	engine->getMouseMove(&mx, &my);
@@ -89,61 +81,45 @@ bool Game::onUpdate(Engine *engine, double time)
 	mPitch-= mouseSensitivity*my;
 	mPitch = pla::bounds(mPitch, -Pi/2, Pi/2);
 
-	vec3 move;
-	mGravity+= 10.f*time;
-	move.z-= mGravity*time;
+	const float walkSpeed = 5.f;
+	float speed = 0.f;
+	if(engine->isKeyDown(KEY_UP)) speed+= walkSpeed;
+	if(engine->isKeyDown(KEY_DOWN)) speed-= walkSpeed;
 
-	const float speed = 10.f;
-	vec3 dir = vec3(std::sin(-mYaw), std::cos(-mYaw), 0.f);
-	if(engine->isKeyDown(KEY_UP))
-		move+= dir*float(time)*speed;
-	if(engine->isKeyDown(KEY_DOWN))
-		move-= dir*float(time)*speed;
+	mLocalPlayer->rotate(mYaw, mPitch);
+	mLocalPlayer->setSpeed(speed);
 
-	mat4 camera = mat4(1.0f);
-	camera = glm::translate(camera, mPosition);
-	camera = glm::rotate(camera, Pi/2, vec3(1, 0, 0));
-	camera = glm::rotate(camera, mYaw, vec3(0, 1, 0));
-	camera = glm::rotate(camera, mPitch, vec3(1, 0, 0));
-
+	if(engine->isKeyDown(KEY_SPACE)) mLocalPlayer->jump();
+	
+	for(const auto &p : mPlayers)
+	{
+		sptr<Player> player = p.second;
+		player->update(mIsland, time);
+	}
+	
+	mLocalPlayer->update(mIsland, time);
+	
 	if(engine->isMouseButtonDown(MOUSE_BUTTON_LEFT) || engine->isMouseButtonDown(MOUSE_BUTTON_RIGHT))
 	{
-		vec3 front = vec3(camera*vec4(0, 0, -1, 0));
+		vec3 position = mLocalPlayer->getPosition();
+		vec3 front = mLocalPlayer->getDirection();
 		vec3 intersection;
-		if(mIsland.intersect(mPosition, front*20.f, 0.25f, &intersection) <= 1.f)
+		if(mIsland->intersect(position, front*10.f, 0.25f, &intersection) <= 1.f)
 		{
 			bool diggingMode = engine->isMouseButtonDown(MOUSE_BUTTON_RIGHT);
-			if(diggingMode) mAccumulator-= 400.f*time;
+			if(diggingMode) mAccumulator-= 200.f*time;
 			else mAccumulator+= 200.f*time;
 				
 			int delta = int(mAccumulator);
 			if(delta)
 			{
 				mAccumulator-= float(delta);
-				if(diggingMode) mIsland.dig(intersection, delta, 2.5f);
-				else mIsland.build(intersection, delta);
+				if(diggingMode) mIsland->dig(intersection, delta, 2.5f);
+				else mIsland->build(intersection, delta);
 			}
 		}
 	}
-
-	vec3 newmove, intersection, normal;
-	if(mIsland.collide(mPosition - vec3(0.f, 0.5f, 0.f), move, 1.f, &newmove, &intersection, &normal))
-	{
-		move = newmove;
-
-		if(normal.z > 0.f)
-		{
-			mGravity = 0.f;
-
-			// Jump
-			if(engine->isKeyDown(KEY_SPACE))
-			{
-				mGravity = -10.f;
-			}
-		}
-	}
-
-	mPosition+= move;
+	
 	return true;
 }
 
@@ -162,17 +138,17 @@ int Game::onDraw(Engine *engine)
 		0.1f, 60.0f
 	);
 
-	mat4 camera = mat4(1.0f);
-	camera = glm::translate(camera, mPosition);
-	camera = glm::rotate(camera, Pi/2, vec3(1, 0, 0));
-	camera = glm::rotate(camera, mYaw, vec3(0, 1, 0));
-	camera = glm::rotate(camera, mPitch, vec3(1, 0, 0));
-
-	Context context(projection, camera);
+	Context context(projection, mLocalPlayer->getTransform());
 	context.setUniform("lightPosition", vec3(10000, 10000, 10000));
 
-	count+= mIsland.draw(context);
+	count+= mIsland->draw(context);
 
+	for(const auto &p : mPlayers)
+	{
+		sptr<Player> player = p.second;
+		count+= player->draw(context);
+	}
+	
 	return count;
 }
 

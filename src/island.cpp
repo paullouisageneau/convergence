@@ -38,7 +38,7 @@ Island::~Island(void)
 
 void Island::update(double time)
 {
-	mSurface.update();
+	mSurface.update(time);
 }
 
 int Island::draw(const Context &context)

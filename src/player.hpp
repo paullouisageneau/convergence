@@ -23,8 +23,14 @@
 
 #include "src/include.hpp"
 
+#include "pla/context.hpp"
+#include "pla/collidable.hpp"
+
 namespace convergence
 {
+
+using pla::Context;
+using pla::Collidable;
 
 class Player
 {
@@ -32,9 +38,27 @@ public:
 	Player(const identifier &id);
 	~Player(void);
 
+	void rotate(float yaw, float pitch);
+	void jump(void);
+	void setSpeed(float speed);
+	
+	vec3 getPosition(void) const;
+	vec3 getDirection(void) const;
+	mat4 getTransform(void) const;
+	bool isOnGround(void) const;
+	bool isJumping(void) const;
+	
+	void update(sptr<Collidable> terrain, double time);
+	int draw(const Context &context);
 
 private:
 	identifier mId;
+	vec3 mPosition;
+	float mYaw, mPitch;
+	float mSpeed;
+	float mGravity;
+	bool mIsOnGround;
+	bool mIsJumping;
 };
 
 }

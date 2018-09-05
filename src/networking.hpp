@@ -36,7 +36,9 @@ class Networking
 public:
 	Networking(const string &url);
 	~Networking(void);
-
+	
+	identifier localId(void) const;
+	
 private:
 	identifier mLocalId;
 	shared_ptr<MessageBus> mSignaling;
