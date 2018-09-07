@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2015-2016 by Paul-Louis Ageneau                         *
+ *   Copyright (C) 2015-2018 by Paul-Louis Ageneau                         *
  *   paul-louis (at) ageneau (dot) org                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -19,10 +19,7 @@
  ***************************************************************************/
 
 #include "src/game.hpp"
-
-using pla::Pi;
-using pla::Epsilon;
-using pla::to_hex;
+#include "src/player.hpp"
 
 namespace convergence
 {
@@ -39,41 +36,24 @@ Game::~Game(void)
 
 void Game::onInit(Engine *engine)
 {
-	/*
-	mColorProgram = std::make_shared<Program>(
-		std::make_shared<VertexShader>("shader/color.vert"),
-		std::make_shared<FragmentShader>("shader/color.frag")
-	);
-
-	mColorProgram->bindAttribLocation(0, "position");
-	mColorProgram->bindAttribLocation(1, "normal");
-	mColorProgram->bindAttribLocation(2, "color");
-	mColorProgram->link();
-	*/
-
 	mYaw = 0.f;
 	mPitch = -Pi/2;
 	mAccumulator = 0.f;
 	
 	mNetworking = std::make_shared<Networking>("ws://127.0.0.1:8080/test");
-	mIsland = std::make_shared<Island>(unsigned(time(NULL)));
-	mLocalPlayer = std::make_shared<Player>(mNetworking->localId());
+	mWorld = std::make_shared<World>(mNetworking->localId());
 }
 
 void Game::onCleanup(Engine *engine)
 {
 	mNetworking.reset();
-	mIsland.reset();
-	mLocalPlayer.reset();
-	mPlayers.clear();
+	mWorld.reset();
 }
 
 bool Game::onUpdate(Engine *engine, double time)
 {
 	if(engine->isKeyDown(KEY_ESCAPE)) return false;
 
-	mIsland->update(time);
-	
 	const float mouseSensitivity = 0.025f;
 	double mx, my;
 	engine->getMouseMove(&mx, &my);
@@ -86,25 +66,22 @@ bool Game::onUpdate(Engine *engine, double time)
 	if(engine->isKeyDown(KEY_UP)) speed+= walkSpeed;
 	if(engine->isKeyDown(KEY_DOWN)) speed-= walkSpeed;
 
-	mLocalPlayer->rotate(mYaw, mPitch);
-	mLocalPlayer->setSpeed(speed);
+	sptr<Player> localPlayer = mWorld->localPlayer();
+	localPlayer->rotate(mYaw, mPitch);
+	localPlayer->setSpeed(speed);
 
-	if(engine->isKeyDown(KEY_SPACE)) mLocalPlayer->jump();
-	
-	for(const auto &p : mPlayers)
-	{
-		sptr<Player> player = p.second;
-		player->update(mIsland, time);
-	}
-	
-	mLocalPlayer->update(mIsland, time);
-	
+	if(engine->isKeyDown(KEY_SPACE)) localPlayer->jump();
+
+	mWorld->update(time);
+
 	if(engine->isMouseButtonDown(MOUSE_BUTTON_LEFT) || engine->isMouseButtonDown(MOUSE_BUTTON_RIGHT))
 	{
-		vec3 position = mLocalPlayer->getPosition();
-		vec3 front = mLocalPlayer->getDirection();
+		sptr<Island> island = mWorld->island();
+		
+		vec3 position = localPlayer->getPosition();
+		vec3 front = localPlayer->getDirection();
 		vec3 intersection;
-		if(mIsland->intersect(position, front*10.f, 0.25f, &intersection) <= 1.f)
+		if(island->intersect(position, front*10.f, 0.25f, &intersection) <= 1.f)
 		{
 			bool diggingMode = engine->isMouseButtonDown(MOUSE_BUTTON_RIGHT);
 			if(diggingMode) mAccumulator-= 200.f*time;
@@ -114,8 +91,8 @@ bool Game::onUpdate(Engine *engine, double time)
 			if(delta)
 			{
 				mAccumulator-= float(delta);
-				if(diggingMode) mIsland->dig(intersection, delta, 2.5f);
-				else mIsland->build(intersection, delta);
+				if(diggingMode) island->dig(intersection, delta, 2.5f);
+				else island->build(intersection, delta);
 			}
 		}
 	}
@@ -138,16 +115,10 @@ int Game::onDraw(Engine *engine)
 		0.1f, 60.0f
 	);
 
-	Context context(projection, mLocalPlayer->getTransform());
+	Context context(projection, mWorld->localPlayer()->getTransform());
 	context.setUniform("lightPosition", vec3(10000, 10000, 10000));
 
-	count+= mIsland->draw(context);
-
-	for(const auto &p : mPlayers)
-	{
-		sptr<Player> player = p.second;
-		count+= player->draw(context);
-	}
+	count+= mWorld->draw(context);
 	
 	return count;
 }

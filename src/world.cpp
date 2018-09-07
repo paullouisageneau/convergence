@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2015-2018 by Paul-Louis Ageneau                         *
+ *   Copyright (C) 2017-2018 by Paul-Louis Ageneau                         *
  *   paul-louis (at) ageneau (dot) org                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -18,50 +18,59 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef CONVERGENCE_GAME_H
-#define CONVERGENCE_GAME_H
-
-#include "src/include.hpp"
-#include "src/networking.hpp"
 #include "src/world.hpp"
-
-#include "pla/engine.hpp"
-#include "pla/context.hpp"
-
-#include <map>
 
 namespace convergence
 {
 
-using pla::string;
-using pla::Engine;
-using pla::Context;
-
-class Game : public Engine::State
+World::World(const identifier &localId)
 {
-public:
-	Game(void);
-	~Game(void);
+	mIsland = std::make_shared<Island>(unsigned(time(NULL)));
+	mLocalPlayer = std::make_shared<Player>(localId);
+}
 
-	void onInit(Engine *engine);
-	void onCleanup(Engine *engine);
-		
-	bool onUpdate(Engine *engine, double time);
-	int  onDraw(Engine *engine);
-	
-	void onKey(Engine *engine, int key, bool down);
-	void onMouse(Engine *engine, int button, bool down);
-	void onInput(Engine *engine, string text);
-
-private:
-	sptr<Networking> mNetworking;
-	sptr<World> mWorld;
-	
-	float mYaw, mPitch;
-	float mAccumulator;
-};
+World::~World(void)
+{
 
 }
 
-#endif
+sptr<Player> World::localPlayer(void) const
+{
+	return mLocalPlayer;
+}
+
+sptr<Island> World::island(void) const
+{
+	return mIsland;
+}
+
+void World::update(double time)
+{
+	mIsland->update(time);
+		
+	for(const auto &p : mPlayers)
+	{
+		sptr<Player> player = p.second;
+		player->update(mIsland, time);
+	}
+	
+	mLocalPlayer->update(mIsland, time);
+}
+
+int World::draw(Context &context)
+{
+	int count = 0;
+
+	count+= mIsland->draw(context);
+
+	for(const auto &p : mPlayers)
+	{
+		sptr<Player> player = p.second;
+		count+= player->draw(context);
+	}
+	
+	return count;
+}
+
+}
 
