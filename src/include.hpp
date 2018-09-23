@@ -25,6 +25,7 @@
 #include "pla/linalg.hpp"
 
 #include <memory>
+#include <functional>
 
 namespace convergence
 {
@@ -50,6 +51,13 @@ class identifier : public binary {
 public:
 	identifier(void) : binary(8, 0) {}
 };
+
+template <class T>
+inline void hash_combine(std::size_t &seed, const T &v)
+{
+    std::hash<T> hash;
+    seed^= hash(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+}
 
 }
 

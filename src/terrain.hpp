@@ -18,47 +18,32 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#include "src/island.hpp"
+#ifndef CONVERGENCE_ISLAND_H
+#define CONVERGENCE_ISLAND_H
 
-using pla::LogImpl;
+#include "src/include.hpp"
+#include "src/surface.hpp"
 
 namespace convergence
 {
 
-Island::Island(unsigned int seed) :
-	mSurface(seed)
+class Terrain : public Collidable
 {
+public:
+	Terrain(unsigned int seed);
+	~Terrain(void);
+
+	void update(double time);
+	int draw(const Context &context);
+	float intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *intersection = NULL);
+
+	void build(const vec3 &p, int weight);
+	void dig(const vec3 &p, int weight, float radius);
+
+protected:
+	Surface mSurface;
+};
 
 }
 
-Island::~Island(void)
-{
-
-}
-
-void Island::update(double time)
-{
-	mSurface.update(time);
-}
-
-int Island::draw(const Context &context)
-{
-	return mSurface.draw(context);
-}
-
-float Island::intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *intersection)
-{
-	return mSurface.intersect(pos, move, radius, intersection);
-}
-
-void Island::build(const vec3 &p, int weight)
-{
-	mSurface.addWeight(p, weight, 0);
-}
-
-void Island::dig(const vec3 &p, int weight, float radius)
-{
-	mSurface.addWeight(p, weight, radius, -1);
-}
-
-}
+#endif

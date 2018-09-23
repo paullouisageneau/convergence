@@ -76,12 +76,12 @@ bool Game::onUpdate(Engine *engine, double time)
 
 	if(engine->isMouseButtonDown(MOUSE_BUTTON_LEFT) || engine->isMouseButtonDown(MOUSE_BUTTON_RIGHT))
 	{
-		sptr<Island> island = mWorld->island();
+		sptr<Terrain> terrain = mWorld->terrain();
 		
 		vec3 position = localPlayer->getPosition();
 		vec3 front = localPlayer->getDirection();
 		vec3 intersection;
-		if(island->intersect(position, front*10.f, 0.25f, &intersection) <= 1.f)
+		if(terrain->intersect(position, front*10.f, 0.25f, &intersection) <= 1.f)
 		{
 			bool diggingMode = engine->isMouseButtonDown(MOUSE_BUTTON_RIGHT);
 			if(diggingMode) mAccumulator-= 200.f*time;
@@ -91,8 +91,8 @@ bool Game::onUpdate(Engine *engine, double time)
 			if(delta)
 			{
 				mAccumulator-= float(delta);
-				if(diggingMode) island->dig(intersection, delta, 2.5f);
-				else island->build(intersection, delta);
+				if(diggingMode) terrain->dig(intersection, delta, 2.5f);
+				else terrain->build(intersection, delta);
 			}
 		}
 	}
@@ -104,7 +104,7 @@ int Game::onDraw(Engine *engine)
 {
 	int count = 0;
 
-	engine->clear(vec4(0.9f, 0.9f, 0.9f, 1.f));
+	engine->clear(vec4(0.f, 0.f, 0.f, 1.f));
 
 	int width, height;
 	engine->getWindowSize(&width, &height);
@@ -112,11 +112,11 @@ int Game::onDraw(Engine *engine)
 	mat4 projection = glm::perspective(
 		glm::radians(45.0f),
 		float(width)/float(height),
-		0.1f, 60.0f
+		0.1f, 30.0f
 	);
 
 	Context context(projection, mWorld->localPlayer()->getTransform());
-	context.setUniform("lightPosition", vec3(10000, 10000, 10000));
+	context.setUniform("lightPosition", mWorld->localPlayer()->getPosition());
 
 	count+= mWorld->draw(context);
 	

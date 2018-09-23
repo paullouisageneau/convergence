@@ -22,7 +22,7 @@
 #define CONVERGENCE_WORLD_H
 
 #include "src/include.hpp"
-#include "src/island.hpp"
+#include "src/terrain.hpp"
 #include "src/player.hpp"
 
 #include "pla/context.hpp"
@@ -42,13 +42,13 @@ public:
 	~World(void);
 
 	sptr<Player> localPlayer(void) const;
-	sptr<Island> island(void) const;
+	sptr<Terrain> terrain(void) const;
 
 	void update(double time);
 	int draw(Context &context);
 
 private:
-	sptr<Island> mIsland;
+	sptr<Terrain> mTerrain;
 	sptr<Player> mLocalPlayer;
 	std::map<identifier, sptr<Player>> mPlayers;
 };

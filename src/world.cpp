@@ -25,7 +25,7 @@ namespace convergence
 
 World::World(const identifier &localId)
 {
-	mIsland = std::make_shared<Island>(unsigned(time(NULL)));
+	mTerrain = std::make_shared<Terrain>(unsigned(time(NULL)));
 	mLocalPlayer = std::make_shared<Player>(localId);
 }
 
@@ -39,29 +39,29 @@ sptr<Player> World::localPlayer(void) const
 	return mLocalPlayer;
 }
 
-sptr<Island> World::island(void) const
+sptr<Terrain> World::terrain(void) const
 {
-	return mIsland;
+	return mTerrain;
 }
 
 void World::update(double time)
 {
-	mIsland->update(time);
+	mTerrain->update(time);
 		
 	for(const auto &p : mPlayers)
 	{
 		sptr<Player> player = p.second;
-		player->update(mIsland, time);
+		player->update(mTerrain, time);
 	}
 	
-	mLocalPlayer->update(mIsland, time);
+	mLocalPlayer->update(mTerrain, time);
 }
 
 int World::draw(Context &context)
 {
 	int count = 0;
 
-	count+= mIsland->draw(context);
+	count+= mTerrain->draw(context);
 
 	for(const auto &p : mPlayers)
 	{
