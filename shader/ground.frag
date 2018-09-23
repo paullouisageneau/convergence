@@ -109,13 +109,13 @@ void main()
 	float light = clamp(dot(normal, -fragLight), 0.0, 1.0);
 	
 	float z = gl_FragCoord.z/gl_FragCoord.w;
-	float fog = min((exp2(0.1*z) - 1.0)*0.02, 1.0);
+	float fog = min((exp2(0.2*z) - 1.0)*0.02, 1.0);
 	
 	vec3 grad2 = snoise(fragPosition*0.9);
 	vec4 mask = vec4(1.0) + vec4(normalize(grad2), 0.0)*0.8;
 	vec4 material = normalize(fragMaterial * mask);
-	vec3 ambient = vec3(0.1, 0.1, 0.1)*material.x + vec3(0.1, 0.25, 0.1)*material.y;
+	vec3 ambient = vec3(0.01, 0.01, 0.01)*material.x + vec3(0.01, 0.025, 0.01)*material.y;
 	vec3 diffuse = vec3(0.2, 0.2, 0.2)*material.x + vec3(0.2, 0.5, 0.2)*material.y;
-	vec3 color = (ambient + diffuse * light)*(1.0-fog) + vec3(0.9)*fog;
+	vec3 color = (ambient + diffuse * light)*(1.0-fog);
 	gl_FragColor = vec4(color, 1.0);
 }

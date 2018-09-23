@@ -32,6 +32,7 @@
 #include "pla/perlinnoise.hpp"
 
 #include <vector>
+#include <unordered_map>
 #include <unordered_set>
 
 using pla::Mesh;
@@ -49,35 +50,62 @@ namespace convergence
 class Surface : public Collidable
 {
 public:
-	#pragma pack(push, 4) // Align on 4 bytes
-	struct int4
+	struct int3
 	{
-		static int8_t blockCoord(int8_t v);
-		static int8_t cellCoord(int8_t v);
+		static int blockCoord(int v);
+		static int cellCoord(int v);
 
-		int4(int8_t _x = 0, int8_t _y = 0, int8_t _z = 0, int8_t _w = 0);
-		int4(const vec4 &v);
-		int4(const vec3 &v);
-		int4(const int4 &block, const int4 &cell);
+		int3(int _x = 0, int _y = 0, int _z = 0);
+		int3(const vec3 &v);
+		int3(const int3 &block, const int3 &cell);
 
-		int4 block(void) const;
-		int4 cell(void) const;
-		int4 normalize(void) const;
+		int3 block(void) const;
+		int3 cell(void) const;
 
-		bool operator==(const int4 &i) const;
-		bool operator!=(const int4 &i) const;
-		bool operator< (const int4 &i) const;
-		bool operator> (const int4 &i) const;
-		int4 operator- (void) const;
-		int4 operator+ (const int4 &i) const;
-		int4 operator- (const int4 &i) const;
-		int4 operator* (int i) const;
-		int4 operator* (float f) const;
+		bool operator==(const int3 &i) const;
+		bool operator!=(const int3 &i) const;
+		int3 operator- (void) const;
+		int3 operator+ (const int3 &i) const;
+		int3 operator- (const int3 &i) const;
+		int3 operator* (int i) const;
+		int3 operator* (float f) const;
+
+		int x, y, z;
+	};
+
+	struct int3_hash
+	{
+		std::size_t operator()(const int3 &p) const noexcept
+		{
+			std::size_t seed = 0;
+			hash_combine(seed, p.x);
+			hash_combine(seed, p.y);
+			hash_combine(seed, p.z);
+			return seed;
+		}
+	};
+	
+	#pragma pack(push, 4) // Align on 4 bytes
+	struct int84
+	{
+		int84(int8_t _x = 0, int8_t _y = 0, int8_t _z = 0, int8_t _w = 0);
+		int84(const vec4 &v);
+		int84(const vec3 &v);
+
+		int84 normalize(void) const;
+
+		bool operator==(const int84 &i) const;
+		bool operator!=(const int84 &i) const;
+		int84 operator- (void) const;
+		int84 operator+ (const int84 &i) const;
+		int84 operator- (const int84 &i) const;
+		int84 operator* (int i) const;
+		int84 operator* (float f) const;
 
 		int8_t x, y, z, w;
 	};
 	#pragma pack(pop)
-
+	
 	struct value
 	{
 		value(uint8_t _type = 0, uint8_t _weight = 0) : type(_type), weight(_weight) {}
@@ -94,15 +122,15 @@ public:
 	int draw(const Context &context);
 	float intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *intersection = NULL);
 
-	void setValue(const int4 &p, value v);
+	void setValue(const int3 &p, value v);
 	void setValue(const vec3 &p, value v);
-	void setType(const int4 &p, uint8_t t);
-	value getValue(const int4 &p);
+	void setType(const int3 &p, uint8_t t);
+	value getValue(const int3 &p);
 	value getValue(const vec3 &p);
-	int4 getGradient(const int4 &p);
-	int4 getGradient(const vec3 &p);
+	int84 getGradient(const int3 &p);
+	int84 getGradient(const vec3 &p);
 
-	int addWeight(const int4 &p, int weight, int newType = -1);
+	int addWeight(const int3 &p, int weight, int newType = -1);
 	int addWeight(const vec3 &p, int weight, int newType = -1);
 	void addWeight(const vec3 &p, int weight, float radius, int newType = -1);
 
@@ -117,29 +145,29 @@ protected:
 	class Block : public Mesh
 	{
 	public:
-		Block(Surface *surface, const int4 &b);
+		Block(Surface *surface, const int3 &b);
 		~Block(void);
 
-		int4 position(void) const;
+		int3 position(void) const;
 		vec3 center(void) const;
 		bool isChanged(void) const;
 		
-		void setValue(const int4 &p, value v, bool markChanged = true);
-		void setType(const int4 &p, uint8_t t);
-		value getValue(const int4 &p);
-		int4 getGradient(const int4 &p);
-		int4 computeGradient(const int4 &p);
+		void setValue(const int3 &p, value v, bool markChanged = true);
+		void setType(const int3 &p, uint8_t t);
+		value getValue(const int3 &p);
+		int84 getGradient(const int3 &p);
+		int84 computeGradient(const int3 &p);
 
 		int update(void);
 
 	private:
-		int polygonizeCell(const int4 &c,
-			std::vector<vec3> &vertices, std::vector<int4> &normals, std::vector<int4> &material,
+		int polygonizeCell(const int3 &c,
+			std::vector<vec3> &vertices, std::vector<int84> &normals, std::vector<int84> &material,
 			std::vector<index_t> &indices);
-		vec3 interpolate(vec3 p1, vec3 p2, int4 g1, int4 g2, value v1, value v2, int4 &grad, int4 &mat);
+		vec3 interpolate(vec3 p1, vec3 p2, int84 g1, int84 g2, value v1, value v2, int84 &grad, int84 &mat);
 
 		Surface *mSurface;
-		int4 mPos;
+		int3 mPos;
 
 		value mCells[Size*Size*Size];
 		bool  mChanged;
@@ -147,11 +175,13 @@ protected:
 		friend class Surface;
 	};
 
-	void changedBlock(const int4 &b);
-	sptr<Block> getBlock(const int4 &b);
-	void getBlocksRec(const int4 &b, std::unordered_set<sptr<Block> > &result, std::unordered_set<sptr<Block> > &processed, std::function<bool(sptr<Block>)> check);
-
-	std::vector<sptr<Block>> mBlocks;
+	void changedBlock(const int3 &b);
+	sptr<Block> getBlock(const int3 &b);
+	void getBlocksRec(const int3 &b, std::unordered_set<sptr<Block> > &result, std::unordered_set<sptr<Block> > &processed, std::function<bool(sptr<Block>)> check);
+	void populateBlock(sptr<Block> block);
+	
+	std::unordered_map<int3, sptr<Block>, int3_hash> mBlocks;
+	PerlinNoise mPerlin;
 	sptr<Program> mProgram;
 	bool mInit;
 };

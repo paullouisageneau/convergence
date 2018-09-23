@@ -30,7 +30,7 @@ Player::Player(const identifier &id) : mId(id)
 	mSpeed = 0.f;
 	mIsOnGround = false;
 	
-	mPosition = vec3(5.f, 5.f, 50.f);
+	mPosition = vec3(0.f, 0.f, 0.f);
 }
 
 Player::~Player(void)
