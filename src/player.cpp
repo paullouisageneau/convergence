@@ -28,6 +28,7 @@ Player::Player(const identifier &id) : mId(id)
 	mYaw = 0.f;
 	mPitch = 0.f;
 	mSpeed = 0.f;
+	mGravity = 0.f;
 	mIsOnGround = false;
 	
 	mPosition = vec3(0.f, 0.f, 0.f);
