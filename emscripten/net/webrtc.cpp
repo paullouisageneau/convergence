@@ -47,7 +47,11 @@ void PeerConnection::CandidateCallback(const char *candidate, const char *sdpMid
 void DataChannel::OpenCallback(void *ptr)
 {
 	DataChannel *d = static_cast<DataChannel*>(ptr);
-	if(d) d->triggerOpen();
+	if(d)
+	{
+		d->mConnected = true;
+		d->triggerOpen();
+	}
 }
 
 void DataChannel::ErrorCallback(const char *error, void *ptr)
@@ -59,7 +63,8 @@ void DataChannel::ErrorCallback(const char *error, void *ptr)
 void DataChannel::MessageCallback(const char *data, int size, void *ptr)
 {
 	DataChannel *d = static_cast<DataChannel*>(ptr);
-	if(d) {
+	if(d)
+	{
 		if(data) d->triggerMessage(binary(data, data + size));
 		else {
 			d->close();
@@ -134,7 +139,8 @@ void PeerConnection::triggerLocalCandidate(const IceCandidate &candidate)
 }
 
 DataChannel::DataChannel(int id) :
-	mId(id)
+	mId(id),
+	mConnected(false)
 {
 	rtcSetUserPointer(mId, this);
 	rtcSetOpenCallback(mId, OpenCallback);
@@ -148,29 +154,33 @@ DataChannel::DataChannel(int id) :
 
 DataChannel::~DataChannel(void) 
 {
-	rtcDeleteDataChannel(mId);
+	close();
 }
 
 void DataChannel::close(void)
 {
-	// TODO
+	mConnected = false;
+	if(mId)
+	{
+		rtcDeleteDataChannel(mId);
+		mId = 0;
+	}
 }
 
 void DataChannel::send(const binary &data)
 {
+	if(!mId) return;
 	rtcSendMessage(mId, data.data(), data.size());
 }
 
 bool DataChannel::isOpen(void) const
 {
-	// TODO
-	return true;
+	return mConnected;
 }
 
 bool DataChannel::isClosed(void) const
 {
-	// TODO
-	return false;
+	return mId == 0;
 }
 
 std::string DataChannel::label(void) const

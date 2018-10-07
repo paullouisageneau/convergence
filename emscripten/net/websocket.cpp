@@ -22,7 +22,11 @@ namespace net
 void WebSocket::OpenCallback(void *ptr)
 {
 	WebSocket *w = static_cast<WebSocket*>(ptr);
-	if(w) w->triggerOpen();
+	if(w)
+	{
+		w->mConnected = true;
+		w->triggerOpen();
+	}
 }
 
 void WebSocket::ErrorCallback(const char *error, void *ptr)
@@ -34,7 +38,8 @@ void WebSocket::ErrorCallback(const char *error, void *ptr)
 void WebSocket::MessageCallback(const char *data, int size, void *ptr)
 {
 	WebSocket *w = static_cast<WebSocket*>(ptr);
-	if(w) {
+	if(w) 
+	{
 		if(data) w->triggerMessage(binary(data, data + size));
 		else {
 			w->close();
@@ -88,7 +93,7 @@ bool WebSocket::isOpen(void) const
 
 bool WebSocket::isClosed(void) const
 {
-	return mId != 0;
+	return mId == 0;
 }
 
 void WebSocket::send(const binary &data)

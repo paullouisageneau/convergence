@@ -118,9 +118,12 @@ void PeerConnection::triggerLocalCandidate(const IceCandidate &candidate)
 }
 
 DataChannel::DataChannel(shared_ptr<rtcdcpp::DataChannel> dataChannel) :
-	mDataChannel(dataChannel)
+	mDataChannel(dataChannel),
+	mConnected(false),
+	mClosed(false)
 {
 	mDataChannel->SetOnOpen([this]() {
+		mConnected = true;
 		triggerOpen();
 	});
 	
@@ -135,6 +138,8 @@ DataChannel::DataChannel(shared_ptr<rtcdcpp::DataChannel> dataChannel) :
 	});
 	
 	mDataChannel->SetOnClosedCallback([this]() {
+		mConnected = false;
+		mClosed = true;
 		triggerClosed();
 	});
 	
@@ -150,6 +155,8 @@ DataChannel::~DataChannel(void)
 
 void DataChannel::close(void)
 {
+	mConnected = false;
+	mClosed = true;
 	mDataChannel->Close();
 }
 
@@ -160,14 +167,12 @@ void DataChannel::send(const binary &data)
 
 bool DataChannel::isOpen(void) const
 {
-	// TODO
-	return true;
+	return mConnected;
 }
 
 bool DataChannel::isClosed(void) const
 {
-	// TODO
-	return false;
+	return mClosed;
 }
 
 std::string DataChannel::label(void) const

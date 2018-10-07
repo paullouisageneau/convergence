@@ -54,10 +54,8 @@ public:
 	
 private:
 	shared_ptr<rtcdcpp::DataChannel> mDataChannel;
-	
-	static void OpenCallback(void *ptr);
-	static void ErrorCallback(const char *error, void *ptr);
-	static void MessageCallback(const char *data, int size, void *ptr);
+	bool mConnected;
+	bool mClosed;
 };
 
 class PeerConnection

@@ -51,6 +51,7 @@ public:
 private:
 	int mId;
 	string mLabel;
+	bool mConnected;
 	
 	static void OpenCallback(void *ptr);
 	static void ErrorCallback(const char *error, void *ptr);
