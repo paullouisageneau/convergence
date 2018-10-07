@@ -36,8 +36,9 @@ void loop()
 			return;
 		}
 		
-		int count = engine.display();
-		std::cout << count << std::endl;
+		//int count = engine.display();
+		//std::cout << count << std::endl;
+		engine.display();
 	}
 	catch(const std::exception &e) {
 		std::cout << "Error: " << e.what() << std::endl;

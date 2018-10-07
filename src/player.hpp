@@ -22,6 +22,7 @@
 #define CONVERGENCE_PLAYER_H
 
 #include "src/include.hpp"
+#include "src/messagebus.hpp"
 
 #include "pla/context.hpp"
 #include "pla/collidable.hpp"
@@ -32,26 +33,30 @@ namespace convergence
 using pla::Context;
 using pla::Collidable;
 
-class Player
+class Player : protected MessageBus::Listener
 {
 public:
-	Player(const identifier &id);
-	~Player(void);
-
-	void rotate(float yaw, float pitch);
-	void jump(void);
-	void setSpeed(float speed);
+	Player(sptr<MessageBus> messageBus, const identifier &id);
+	virtual ~Player(void);
 	
+	identifier id(void) const;
 	vec3 getPosition(void) const;
 	vec3 getDirection(void) const;
 	mat4 getTransform(void) const;
 	bool isOnGround(void) const;
 	bool isJumping(void) const;
 	
-	void update(sptr<Collidable> terrain, double time);
-	int draw(const Context &context);
+	void rotate(float yaw, float pitch);
+	void move(float speed);
+	void jump(void);
+	
+	virtual void update(sptr<Collidable> terrain, double time);
+	virtual int draw(const Context &context);
 
-private:
+protected:
+	virtual void onMessage(const Message &message);
+	
+	sptr<MessageBus> mMessageBus;
 	identifier mId;
 	vec3 mPosition;
 	float mYaw, mPitch;

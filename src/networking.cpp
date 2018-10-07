@@ -40,44 +40,69 @@ Networking::Networking(const string &url)
 	std::generate(mLocalId.begin(), mLocalId.end(), std::ref(rbe));
 
 	std::cout << "Local peer is " << to_hex(mLocalId) << std::endl;
-
-	auto webSocket = std::make_shared<WebSocket>(url);
-	webSocket->onOpen([this, webSocket]() {
-		std::cout << "WebSocket opened" << std::endl;
-		mSignaling = std::make_shared<MessageBus>(mLocalId);
-		
-		mSignaling->onPeer([this](const identifier &id) {
-			std::cout << "Discovered peer " << to_hex(id) << std::endl;
-			auto peer = std::make_shared<Peer>(id, mSignaling);
-			peer->connect();
-			mPeers[id] = peer;
-		});
-		
-		mSignaling->onMessage([this](const Message &message) {
-			if(message.type == 0x11) {
-				const identifier &id = message.source;
-				std::cout << "Incoming peer " << to_hex(id) << std::endl;
-				auto peer = std::make_shared<Peer>(id, mSignaling);
-				mPeers[id] = peer;
-			}
-		});
-		
-		mSignaling->addChannel(webSocket);
-	});
+	mMessageBus = std::make_shared<MessageBus>(mLocalId);
+	mMessageBus->registerOmniscientListener(this);
 	
-	webSocket->onError([this](const string &error) {
-		std::cerr << "WebSocket error: " << error << std::endl;
-	});
+	connectWebSocket(url);
 }
 
 Networking::~Networking(void)
 {
-
+	mMessageBus->unregisterOmniscientListener(this);
 }
 
 identifier Networking::localId(void) const
 {
 	return mLocalId;
+}
+
+shared_ptr<MessageBus> Networking::messageBus(void) const
+{
+	return mMessageBus;
+}
+
+void Networking::onPeer(const identifier &id)
+{
+	std::cout << "Discovered peer " << to_hex(id) << std::endl;
+	auto peering = createPeering(id);
+	peering->connect();
+}
+
+void Networking::onMessage(const Message &message)
+{
+	if(message.type == Message::Description) {
+		const identifier &id = message.source;
+		std::cout << "Incoming peer " << to_hex(id) << std::endl;
+		createPeering(id);
+	}
+}
+
+void Networking::connectWebSocket(const string &url)
+{
+	auto webSocket = std::make_shared<WebSocket>(url);
+	webSocket->onOpen([this, webSocket]() {
+		std::cout << "WebSocket opened" << std::endl;
+		mMessageBus->addChannel(webSocket);
+	});
+	
+	webSocket->onError([this](const string &error) {
+		std::cerr << "WebSocket error: " << error << std::endl;
+	});
+	
+	webSocket->onClosed([this, webSocket]() {
+		std::cerr << "WebSocket closed" << std::endl;
+		mMessageBus->removeChannel(webSocket);
+	});
+}
+
+shared_ptr<Peering> Networking::createPeering(const identifier &id)
+{
+	auto it = mPeerings.find(id);
+	if(it != mPeerings.end()) return it->second;
+	
+	auto peering = std::make_shared<Peering>(id, mMessageBus);
+	mPeerings[id] = peering;
+	return peering;
 }
 
 }

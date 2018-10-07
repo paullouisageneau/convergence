@@ -40,24 +40,33 @@ MessageBus::~MessageBus(void)
 	
 }
 
-
-void MessageBus::addRoute(const identifier &id, shared_ptr<Channel> channel)
+identifier MessageBus::localId(void) const
 {
-	mRoutes.insert(std::make_pair(id, channel));
+	return mLocalId;
+}
+
+void MessageBus::addRoute(const identifier &id, shared_ptr<Channel> channel, Priority priority)
+{
+	mRoutes[id][priority] = channel;
 }
 
 void MessageBus::removeRoute(const identifier &id, shared_ptr<Channel> channel)
 {
-	auto range = mRoutes.equal_range(id);
-	auto it = range.first;
-	while(it != range.second)
+	auto it = mRoutes.find(id);
+	if(it != mRoutes.end())
 	{
-		if(it->second == channel) 
+		auto &map = it->second;
+		auto jt = map.begin();
+		while(jt != map.end())
 		{
-			mRoutes.erase(it);
-			break;
+			if(jt->second == channel)
+			{
+				map.erase(jt);
+				if(map.empty()) mRoutes.erase(it);
+				break;
+			}
+			++jt;
 		}
-		++it;
 	}
 }
 
@@ -68,29 +77,32 @@ void MessageBus::addChannel(shared_ptr<Channel> channel)
 		Message message(data);
 
 		if(!message.source.empty()) {
-			// TODO
-			if(mRoutes.find(message.source) == mRoutes.end()) {
-				addRoute(message.source, channel);
-			}
+			addRoute(message.source, channel, Priority::Default);
 		}
 
-		if(message.type == 2)
+		if(message.type == Message::List)
 		{
 			identifier peerId;
 			BinaryFormatter formatter(message.payload);
 			while(formatter >> peerId) 
 			{
-				addRoute(peerId, channel);
-				if(mPeerCallback) mPeerCallback(peerId);
+				if(!peerId.isNull() && peerId != mLocalId)
+				{
+					addRoute(peerId, channel, Priority::Default);
+					
+					for(auto listener : mOmniscientListeners)
+					{
+						listener->onPeer(peerId);
+					}
+				}
 			}
 		}
 		else {
-			dispatch(message);
+			route(message);
 		}
 	});
 
-	Message message;
-	message.type = 1;
+	Message message(Message::Join);
 	message.source = mLocalId;
 	channel->send(message);
 }
@@ -108,17 +120,46 @@ void MessageBus::removeChannel(shared_ptr<Channel> channel)
 void MessageBus::send(Message &message)
 {
 	message.source = mLocalId;
-	dispatch(message);
+	if(!message.destination.isNull()) route(message);
+	else broadcast(message);
 }
 
-void MessageBus::onPeer(function<void(const identifier &id)> callback)
+void MessageBus::broadcast(Message &message)
 {
-	mPeerCallback = callback;
+	message.source = mLocalId;
+	
+	// Broadcast to remote ids that have local listeners
+	for(auto it = mListeners.begin(); it != mListeners.end(); ++it)
+	{
+		if(it->first != mLocalId)
+		{
+			message.destination = it->first;
+			route(message);
+		}
+	}
+	
+	message.destination.clear();
 }
 
-void MessageBus::onMessage(function<void(const Message &message)> callback)
+void MessageBus::dispatch(const Message &message)
 {
-	mMessageCallback = callback;
+	// Dispatch locally
+	for(auto listener : mOmniscientListeners)
+	{
+		listener->onMessage(message);
+	}
+	auto range = mListeners.equal_range(message.source);
+	if(range.first != range.second)
+	{
+		for(auto it = range.first; it != range.second; ++it)
+		{
+			Listener *listener = it->second;
+			listener->onMessage(message);
+		}
+	}
+	else {
+		//std::cout << "No listener for " << to_hex(message.source)  << std::endl;
+	}
 }
 
 void MessageBus::registerListener(const identifier &remoteId, Listener *listener)
@@ -141,35 +182,28 @@ void MessageBus::unregisterListener(const identifier &remoteId, Listener *listen
 	}
 }
 
-void MessageBus::dispatch(const Message &message)
+void MessageBus::registerOmniscientListener(Listener *listener)
 {
-	if(message.destination.empty())
-	{
-		std::cout << "Missing message destination" << std::endl;
-		return;
-	}
+	mOmniscientListeners.insert(listener);
+}
 
-	if(message.destination == mLocalId)
+void MessageBus::unregisterOmniscientListener(Listener *listener)
+{
+	mOmniscientListeners.erase(listener);
+}
+
+void MessageBus::route(Message &message)
+{
+	if(message.destination == mLocalId || message.destination.isNull())
 	{
-		// Dispatch locally
-		if(mMessageCallback) mMessageCallback(message);
-		auto range = mListeners.equal_range(message.source);
-		if(range.first != range.second) {
-			for(auto it = range.first; it != range.second; ++it)
-			{
-				Listener *listener = it->second;
-				listener->onMessage(message);
-			}
-		}
-		else {
-			std::cout << "No listener for " << to_hex(message.source)  << std::endl;
-		}
+		dispatch(message);
 	}
 	else {
 		auto it = mRoutes.find(message.destination);
-		if(it != mRoutes.end())
+		if(it != mRoutes.end() && !it->second.empty())
 		{
-			shared_ptr<Channel> channel = it->second;
+			// Take route with highest priority
+			shared_ptr<Channel> channel = it->second.rbegin()->second;
 			channel->send(message);
 		}
 		else {

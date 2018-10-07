@@ -32,8 +32,6 @@ namespace pla
 class Address
 {
 public:
-	static const Address Empty;
-	
 	static bool Resolve(const string &host, const string &service, std::list<Address> &result);
 	static bool Resolve(const string &host, uint16_t port, std::list<Address> &result);
 	static bool Resolve(const string &str, std::list<Address> &result, const string &protocol = "");

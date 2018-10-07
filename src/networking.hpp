@@ -22,27 +22,36 @@
 #define CONVERGENCE_NETWORKING_H
 
 #include "src/include.hpp"
-#include "src/peer.hpp"
+#include "src/peering.hpp"
 #include "src/messagebus.hpp"
+
+#include <map>
 
 namespace convergence
 {
 
-using pla::string;
-using std::shared_ptr;
+using std::multimap;
 
-class Networking
+class Networking : public MessageBus::Listener
 {
 public:
 	Networking(const string &url);
 	~Networking(void);
 	
 	identifier localId(void) const;
+	shared_ptr<MessageBus> messageBus(void) const;
+
+protected:
+	void onPeer(const identifier &id);
+	void onMessage(const Message &message);
 	
 private:
+	void connectWebSocket(const string &url);
+	shared_ptr<Peering> createPeering(const identifier &id);
+	
 	identifier mLocalId;
-	shared_ptr<MessageBus> mSignaling;
-	std::map<identifier, shared_ptr<Peer>> mPeers;
+	shared_ptr<MessageBus> mMessageBus;
+	std::map<identifier, shared_ptr<Peering>> mPeerings;
 };
 
 }

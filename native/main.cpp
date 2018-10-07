@@ -41,8 +41,9 @@ int main(int argc, char **argv)
 		
 		while(engine.update())
 		{
-			int count = engine.display();
-			std::cout << count << std::endl;
+			//int count = engine.display();
+			//std::cout << count << std::endl;
+			engine.display();
 		}
 	}
 	catch(const std::exception &e) {

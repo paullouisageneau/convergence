@@ -26,7 +26,11 @@ namespace convergence
 
 Game::Game(void)
 {
+	mYaw = 0.f;
+	mPitch = -Pi/2;
+	mAccumulator = 0.f;
 
+	mUpdateCount = 0;
 }
 
 Game::~Game(void)
@@ -36,12 +40,8 @@ Game::~Game(void)
 
 void Game::onInit(Engine *engine)
 {
-	mYaw = 0.f;
-	mPitch = -Pi/2;
-	mAccumulator = 0.f;
-	
 	mNetworking = std::make_shared<Networking>("ws://127.0.0.1:8080/test");
-	mWorld = std::make_shared<World>(mNetworking->localId());
+	mWorld = std::make_shared<World>(mNetworking->messageBus());
 }
 
 void Game::onCleanup(Engine *engine)
@@ -68,7 +68,7 @@ bool Game::onUpdate(Engine *engine, double time)
 
 	sptr<Player> localPlayer = mWorld->localPlayer();
 	localPlayer->rotate(mYaw, mPitch);
-	localPlayer->setSpeed(speed);
+	localPlayer->move(speed);
 
 	if(engine->isKeyDown(KEY_SPACE)) localPlayer->jump();
 
@@ -97,6 +97,7 @@ bool Game::onUpdate(Engine *engine, double time)
 		}
 	}
 	
+	++mUpdateCount;
 	return true;
 }
 

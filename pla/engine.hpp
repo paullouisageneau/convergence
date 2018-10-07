@@ -102,6 +102,8 @@ private:
 	double mOldCursorx = 0;
 	double mOldCursory = 0;
 	
+	bool mHasFocus = false;
+	
 	// Time handling
 	double mOldTime = 0., mMesureTime = 0.;
 	unsigned long mMesureFrames = 0;
@@ -116,6 +118,7 @@ private:
 	static void CursorEnterCallback(GLFWwindow* window, int entered);
 	static void CharCallback(GLFWwindow* window, unsigned int codepoint);
 	static void WindowSizeCallback(GLFWwindow* window, int width, int height);
+	static void WindowFocusCallback(GLFWwindow* window, int focus);
 };
 
 #define MOUSE_BUTTON_LEFT	GLFW_MOUSE_BUTTON_LEFT

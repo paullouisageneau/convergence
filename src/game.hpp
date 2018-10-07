@@ -59,6 +59,8 @@ private:
 	
 	float mYaw, mPitch;
 	float mAccumulator;
+	
+	unsigned mUpdateCount;
 };
 
 }

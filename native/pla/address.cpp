@@ -24,8 +24,6 @@
 
 namespace pla
 {
-
-const Address Address::Empty;
 	
 bool Address::Resolve(const string &host, const string &service, std::list<Address> &result)
 {
