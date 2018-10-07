@@ -72,6 +72,7 @@ Peering::Peering(const identifier &id, shared_ptr<MessageBus> messageBus) :
 Peering::~Peering(void) 
 {
 	mMessageBus->unregisterListener(mId, this);
+	disconnect();
 }
 
 identifier Peering::id(void) const
@@ -86,12 +87,26 @@ bool Peering::isConnected(void) const
 
 void Peering::connect(void)
 {
+	disconnect();
 	setDataChannel(mPeerConnection->createDataChannel(DataChannelName));
+}
+
+void Peering::disconnect(void)
+{
+	if(mDataChannel)
+	{
+		mMessageBus->removeChannel(mDataChannel);
+		mDataChannel->close();
+		mDataChannel.reset();
+	}
 }
 
 void Peering::onMessage(const Message &message)
 {
-	if(uint32_t(message.type) < 0x20) processSignaling(message.type, message.payload);
+	if(uint32_t(message.type) < 0x20) 
+	{
+		processSignaling(message.type, message.payload);
+	}
 }
 
 void Peering::setDataChannel(shared_ptr<DataChannel> dataChannel)
@@ -100,19 +115,13 @@ void Peering::setDataChannel(shared_ptr<DataChannel> dataChannel)
 	
 	mDataChannel->onOpen([this]() {
 		std::cout << "Data channel open !" << std::endl;
+		mMessageBus->addChannel(mDataChannel, MessageBus::Priority::Relay);
 		mMessageBus->addRoute(mId, mDataChannel, MessageBus::Priority::Direct);
 	});
 	
 	mDataChannel->onClosed([this]() {
 		std::cout << "Data channel closed" << std::endl;
-		mMessageBus->removeRoute(mId, mDataChannel);
-	});
-	
-	mDataChannel->onMessage([this](const binary &data) {
-		Message message(data);
-		message.source = mId;
-		// Dispatch message locally in message bus
-		mMessageBus->dispatch(message);
+		mMessageBus->removeChannel(mDataChannel);
 	});
 }
 
@@ -120,6 +129,12 @@ void Peering::processSignaling(Message::Type type, const binary &payload)
 {
 	switch(type)
 	{
+		case Message::Join:
+		{
+			// TODO: send list message
+			break;
+		}
+		
 		case Message::Description:
 		{
 			vector<string> fields(unpack_strings(payload));

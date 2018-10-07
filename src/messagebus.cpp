@@ -59,25 +59,21 @@ void MessageBus::removeRoute(const identifier &id, shared_ptr<Channel> channel)
 		auto jt = map.begin();
 		while(jt != map.end())
 		{
-			if(jt->second == channel)
-			{
-				map.erase(jt);
-				if(map.empty()) mRoutes.erase(it);
-				break;
-			}
-			++jt;
+			if(jt->second == channel) jt = map.erase(jt);
+			else ++jt;
 		}
+		if(map.empty()) mRoutes.erase(it);
 	}
 }
 
-void MessageBus::addChannel(shared_ptr<Channel> channel)
+void MessageBus::addChannel(shared_ptr<Channel> channel, Priority priority)
 {
 	mChannels.insert(channel);
-	channel->onMessage([this, channel](const binary &data) {
+	channel->onMessage([this, channel, priority](const binary &data) {
 		Message message(data);
 
-		if(!message.source.empty()) {
-			addRoute(message.source, channel, Priority::Default);
+		if(!message.source.isNull()) {
+			addRoute(message.source, channel, priority);
 		}
 
 		if(message.type == Message::List)
@@ -88,7 +84,7 @@ void MessageBus::addChannel(shared_ptr<Channel> channel)
 			{
 				if(!peerId.isNull() && peerId != mLocalId)
 				{
-					addRoute(peerId, channel, Priority::Default);
+					addRoute(peerId, channel, priority);
 					
 					for(auto listener : mOmniscientListeners)
 					{
@@ -114,6 +110,20 @@ void MessageBus::removeChannel(shared_ptr<Channel> channel)
 	{
 		mChannels.erase(it);
 		channel->onMessage([](const binary &data) {});
+	}
+	
+	auto jt = mRoutes.begin();
+	while(jt != mRoutes.end())
+	{
+		auto &map = jt->second;
+		auto kt = map.begin();
+		while(kt != map.end())
+		{
+			if(kt->second == channel) kt = map.erase(kt);
+			else ++kt;
+		}
+		if(map.empty()) jt = mRoutes.erase(jt);
+		else ++jt;
 	}
 }
 

@@ -82,7 +82,7 @@ void Networking::connectWebSocket(const string &url)
 	auto webSocket = std::make_shared<WebSocket>(url);
 	webSocket->onOpen([this, webSocket]() {
 		std::cout << "WebSocket opened" << std::endl;
-		mMessageBus->addChannel(webSocket);
+		mMessageBus->addChannel(webSocket, MessageBus::Priority::Default);
 	});
 	
 	webSocket->onError([this](const string &error) {

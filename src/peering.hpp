@@ -45,6 +45,7 @@ public:
 	bool isConnected(void) const;
 
 	void connect(void);
+	void disconnect(void);
 	
 protected:
 	void onMessage(const Message &message);
