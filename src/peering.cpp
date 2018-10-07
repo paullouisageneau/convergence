@@ -18,7 +18,7 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#include "src/peer.hpp"
+#include "src/peering.hpp"
 #include "src/message.hpp"
 
 #include "pla/binary.hpp"
@@ -34,11 +34,13 @@ using pla::pack_strings;
 using pla::unpack_strings;
 using std::vector;
 
-Peer::Peer(const identifier &id, shared_ptr<MessageBus> signaling) :
+const string DataChannelName = "data";
+
+Peering::Peering(const identifier &id, shared_ptr<MessageBus> messageBus) :
 	mId(id),
-	mSignaling(signaling)
+	mMessageBus(messageBus)
 {
-	mSignaling->registerListener(mId, this);
+	mMessageBus->registerListener(mId, this);
 	
 	vector<string> iceServers;
 	iceServers.emplace_back("stun:stun.ageneau.net:3478");
@@ -46,18 +48,7 @@ Peer::Peer(const identifier &id, shared_ptr<MessageBus> signaling) :
 	
 	mPeerConnection->onDataChannel([this](shared_ptr<DataChannel> dataChannel) {
 		std::cout << "Got a data channel !" << std::endl;
-		if(dataChannel->label() == "main") {
-			mDataChannel = dataChannel;
-			
-			mDataChannel->onOpen([this]() {
-				std::cout << "Data channel open !" << std::endl;
-			});
-	
-			mDataChannel->onMessage([this](const binary &data) {
-				Message message(data);
-				onMessage(message);
-			});
-		}
+		if(dataChannel->label() == DataChannelName) setDataChannel(dataChannel);
 	});
 	
 	mPeerConnection->onLocalDescription([this](const PeerConnection::SessionDescription &description) {
@@ -65,7 +56,7 @@ Peer::Peer(const identifier &id, shared_ptr<MessageBus> signaling) :
 		vector<string> fields;
 		fields.push_back(description.type);
 		fields.push_back(description.sdp);
-		sendMessage(0x11, pack_strings(fields));
+		sendSignaling(Message::Description, pack_strings(fields));
 	});
 	
 	mPeerConnection->onLocalCandidate([this](const PeerConnection::IceCandidate &candidate) {
@@ -74,48 +65,62 @@ Peer::Peer(const identifier &id, shared_ptr<MessageBus> signaling) :
 		vector<string> fields;
 		fields.push_back(candidate.sdpMid);
 		fields.push_back(candidate.candidate);
-		sendMessage(0x12, pack_strings(fields));
+		sendSignaling(Message::Candidate, pack_strings(fields));
 	});
 }
 
-Peer::~Peer(void) 
+Peering::~Peering(void) 
 {
-	mSignaling->unregisterListener(mId, this);
+	mMessageBus->unregisterListener(mId, this);
 }
 
-void Peer::connect(void)
+identifier Peering::id(void) const
 {
-	mDataChannel = mPeerConnection->createDataChannel("main");
-	
-	mDataChannel->onOpen([this]() {
-		std::cout << "Data channel open !" << std::endl;
-	});
-	
-	mDataChannel->onMessage([this](const binary &data) {
-		Message message(data);
-		onMessage(message);
-	});
+	return mId;
 }
 
-bool Peer::isConnected(void) const
+bool Peering::isConnected(void) const
 {
 	return mDataChannel && mDataChannel->isOpen();
 }
 
-void Peer::sendMessage(uint32_t type, const binary &payload)
+void Peering::connect(void)
 {
-	Message message;
-	message.destination = mId;
-	message.type = type;
-	message.payload = payload;
-	mSignaling->send(message);
+	setDataChannel(mPeerConnection->createDataChannel(DataChannelName));
 }
 
-void Peer::processMessage(uint32_t type, const binary &payload)
+void Peering::onMessage(const Message &message)
+{
+	if(uint32_t(message.type) < 0x20) processSignaling(message.type, message.payload);
+}
+
+void Peering::setDataChannel(shared_ptr<DataChannel> dataChannel)
+{
+	mDataChannel = dataChannel;
+	
+	mDataChannel->onOpen([this]() {
+		std::cout << "Data channel open !" << std::endl;
+		mMessageBus->addRoute(mId, mDataChannel, MessageBus::Priority::Direct);
+	});
+	
+	mDataChannel->onClosed([this]() {
+		std::cout << "Data channel closed" << std::endl;
+		mMessageBus->removeRoute(mId, mDataChannel);
+	});
+	
+	mDataChannel->onMessage([this](const binary &data) {
+		Message message(data);
+		message.source = mId;
+		// Dispatch message locally in message bus
+		mMessageBus->dispatch(message);
+	});
+}
+
+void Peering::processSignaling(Message::Type type, const binary &payload)
 {
 	switch(type)
 	{
-		case 0x11:
+		case Message::Description:
 		{
 			vector<string> fields(unpack_strings(payload));
 			std::cout << "Remote description: " << fields[1] << std::endl;
@@ -123,7 +128,7 @@ void Peer::processMessage(uint32_t type, const binary &payload)
 			break;
 		}
 
-		case 0x12:
+		case Message::Candidate:
 		{
 			vector<string> fields(unpack_strings(payload));
 			std::cout << "Remote candidate: " << fields[1] << std::endl;
@@ -133,15 +138,19 @@ void Peer::processMessage(uint32_t type, const binary &payload)
 
 		default:
 		{
-			std::cout << "Unknown message type: " << std::endl;
+			std::cout << "Unknown signaling message type: " << type << std::endl;
 			break;
 		}
 	}
 }
 
-void Peer::onMessage(const Message &message)
+void Peering::sendSignaling(Message::Type type, const binary &payload)
 {
-	processMessage(message.type, message.payload);
+	Message message;
+	message.destination = mId;
+	message.type = type;
+	message.payload = payload;
+	mMessageBus->send(message);
 }
 
 }

@@ -20,39 +20,36 @@
 
 #include "src/player.hpp"
 
+#include "pla/binaryformatter.hpp"
+
+using pla::BinaryFormatter;
+
 namespace convergence
 {
 
-Player::Player(const identifier &id) : mId(id)
+Player::Player(sptr<MessageBus> messageBus, const identifier &id) :
+	mMessageBus(messageBus),
+	mId(id)
 {
-	mYaw = 0.f;
-	mPitch = 0.f;
+	mMessageBus->registerListener(mId, this);
+	
+	mYaw = mPitch = 0.f;
 	mSpeed = 0.f;
 	mGravity = 0.f;
 	mIsOnGround = false;
+	mIsJumping = false;
 	
 	mPosition = vec3(0.f, 0.f, 0.f);
 }
 
 Player::~Player(void)
 {
-
+	mMessageBus->unregisterListener(mId, this);
 }
 
-void Player::rotate(float yaw, float pitch)
+identifier Player::id(void) const
 {
-	mYaw = yaw;
-	mPitch = pitch;
-}
-
-void Player::jump(void)
-{
-	if(mIsOnGround) mIsJumping = true;
-}
-
-void Player::setSpeed(float speed)
-{
-	mSpeed = speed;
+	return mId;
 }
 
 vec3 Player::getPosition(void) const
@@ -85,6 +82,22 @@ bool Player::isJumping(void) const
 	return mIsJumping;
 }
 
+void Player::rotate(float yaw, float pitch)
+{
+	mYaw = yaw;
+	mPitch = pitch;
+}
+
+void Player::move(float speed)
+{
+	mSpeed = speed;
+}
+
+void Player::jump(void)
+{
+	if(mIsOnGround) mIsJumping = true;
+}
+
 void Player::update(sptr<Collidable> terrain, double time)
 {
 	vec3 move(0.f);
@@ -115,6 +128,37 @@ void Player::update(sptr<Collidable> terrain, double time)
 int Player::draw(const Context &context)
 {
 	return 0;
+}
+
+void Player::onMessage(const Message &message)
+{
+	BinaryFormatter formatter(message.payload);
+	
+	switch(message.type)
+	{
+		case Message::PlayerPosition:
+		{
+			float32_t x, y, z;
+			formatter >> x >> y >> z;
+			mPosition = vec3(x, y, z);
+		}
+		
+		case Message::PlayerControl:
+		{
+			float32_t yaw = 0.f;
+			float32_t pitch = 0.f;
+			formatter >> yaw >> pitch;
+			rotate(yaw, pitch);
+			
+			float32_t speed = 0.f;
+			formatter >> speed;
+			move(speed);
+			
+			uint32_t flags = 0;
+			formatter >> flags;
+			if(flags & 0x1) jump();
+		}
+	}
 }
 
 }

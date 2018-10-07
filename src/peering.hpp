@@ -26,32 +26,36 @@
 
 #include "net/webrtc.hpp"
 
+#include <functional>
+
 namespace convergence
 {
 
 using net::PeerConnection;
 using net::DataChannel;
-using std::shared_ptr;
+using std::function;
 
-class Peer : protected MessageBus::Listener
+class Peering : protected MessageBus::Listener
 {
 public:
-	Peer(const identifier &id, shared_ptr<MessageBus> signaling);
-	~Peer(void);
+	Peering(const identifier &id, shared_ptr<MessageBus> signaling);
+	~Peering(void);
+
+	identifier id(void) const;
+	bool isConnected(void) const;
 
 	void connect(void);
 	
-	bool isConnected(void) const;
-
-	void sendMessage(uint32_t type, const binary &payload);
-	void processMessage(uint32_t type, const binary &payload);
-
 protected:
 	void onMessage(const Message &message);
 
 private:
+	void setDataChannel(shared_ptr<DataChannel> dataChannel);
+	void processSignaling(Message::Type type, const binary &payload);
+	void sendSignaling(Message::Type type, const binary &payload);
+
 	identifier mId;
-	shared_ptr<MessageBus> mSignaling;
+	shared_ptr<MessageBus> mMessageBus;
 	shared_ptr<PeerConnection> mPeerConnection;
 	shared_ptr<DataChannel> mDataChannel;
 };

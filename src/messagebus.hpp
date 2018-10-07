@@ -29,53 +29,55 @@
 #include <memory>
 #include <map>
 #include <set>
-#include <functional>
 
 namespace convergence
 {
 
 using net::Channel;
-using std::shared_ptr;
 using std::multimap;
+using std::map;
 using std::set;
-using std::function;
 
 class MessageBus
 {
 public:
+	enum class Priority : int { Default = 0, Relay = 1, Direct = 3 };
+	
 	MessageBus(const identifier &localId);
 	~MessageBus(void);
+	
+	identifier localId(void) const;
 	
 	void addChannel(shared_ptr<Channel> channel);
 	void removeChannel(shared_ptr<Channel> channel);
 	
-	void addRoute(const identifier &id, shared_ptr<Channel> channel);
+	void addRoute(const identifier &id, shared_ptr<Channel> channel, Priority priority);
 	void removeRoute(const identifier &id, shared_ptr<Channel> channel);
 	
 	void send(Message &message);
-
-	void onPeer(function<void(const identifier &id)> callback);
-	void onMessage(function<void(const Message &message)> callback);
-
+	void broadcast(Message &message);
+	void dispatch(const Message &message);
+	
 	class Listener
 	{
 	public:
+		virtual void onPeer(const identifier &id) {};
 		virtual void onMessage(const Message &message) = 0;
 	};
 	
 	void registerListener(const identifier &remoteId, Listener *listener);
 	void unregisterListener(const identifier &remoteId, Listener *listener);
-
+	void registerOmniscientListener(Listener *listener);
+	void unregisterOmniscientListener(Listener *listener);
+	
 private:
-	void dispatch(const Message &message);
+	void route(Message &message);
 	
 	identifier mLocalId;
 	set<shared_ptr<Channel>> mChannels;
-	multimap<identifier, shared_ptr<Channel>> mRoutes;
+	map<identifier, map<Priority, shared_ptr<Channel>>> mRoutes;
 	multimap<identifier, Listener*> mListeners;
-
-	function<void(const identifier &id)> mPeerCallback;
-	function<void(const Message &message)> mMessageCallback;
+	set<Listener*> mOmniscientListeners;
 };
 
 }

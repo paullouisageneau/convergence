@@ -25,7 +25,8 @@ namespace pla
 {
 
 Engine::Engine(void) : 
-	mWindow(NULL)
+	mWindow(NULL),
+	mHasFocus(false)
 {
 	// GLFW initialization
 	if (!glfwInit()) throw std::runtime_error("GLFW initialization failed");
@@ -63,7 +64,8 @@ void Engine::openWindow(int width, int height)
 	glfwSetCursorEnterCallback(mWindow, CursorEnterCallback);
 	glfwSetCharCallback(mWindow, CharCallback);
 	glfwSetWindowSizeCallback(mWindow, WindowSizeCallback);
-
+	glfwSetWindowFocusCallback(mWindow, WindowFocusCallback);
+	
 	glfwMakeContextCurrent(mWindow);
 
 #ifndef USE_OPENGL_ES
@@ -72,6 +74,8 @@ void Engine::openWindow(int width, int height)
 #endif
 
 	getMousePosition(&mOldCursorx, &mOldCursory);
+	
+	mHasFocus = true;
 }
 
 void Engine::closeWindow(void)
@@ -115,7 +119,7 @@ void Engine::pushState(sptr<State> state)
 	mStates.push(state);
 	state->onInit(this);
 	mMesureTime = mOldTime = getTime();
-	mMesureFrames=0;
+	mMesureFrames = 0;
 }
 
 void Engine::popState(void)
@@ -196,9 +200,9 @@ int Engine::display(void)
 	++mMesureFrames;
 	if(mMesureFrames > 10)
 	{
-		mFps=mMesureFrames/(getTime()-mMesureTime);
-		mMesureTime=getTime();
-		mMesureFrames=0;
+		mFps = mMesureFrames / (getTime() - mMesureTime);
+		mMesureTime = getTime();
+		mMesureFrames = 0;
 	}
 	
 	return count;
@@ -221,10 +225,17 @@ void Engine::getMousePosition(double *x, double *y) const
 
 void Engine::getMouseMove(double *mx, double *my) const
 {
-	double x, y;
-	glfwGetCursorPos(mWindow, &x, &y);
-	if(x) *mx = x - mOldCursorx;
-	if(y) *my = y - mOldCursory;
+	if(mHasFocus)
+	{
+		double x, y;
+		glfwGetCursorPos(mWindow, &x, &y);
+		if(mx) *mx = x - mOldCursorx;
+		if(my) *my = y - mOldCursory;
+	}
+	else {
+		*mx = 0;
+		*my = 0;
+	}
 }
 
 double Engine::getMouseWheel(void) const
@@ -304,12 +315,19 @@ void Engine::CharCallback(GLFWwindow* window, unsigned int codepoint)
 {
 	Engine *engine = static_cast<Engine*>(glfwGetWindowUserPointer(window));
 	if(!engine) return;
-
 }
 
 void Engine::WindowSizeCallback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
+}
+
+void Engine::WindowFocusCallback(GLFWwindow* window, int focus)
+{
+	Engine *engine = static_cast<Engine*>(glfwGetWindowUserPointer(window));
+	if(!engine) return;
+	
+	engine->mHasFocus = (focus == GLFW_TRUE);
 }
 
 }

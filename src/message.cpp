@@ -27,7 +27,8 @@ namespace convergence
 
 using pla::BinaryFormatter;
 
-Message::Message(void)
+Message::Message(Type _type) :
+	type(_type)
 {
 	
 }
@@ -35,10 +36,12 @@ Message::Message(void)
 Message::Message(const binary &data)
 {
 	uint32_t size = 0;
+	uint32_t tmpType = 0;
 	
 	BinaryFormatter formatter(data);
-	formatter >> type >> size;
+	formatter >> tmpType >> size;
 	payload.resize(size);
+	type = Type(tmpType);
 	
 	formatter >> source;
 	formatter >> destination;
@@ -50,7 +53,7 @@ Message::operator binary(void) const
 	uint32_t size(payload.size());
 	
 	BinaryFormatter formatter;
-	formatter << type << size;
+	formatter << uint32_t(type) << size;
 	
 	formatter << source;
 	formatter << destination;

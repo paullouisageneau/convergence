@@ -20,8 +20,6 @@
 
 #include "src/world.hpp"
 
-using pla::LogImpl;
-
 namespace convergence
 {
 

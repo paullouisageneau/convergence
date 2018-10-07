@@ -198,9 +198,9 @@ typedef std::chrono::duration<double, std::milli> milliseconds;
 typedef std::chrono::duration<double, std::micro> microseconds;
 typedef std::chrono::duration<double, std::nano>  nanoseconds;
 
-typedef unsigned char	byte;
 typedef float			float32_t;	// 32 bits float
 typedef double			float64_t;	// 64 bits float
+typedef unsigned char	byte;
 
 // Hacks
 #ifdef WINDOWS
