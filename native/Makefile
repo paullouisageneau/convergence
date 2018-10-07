@@ -4,7 +4,7 @@ DESTDIR=
 CC=gcc
 CXX=g++
 RM=rm -f
-CPPFLAGS=-pthread -std=c++14 -Wall -Wno-sign-compare -Og -g
+CPPFLAGS=-pthread -std=c++14 -fPIC -Wall -Wno-reorder -Wno-sign-compare -Wno-switch -Og -g
 LDFLAGS=-pthread
 LDLIBS=$(shell pkg-config --libs glib-2.0 gobject-2.0 nice) -lGL -lGLEW -lglfw -lnettle -lhogweed -lgmp -lgnutls -largon2
 
@@ -24,7 +24,7 @@ $(OUTPUT): librtcdcpp/librtcdcpp.a $(OBJS)
 	$(CXX) $(LDFLAGS) -o $(OUTPUT) $(OBJS) $(LDLIBS) librtcdcpp/librtcdcpp.a librtcdcpp/libusrsctp.a
 
 librtcdcpp/librtcdcpp.a:
-	cd librtcdcpp && $(MAKE) USE_GNUTLS=1
+	cd librtcdcpp && $(MAKE) USE_GNUTLS=1 USE_SPDLOG=0
 
 clean:
 	cd librtcdcpp && $(MAKE) dist-clean
