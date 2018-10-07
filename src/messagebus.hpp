@@ -41,14 +41,14 @@ using std::set;
 class MessageBus
 {
 public:
-	enum class Priority : int { Default = 0, Relay = 1, Direct = 3 };
+	enum class Priority : int { Default = 0, Relay = 1, Direct = 2 };
 	
 	MessageBus(const identifier &localId);
 	~MessageBus(void);
 	
 	identifier localId(void) const;
 	
-	void addChannel(shared_ptr<Channel> channel);
+	void addChannel(shared_ptr<Channel> channel, Priority priority);
 	void removeChannel(shared_ptr<Channel> channel);
 	
 	void addRoute(const identifier &id, shared_ptr<Channel> channel, Priority priority);
