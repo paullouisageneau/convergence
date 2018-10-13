@@ -40,14 +40,12 @@ Peering::Peering(const identifier &id, shared_ptr<MessageBus> messageBus) :
 	mId(id),
 	mMessageBus(messageBus)
 {
-	mMessageBus->registerListener(mId, this);
-	
 	vector<string> iceServers;
 	iceServers.emplace_back("stun:stun.ageneau.net:3478");
 	mPeerConnection = std::make_shared<PeerConnection>(iceServers);
 	
 	mPeerConnection->onDataChannel([this](shared_ptr<DataChannel> dataChannel) {
-		std::cout << "Got a data channel !" << std::endl;
+		std::cout << "Data channel received" << std::endl;
 		if(dataChannel->label() == DataChannelName) setDataChannel(dataChannel);
 	});
 	
@@ -71,7 +69,6 @@ Peering::Peering(const identifier &id, shared_ptr<MessageBus> messageBus) :
 
 Peering::~Peering(void) 
 {
-	mMessageBus->unregisterListener(mId, this);
 	disconnect();
 }
 
@@ -114,7 +111,7 @@ void Peering::setDataChannel(shared_ptr<DataChannel> dataChannel)
 	mDataChannel = dataChannel;
 	
 	mDataChannel->onOpen([this]() {
-		std::cout << "Data channel open !" << std::endl;
+		std::cout << "Data channel open" << std::endl;
 		mMessageBus->addChannel(mDataChannel, MessageBus::Priority::Relay);
 		mMessageBus->addRoute(mId, mDataChannel, MessageBus::Priority::Direct);
 	});

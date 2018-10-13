@@ -39,7 +39,7 @@ Context::~Context(void)
 {
 	
 }
-	
+
 const mat4 &Context::projection(void) const
 {
 	return mProjection;
@@ -52,7 +52,7 @@ const mat4 &Context::modelview(void) const
 
 const mat4 &Context::transform(void) const
 {
-	return mModelview;
+	return mTransform;
 }
 
 const vec3 &Context::cameraPosition(void) const

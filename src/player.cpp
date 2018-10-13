@@ -21,8 +21,13 @@
 #include "src/player.hpp"
 
 #include "pla/binaryformatter.hpp"
+#include "pla/shader.hpp"
+#include "pla/program.hpp"
 
 using pla::BinaryFormatter;
+using pla::Program;
+using pla::VertexShader;
+using pla::FragmentShader;
 
 namespace convergence
 {
@@ -31,8 +36,6 @@ Player::Player(sptr<MessageBus> messageBus, const identifier &id) :
 	mMessageBus(messageBus),
 	mId(id)
 {
-	mMessageBus->registerListener(mId, this);
-	
 	mYaw = mPitch = 0.f;
 	mSpeed = 0.f;
 	mGravity = 0.f;
@@ -40,11 +43,56 @@ Player::Player(sptr<MessageBus> messageBus, const identifier &id) :
 	mIsJumping = false;
 	
 	mPosition = vec3(0.f, 0.f, 0.f);
+	
+	auto program = std::make_shared<Program>(
+		std::make_shared<VertexShader>("shader/color.vert"),
+		std::make_shared<FragmentShader>("shader/color.frag")
+	);
+
+	program->bindAttribLocation(0, "position");
+	program->bindAttribLocation(1, "normal");
+	program->bindAttribLocation(2, "color");
+	program->link();
+	
+	float cube_vertices[] = {
+		-1.0, -1.0,  1.0,
+		 1.0, -1.0,  1.0,
+		 1.0,  1.0,  1.0,
+		-1.0,  1.0,  1.0,
+		-1.0, -1.0, -1.0,
+		 1.0, -1.0, -1.0,
+		 1.0,  1.0, -1.0,
+		-1.0,  1.0, -1.0,
+	};
+	
+	Object::index_t cube_indices[] = {
+		0, 1, 2,
+		2, 3, 0,
+		1, 5, 6,
+		6, 2, 1,
+		7, 6, 5,
+		5, 4, 7,
+		4, 0, 3,
+		3, 7, 4,
+		4, 5, 1,
+		1, 0, 4,
+		3, 2, 6,
+		6, 7, 3,
+	};
+	
+	mObject = std::make_shared<Object>(
+		cube_indices,
+		12*3,
+		cube_vertices,
+		8*3,
+		program
+	);
+	mObject->computeNormals(1);
 }
 
 Player::~Player(void)
 {
-	mMessageBus->unregisterListener(mId, this);
+
 }
 
 identifier Player::id(void) const
@@ -100,6 +148,9 @@ void Player::jump(void)
 
 void Player::update(sptr<Collidable> terrain, double time)
 {
+	Message message;
+	while(readMessage(message)) processMessage(message);
+	
 	vec3 move(0.f);
 	mGravity+= 10.f*time;
 	if(mIsOnGround && mIsJumping) mGravity-= 10.f;
@@ -127,10 +178,13 @@ void Player::update(sptr<Collidable> terrain, double time)
 
 int Player::draw(const Context &context)
 {
-	return 0;
+	// TODO
+	Context subContext = context;
+	subContext.setUniform("transform", context.transform() * getTransform());
+	return mObject->draw(subContext);
 }
 
-void Player::onMessage(const Message &message)
+void Player::processMessage(const Message &message)
 {
 	BinaryFormatter formatter(message.payload);
 	
@@ -138,9 +192,12 @@ void Player::onMessage(const Message &message)
 	{
 		case Message::PlayerPosition:
 		{
-			float32_t x, y, z;
+			float32_t x = 0.f;
+			float32_t y = 0.f;
+			float32_t z = 0.f;
 			formatter >> x >> y >> z;
 			mPosition = vec3(x, y, z);
+			break;
 		}
 		
 		case Message::PlayerControl:
@@ -154,10 +211,18 @@ void Player::onMessage(const Message &message)
 			formatter >> speed;
 			move(speed);
 			
+			float32_t gravity = 0.f;
+			formatter >> gravity;
+			mGravity = gravity;
+			
 			uint32_t flags = 0;
 			formatter >> flags;
-			if(flags & 0x1) jump();
+			break;
 		}
+		
+		default:
+			// Ignore
+			break;
 	}
 }
 

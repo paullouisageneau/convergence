@@ -29,20 +29,27 @@ namespace pla
 
 PerlinNoise::PerlinNoise(unsigned int seed)
 {
-	// Compute permutation vector given seed
+	// Compute permutation vector from seed
+	const unsigned int m = 2147483648;
+	const unsigned int a = 1103515245;
+	const unsigned int c = 12345;
 	p.resize(256);
 	std::iota(p.begin(), p.end(), 0);
-	std::default_random_engine engine(seed);
-	std::shuffle(p.begin(), p.end(), engine);
+	for(unsigned int i = 255; i > 0; --i) 
+	{
+		seed = (seed*a + c) % m;
+		std::swap(p[i], p[seed % (i+1)]);
+	}
+	
 	p.insert(p.end(), p.begin(), p.end());
 }
 
 double PerlinNoise::noise(double x, double y, double z) const
 {
 	// Find the unit cube that contains the point
-	int X = int(floor(x)) & 255;
-	int Y = int(floor(y)) & 255;
-	int Z = int(floor(z)) & 255;
+	int X = int(floor(x)) & 0xFF;
+	int Y = int(floor(y)) & 0xFF;
+	int Z = int(floor(z)) & 0xFF;
 
 	// Find relative x, y, z of point in cube
 	x-= floor(x);
@@ -80,7 +87,7 @@ double PerlinNoise::lerp(double t, double a, double b) const
 double PerlinNoise::grad(int hash, double x, double y, double z) const
 {
 	int h = hash & 15;
-	// Convert lower 4 bits of hash inot 12 gradient directions
+	// Convert lower 4 bits of hash into 12 gradient directions
 	double u = h < 8 ? x : y,
 		   v = h < 4 ? y : h == 12 || h == 14 ? x : z;
 	return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);

@@ -64,18 +64,19 @@ int Object::draw(const Context &context)
 	{
 		size_t first = it->first;
 		size_t last = indicesCount();
-		++it;
+		auto program = it->second;
 		
+		++it;
 		if(it != mPrograms.end())
 			last = it->first;
 		
-		if(it->second)
+		if(program)
 		{
-			context.prepare(it->second);
+			context.prepare(program);
 			
-			it->second->bind();
+			program->bind();
 			count+= drawElements(first, last-first);
-			it->second->unbind();
+			program->unbind();
 		}
 	}
 	

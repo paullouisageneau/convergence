@@ -35,7 +35,7 @@ using net::PeerConnection;
 using net::DataChannel;
 using std::function;
 
-class Peering : protected MessageBus::Listener
+class Peering : public MessageBus::Listener
 {
 public:
 	Peering(const identifier &id, shared_ptr<MessageBus> signaling);

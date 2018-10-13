@@ -259,10 +259,10 @@ void Surface::populateBlock(sptr<Block> block)
 			bool inside = false;
 			for(int z = -1; z < Size; ++z)
 			{
-				const int ax = block->mPos.x*Size+x;
-				const int ay = block->mPos.y*Size+y;
-				const int az = block->mPos.z*Size+z;
-				const int d2 = ax*ax + ay*ay + az*az;
+				const float ax = float(block->mPos.x*Size+x);
+				const float ay = float(block->mPos.y*Size+y);
+				const float az = float(block->mPos.z*Size+z);
+				const float d2 = ax*ax + ay*ay + az*az;
 				const float noise1 = mPerlin.noise(ax*f1,ay*f1,az*f1*0.1f);
 				const float noise2 = mPerlin.noise(ax*f2,ay*f2,az*f2*4.f);
 				const float noise = noise1*noise1*0.53f + (noise2-0.5f)*2.f*0.47f - 20.f/d2;

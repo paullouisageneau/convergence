@@ -35,11 +35,8 @@ using std::multimap;
 class Networking : public MessageBus::Listener
 {
 public:
-	Networking(const string &url);
+	Networking(shared_ptr<MessageBus> messageBus, const string &url);
 	~Networking(void);
-	
-	identifier localId(void) const;
-	shared_ptr<MessageBus> messageBus(void) const;
 
 protected:
 	void onPeer(const identifier &id);
@@ -49,7 +46,6 @@ private:
 	void connectWebSocket(const string &url);
 	shared_ptr<Peering> createPeering(const identifier &id);
 	
-	identifier mLocalId;
 	shared_ptr<MessageBus> mMessageBus;
 	std::map<identifier, shared_ptr<Peering>> mPeerings;
 };
