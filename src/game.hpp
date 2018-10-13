@@ -22,6 +22,7 @@
 #define CONVERGENCE_GAME_H
 
 #include "src/include.hpp"
+#include "src/messagebus.hpp"
 #include "src/networking.hpp"
 #include "src/world.hpp"
 
@@ -54,6 +55,7 @@ public:
 	void onInput(Engine *engine, string text);
 
 private:
+	sptr<MessageBus> mMessageBus;
 	sptr<Networking> mNetworking;
 	sptr<World> mWorld;
 	

@@ -29,21 +29,19 @@
 #include <memory>
 #include <map>
 #include <set>
+#include <queue>
 
 namespace convergence
 {
 
 using net::Channel;
-using std::multimap;
-using std::map;
-using std::set;
 
 class MessageBus
 {
 public:
 	enum class Priority : int { Default = 0, Relay = 1, Direct = 2 };
 	
-	MessageBus(const identifier &localId);
+	MessageBus(void);
 	~MessageBus(void);
 	
 	identifier localId(void) const;
@@ -53,6 +51,7 @@ public:
 	
 	void addRoute(const identifier &id, shared_ptr<Channel> channel, Priority priority);
 	void removeRoute(const identifier &id, shared_ptr<Channel> channel);
+	void removeAllRoutes(shared_ptr<Channel> channel);
 	
 	void send(Message &message);
 	void broadcast(Message &message);
@@ -65,19 +64,33 @@ public:
 		virtual void onMessage(const Message &message) = 0;
 	};
 	
-	void registerListener(const identifier &remoteId, Listener *listener);
-	void unregisterListener(const identifier &remoteId, Listener *listener);
-	void registerOmniscientListener(Listener *listener);
-	void unregisterOmniscientListener(Listener *listener);
+	class AsyncListener : public Listener
+	{
+	public:
+		void onMessage(const Message &message);
+		bool readMessage(Message &message);
+		
+	private:
+		std::queue<Message> mQueue;
+		std::mutex mQueueMutex;
+	};
+	
+	void registerListener(const identifier &remoteId, weak_ptr<Listener> listener);
+	void registerOmniscientListener(weak_ptr<Listener> listener);
 	
 private:
+	void dispatchPeer(const identifier &id);
 	void route(Message &message);
+	shared_ptr<Channel> findRoute(const identifier &remoteId);
 	
 	identifier mLocalId;
-	set<shared_ptr<Channel>> mChannels;
-	map<identifier, map<Priority, shared_ptr<Channel>>> mRoutes;
-	multimap<identifier, Listener*> mListeners;
-	set<Listener*> mOmniscientListeners;
+	std::set<shared_ptr<Channel>> mChannels;
+	std::mutex mChannelsMutex;
+	std::map<identifier, std::map<Priority, shared_ptr<Channel>>> mRoutes;
+	std::mutex mRoutesMutex;
+	std::multimap<identifier, weak_ptr<Listener>> mListeners;
+	std::list<weak_ptr<Listener>> mOmniscientListeners;
+	std::mutex mListenersMutex;
 };
 
 }

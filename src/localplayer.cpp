@@ -67,20 +67,23 @@ void LocalPlayer::update(sptr<Collidable> terrain, double time)
 void LocalPlayer::sendPosition(void)
 {
 	Message message(Message::PlayerPosition);
-	BinaryFormatter formatter(message.payload);
+	BinaryFormatter formatter;
 	formatter << float32_t(mPosition.x);
 	formatter << float32_t(mPosition.y);
 	formatter << float32_t(mPosition.z);
+	message.payload = formatter.data();
 	mMessageBus->send(message);
 }
 
 void LocalPlayer::sendControl(void)
 {
 	Message message(Message::PlayerControl);
-	BinaryFormatter formatter(message.payload);
+	BinaryFormatter formatter;
 	formatter << float32_t(mYaw) << float32_t(mPitch);
 	formatter << float32_t(mSpeed);
+	formatter << float32_t(mGravity);
 	formatter << uint32_t(mIsJumping ? 0x1 : 0x0);
+	message.payload = formatter.data();
 	mMessageBus->send(message);
 }
 

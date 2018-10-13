@@ -13,6 +13,13 @@ OBJS=$(subst .cpp,.o,$(SRCS))
 
 OUTPUT=convergence
 
+USE_SPDLOG ?= 0
+ifeq ($(USE_SPDLOG), 1)
+	CPPFLAGS+= -DSPDLOG_DEBUG_ON
+else
+	CPPFLAGS+= -DSPDLOG_DISABLED
+endif
+
 all: $(OUTPUT)
 
 %.o: %.cpp
@@ -24,7 +31,7 @@ $(OUTPUT): librtcdcpp/librtcdcpp.a $(OBJS)
 	$(CXX) $(LDFLAGS) -o $(OUTPUT) $(OBJS) $(LDLIBS) librtcdcpp/librtcdcpp.a librtcdcpp/libusrsctp.a
 
 librtcdcpp/librtcdcpp.a:
-	cd librtcdcpp && $(MAKE) USE_GNUTLS=1 USE_SPDLOG=0
+	cd librtcdcpp && $(MAKE) USE_GNUTLS=1 USE_SPDLOG=$(USE_SPDLOG)
 
 clean:
 	cd librtcdcpp && $(MAKE) dist-clean

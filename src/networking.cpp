@@ -22,48 +22,26 @@
 
 #include "net/websocket.hpp"
 
-#include <random>
-#include <chrono>
-
 namespace convergence
 {
 
 using net::WebSocket;
 using pla::to_hex;
 
-Networking::Networking(const string &url)
+Networking::Networking(shared_ptr<MessageBus> messageBus, const string &url) :
+	mMessageBus(messageBus)
 {
-	using clock = std::chrono::high_resolution_clock;
-	using random_bytes_engine = std::independent_bits_engine<std::default_random_engine, CHAR_BIT, unsigned char>;
-	random_bytes_engine rbe;
-	rbe.seed(clock::now().time_since_epoch()/std::chrono::milliseconds(1));
-	std::generate(mLocalId.begin(), mLocalId.end(), std::ref(rbe));
-
-	std::cout << "Local peer is " << to_hex(mLocalId) << std::endl;
-	mMessageBus = std::make_shared<MessageBus>(mLocalId);
-	mMessageBus->registerOmniscientListener(this);
-	
 	connectWebSocket(url);
 }
 
 Networking::~Networking(void)
 {
-	mMessageBus->unregisterOmniscientListener(this);
-}
 
-identifier Networking::localId(void) const
-{
-	return mLocalId;
-}
-
-shared_ptr<MessageBus> Networking::messageBus(void) const
-{
-	return mMessageBus;
 }
 
 void Networking::onPeer(const identifier &id)
 {
-	std::cout << "Discovered peer " << to_hex(id) << std::endl;
+	std::cout << "Discovered peer: " << to_hex(id) << std::endl;
 	auto peering = createPeering(id);
 	peering->connect();
 }
@@ -72,7 +50,7 @@ void Networking::onMessage(const Message &message)
 {
 	if(message.type == Message::Description) {
 		const identifier &id = message.source;
-		std::cout << "Incoming peer " << to_hex(id) << std::endl;
+		std::cout << "Incoming peer: " << to_hex(id) << std::endl;
 		createPeering(id);
 	}
 }
@@ -101,6 +79,7 @@ shared_ptr<Peering> Networking::createPeering(const identifier &id)
 	if(it != mPeerings.end()) return it->second;
 	
 	auto peering = std::make_shared<Peering>(id, mMessageBus);
+	mMessageBus->registerListener(id, peering);
 	mPeerings[id] = peering;
 	return peering;
 }

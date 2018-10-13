@@ -17,7 +17,7 @@ void main()
 {
 	fragPosition = position;
 	fragNormal = normal;
-	fragLight = normalize(position-lightPosition);
+	fragLight = normalize(position - lightPosition);
 	fragMaterial = material;
 	gl_Position = transform*vec4(position, 1.0);
 }

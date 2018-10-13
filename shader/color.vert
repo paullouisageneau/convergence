@@ -1,23 +1,23 @@
-#version 130
+#version 110
 
 uniform mat4 transform;
 uniform mat4 modelview;
 uniform vec3 lightPosition;
 
-in vec3 position;
-in vec3 normal;
-in vec3 color;
+attribute vec3 position;
+attribute vec3 normal;
+attribute vec3 color;
 
-out vec3 fragNormal;
-out vec3 fragLight;
-out vec3 fragColor;
+varying vec3 fragNormal;
+varying vec3 fragLight;
+varying vec3 fragColor;
 
 void main() 
 {
 	fragNormal = normal;
-	fragLight = normalize(position-lightPosition);
-	fragColor = color;
-	
+	fragLight = normalize(position - lightPosition);
+	//fragColor = color;
+	fragColor = vec3(0.933, 0.510, 0.933);
 	gl_Position = transform*vec4(position, 1.0);
 }
 

@@ -27,12 +27,19 @@
 #include <memory>
 #include <functional>
 #include <algorithm>
+#include <mutex>
+#include <shared_mutex>
 
 namespace convergence
 {
 
 using std::shared_ptr;
+using std::weak_ptr;
 template<typename T> using sptr = shared_ptr<T>;
+template<typename T> using wptr = weak_ptr<T>;
+
+using std::mutex;
+using std::recursive_mutex;
 
 using glm::vec2;
 using glm::vec3;
@@ -65,7 +72,7 @@ class identifier : public binary
 public:
 	identifier(void) : binary(8, 0) {}
 	
-	inline bool isNull(void) 
+	inline bool isNull(void) const
 	{ 
 		return std::all_of(begin(), end(), [](char chr) {
 			return chr == 0;

@@ -40,8 +40,15 @@ Game::~Game(void)
 
 void Game::onInit(Engine *engine)
 {
-	mNetworking = std::make_shared<Networking>("ws://127.0.0.1:8080/test");
-	mWorld = std::make_shared<World>(mNetworking->messageBus());
+	const string url = "ws://127.0.0.1:8080/test";
+	
+	mMessageBus = std::make_shared<MessageBus>();
+	
+	mNetworking = std::make_shared<Networking>(mMessageBus, url);
+	mMessageBus->registerOmniscientListener(mNetworking);
+	
+	mWorld = std::make_shared<World>(mMessageBus);
+	mMessageBus->registerOmniscientListener(mWorld);
 }
 
 void Game::onCleanup(Engine *engine)

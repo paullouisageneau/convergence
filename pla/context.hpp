@@ -33,7 +33,7 @@ namespace pla
 class Context
 {
 public:
-	Context(const mat4 &projection,  const mat4 &camera);
+	Context(const mat4 &projection, const mat4 &camera);
 	~Context(void);
 	
 	const mat4 &projection(void) const;
@@ -73,8 +73,8 @@ private:
 template<typename T> 
 void Context::setUniform(const string &name, const T &value)
 {
-	sptr<UniformContainer> p = std::make_shared<UniformContainerImpl<T> >(value);
-	mUniforms.insert(std::make_pair(name, p));
+	auto p = std::make_shared<UniformContainerImpl<T> >(value);
+	mUniforms[name] = p;
 }
 
 }

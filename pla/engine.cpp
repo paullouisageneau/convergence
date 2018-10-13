@@ -55,7 +55,7 @@ void Engine::openWindow(int width, int height)
 	if (!mWindow) throw std::runtime_error("Window creation failed");
 
 	glfwSetWindowUserPointer(mWindow, this);
-	glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	//glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	glfwSetKeyCallback(mWindow, KeyCallback);
 	glfwSetMouseButtonCallback(mWindow, MouseButtonCallback);

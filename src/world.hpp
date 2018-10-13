@@ -38,7 +38,7 @@ namespace convergence
 using pla::string;
 using pla::Context;
 
-class World : protected MessageBus::Listener
+class World : public MessageBus::AsyncListener
 {
 public:
 	World(sptr<MessageBus> messageBus);
@@ -50,11 +50,10 @@ public:
 	void update(double time);
 	int draw(Context &context);
 
-protected:
-	void onPeer(const identifier &id);
-	void onMessage(const Message &message);
-	
 private:
+	void processMessage(const Message &message);
+	shared_ptr<Player> createPlayer(const identifier &id);
+	
 	sptr<MessageBus> mMessageBus;
 	sptr<Ledger> mLedger;
 	sptr<Terrain> mTerrain;

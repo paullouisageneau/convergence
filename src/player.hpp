@@ -26,14 +26,16 @@
 
 #include "pla/context.hpp"
 #include "pla/collidable.hpp"
+#include "pla/object.hpp"
 
 namespace convergence
 {
 
 using pla::Context;
 using pla::Collidable;
+using pla::Object;
 
-class Player : protected MessageBus::Listener
+class Player : public MessageBus::AsyncListener
 {
 public:
 	Player(sptr<MessageBus> messageBus, const identifier &id);
@@ -54,7 +56,7 @@ public:
 	virtual int draw(const Context &context);
 
 protected:
-	virtual void onMessage(const Message &message);
+	virtual void processMessage(const Message &message);
 	
 	sptr<MessageBus> mMessageBus;
 	identifier mId;
@@ -64,6 +66,8 @@ protected:
 	float mGravity;
 	bool mIsOnGround;
 	bool mIsJumping;
+	
+	sptr<Object> mObject;
 };
 
 }
