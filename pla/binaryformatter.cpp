@@ -125,21 +125,21 @@ BinaryFormatter &BinaryFormatter::operator>> (uint8_t &i)
 BinaryFormatter &BinaryFormatter::operator>> (uint16_t &i)
 {
 	mReadFailed = !read(reinterpret_cast<char*>(&i), sizeof(i));
-	if(!mReadFailed) i = fixEndianess(i);
+	if(!mReadFailed) i = toBigEndian(i);
 	return *this;
 }
 
 BinaryFormatter &BinaryFormatter::operator>> (uint32_t &i)
 {
 	mReadFailed = !read(reinterpret_cast<char*>(&i), sizeof(i));
-	if(!mReadFailed) i = fixEndianess(i);
+	if(!mReadFailed) i = toBigEndian(i);
 	return *this;
 }
 
 BinaryFormatter &BinaryFormatter::operator>> (uint64_t &i)
 {
 	mReadFailed = !read(reinterpret_cast<char*>(&i), sizeof(i));
-	if(!mReadFailed) i = fixEndianess(i);
+	if(!mReadFailed) i = toBigEndian(i);
 	return *this;
 }
 
@@ -207,21 +207,21 @@ BinaryFormatter &BinaryFormatter::operator<< (uint8_t i)
 
 BinaryFormatter &BinaryFormatter::operator<< (uint16_t i)
 {
-	i = fixEndianess(i);
+	i = toBigEndian(i);
 	write(reinterpret_cast<char*>(&i), 2);
 	return *this;
 }
 
 BinaryFormatter &BinaryFormatter::operator<< (uint32_t i)
 {
-	i = fixEndianess(i);
+	i = toBigEndian(i);
 	write(reinterpret_cast<char*>(&i), 4);
 	return *this;
 }
 
 BinaryFormatter &BinaryFormatter::operator<< (uint64_t i)
 {
-	i = fixEndianess(i);
+	i = toBigEndian(i);
 	write(reinterpret_cast<char*>(&i), 8);
 	return *this;
 }
@@ -238,14 +238,14 @@ BinaryFormatter &BinaryFormatter::operator<< (float64_t f)
 	return *this;
 }
 
-uint16_t BinaryFormatter::fixEndianess(uint16_t n)
+uint16_t BinaryFormatter::toBigEndian(uint16_t n)
 {
 	uint8_t *p = reinterpret_cast<uint8_t*>(&n);
 	return	(uint16_t(p[0]) << 8) |
 			(uint16_t(p[1]));
 }
 
-uint32_t BinaryFormatter::fixEndianess(uint32_t n)
+uint32_t BinaryFormatter::toBigEndian(uint32_t n)
 {
 	uint8_t *p = reinterpret_cast<uint8_t*>(&n);
 	return	(uint32_t(p[0]) << 24) |
@@ -254,7 +254,7 @@ uint32_t BinaryFormatter::fixEndianess(uint32_t n)
 			(uint32_t(p[3]));
 }
 
-uint64_t BinaryFormatter::fixEndianess(uint64_t n)
+uint64_t BinaryFormatter::toBigEndian(uint64_t n)
 {
 	uint8_t *p = reinterpret_cast<uint8_t*>(&n);
 	return	(uint64_t(p[0]) << 56) |

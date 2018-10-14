@@ -75,9 +75,9 @@ public:
 	operator bool(void) const { return !mReadFailed; }
 	
 protected:
-	static uint16_t fixEndianess(uint16_t n);
-	static uint32_t fixEndianess(uint32_t n);
-	static uint64_t fixEndianess(uint64_t n);
+	static uint16_t toBigEndian(uint16_t n);
+	static uint32_t toBigEndian(uint32_t n);
+	static uint64_t toBigEndian(uint64_t n);
 	
 	binary mData;
 	size_t mReadPosition = 0;
