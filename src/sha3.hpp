@@ -18,23 +18,21 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#include "src/ledger.hpp"
+#ifndef CONVERGENCE_SHA3_H
+#define CONVERGENCE_SHA3_H
 
-#include "src/sha3.hpp"
+#include "src/include.hpp"
 
 namespace convergence
 {
 
-Ledger::Ledger(void)
-{
+void Shake128(const binary &input, binary &output, size_t len);
+void Shake256(const binary &input, binary &output, size_t len);
+void Sha3_224(const binary &input, binary &output);
+void Sha3_256(const binary &input, binary &output);
+void Sha3_384(const binary &input, binary &output);
+void Sha3_512(const binary &input, binary &output);
 
 }
 
-Ledger::~Ledger(void)
-{
-	
-}
-
-}
-
-
+#endif
