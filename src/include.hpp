@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <mutex>
 #include <shared_mutex>
+#include <cassert>
 
 namespace convergence
 {

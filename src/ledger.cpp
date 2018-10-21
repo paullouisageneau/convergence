@@ -45,6 +45,17 @@ void Ledger::update(void)
 	while(readMessage(message)) processMessage(message);
 }
 
+void Ledger::sync(const identifier &destination)
+{
+	BinaryFormatter formatter;
+	for(const auto &b : mCurrentBlocks) formatter << b;
+	
+	Message message(Message::LedgerCurrent);
+	message.payload = formatter.data();
+	message.destination = destination;
+	mMessageBus->send(message);
+}
+
 void Ledger::registerProcessor(Entry::Type type, weak_ptr<Processor> processor)
 {
 	mProcessors[type] = processor;
@@ -81,15 +92,7 @@ void Ledger::processMessage(const Message &message)
 			{
 				std::set<binary> missing;
 				getMissingAncestors(block, missing);
-				for(const auto &b : missing)
-				{
-					std::cout << "Requesting block " << pla::to_hex(b) << std::endl;
-					
-					Message message(Message::LedgerRequest);
-					message.destination = message.source;
-					message.payload = b;
-					mMessageBus->send(message);
-				}
+				for(const auto &b : missing) sendBlockRequest(message.source, b);
 			}
 			break;
 		}
@@ -106,10 +109,42 @@ void Ledger::processMessage(const Message &message)
 			break;
 		}
 		
+		case Message::LedgerCurrent:
+		{
+			BinaryFormatter formatter(message.payload);
+			binary digest(32);
+			while(formatter >> digest)
+			{
+				if(mBlocks.find(digest) != mBlocks.end()) continue;
+				
+				auto it = mUnresolvedBlocks.find(digest);
+				if(it != mUnresolvedBlocks.end())
+				{
+					std::set<binary> missing;
+					getMissingAncestors(it->second, missing);
+					for(const auto &b : missing) sendBlockRequest(message.source, b);
+				}
+				else {
+					sendBlockRequest(message.source, digest);
+				}
+			}
+			break;
+		}
+		
 		default:
 			// Ignore
 			break;
 	}
+}
+
+void Ledger::sendBlockRequest(const identifier &destination, const binary &digest)
+{
+	std::cout << "Requesting block " << pla::to_hex(digest) << std::endl;
+	
+	Message message(Message::LedgerRequest);
+	message.payload = digest;
+	message.destination = destination;
+	mMessageBus->send(message);
 }
 
 shared_ptr<Ledger::Entry> Ledger::createEntry(Entry::Type type, const binary &data)
@@ -190,13 +225,12 @@ void Ledger::doResolve(const binary &digest, shared_ptr<Block> block)
 {
 	std::cout << "Resolved block " << pla::to_hex(digest) << std::endl;
 	
-	for(const auto &p : block->parents)
-		mCurrentBlocks.erase(p);
+	for(const auto &p : block->parents) mCurrentBlocks.erase(p);
 	
 	mBlocks[digest] = block;
 	mCurrentBlocks.insert(digest);
 	
-	for(auto entry : block->entries) apply(entry);
+	apply(block);
 }
 
 void Ledger::getMissingAncestors(shared_ptr<Block> block, std::set<binary> &missing)
@@ -210,6 +244,11 @@ void Ledger::getMissingAncestors(shared_ptr<Block> block, std::set<binary> &miss
 			else missing.insert(p);
 		}
 	}
+}
+
+void Ledger::apply(shared_ptr<Block> block)
+{
+	for(auto e : block->entries) apply(e);
 }
 
 void Ledger::apply(shared_ptr<Entry> entry)
