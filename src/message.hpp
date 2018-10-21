@@ -50,7 +50,8 @@ public:
 		
 		// Ledger
 		LedgerBlock = 0x30,
-		LedgerRequest = 0x31
+		LedgerRequest = 0x31,
+		LedgerCurrent = 0x32
 	};
 	
 	Message(Type _type = Dummy);

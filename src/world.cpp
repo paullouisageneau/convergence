@@ -90,6 +90,8 @@ shared_ptr<Player> World::createPlayer(const identifier &id)
 {
 	auto player = std::make_shared<Player>(mMessageBus, id);
 	mMessageBus->registerListener(id, player);
+	
+	mLedger->sync(id);
 	return player;
 }
 

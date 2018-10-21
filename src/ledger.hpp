@@ -25,6 +25,7 @@
 #include "src/include.hpp"
 
 #include <unordered_map>
+#include <unordered_set>
 #include <map>
 #include <set>
 
@@ -36,8 +37,9 @@ class Ledger : public MessageBus::AsyncListener
 public:
 	Ledger(shared_ptr<MessageBus> messageBus);
 	~Ledger(void);
-
+	
 	void update();
+	void sync(const identifier &destination);
 	
 	class Entry
 	{
@@ -87,6 +89,7 @@ private:
 	};
 	
 	void processMessage(const Message &message);
+	void sendBlockRequest(const identifier &destination, const binary &digest);
 	
 	shared_ptr<Entry> createEntry(Entry::Type type, const binary &data);
 	std::pair<shared_ptr<Block>, bool> createBlock(const binary &data);
@@ -95,7 +98,7 @@ private:
 	void tryResolveAll(void);
 	void doResolve(const binary &digest, shared_ptr<Block> block);
 	void getMissingAncestors(shared_ptr<Block> block, std::set<binary> &missing);
-	
+	void apply(shared_ptr<Block> block);
 	void apply(shared_ptr<Entry> entry);
 	
 	shared_ptr<MessageBus> mMessageBus;
