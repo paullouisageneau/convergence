@@ -24,13 +24,13 @@
 #include "pla/shader.hpp"
 #include "pla/program.hpp"
 
+namespace convergence
+{
+
 using pla::BinaryFormatter;
 using pla::Program;
 using pla::VertexShader;
 using pla::FragmentShader;
-
-namespace convergence
-{
 
 Player::Player(sptr<MessageBus> messageBus, const identifier &id) :
 	mMessageBus(messageBus),

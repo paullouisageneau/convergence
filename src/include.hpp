@@ -26,6 +26,7 @@
 
 #include <memory>
 #include <functional>
+#include <tuple>
 #include <algorithm>
 #include <mutex>
 #include <shared_mutex>
@@ -35,8 +36,10 @@ namespace convergence
 
 using std::shared_ptr;
 using std::weak_ptr;
+using std::unique_ptr;
 template<typename T> using sptr = shared_ptr<T>;
 template<typename T> using wptr = weak_ptr<T>;
+template<typename T> using uptr = unique_ptr<T>;
 
 using std::mutex;
 using std::recursive_mutex;
@@ -50,6 +53,7 @@ using glm::mat4;
 
 using pla::string;
 using pla::binary;
+using pla::binary_hash;
 
 using pla::Pi;
 using pla::Sqrt2;

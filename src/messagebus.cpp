@@ -159,9 +159,18 @@ void MessageBus::broadcast(Message &message)
 	std::list<identifier> destinations;
 	{
 		std::lock_guard<std::mutex> lock(mListenersMutex);
+		binary last;
 		auto it = mListeners.begin(); 
 		while(it != mListeners.end())
 		{
+			if(last == it->first) 
+			{
+				++it;
+				continue;
+			}
+			
+			last = it->first;
+			
 			if(auto l = it->second.lock())
 			{
 				if(it->first != mLocalId) destinations.push_back(it->first);
@@ -187,16 +196,17 @@ void MessageBus::dispatch(const Message &message)
 	std::list<shared_ptr<Listener>> listeners;
 	{
 		std::lock_guard<std::mutex> lock(mListenersMutex);
-		auto it = mOmniscientListeners.begin();
-		while(it != mOmniscientListeners.end())
+		auto range = mTypeListeners.equal_range(message.type);
+		auto it = range.first; 
+		while(it != range.second)
 		{
-			if(auto l = it->lock())
+			if(auto l = it->second.lock())
 			{
 				listeners.push_back(l);
 				++it;
 			}
 			else {
-				it = mOmniscientListeners.erase(it);
+				it = mTypeListeners.erase(it);
 			}
 		}
 	}
@@ -207,16 +217,16 @@ void MessageBus::dispatch(const Message &message)
 	{
 		std::lock_guard<std::mutex> lock(mListenersMutex);
 		auto range = mListeners.equal_range(message.source);
-		auto jt = range.first; 
-		while(jt != range.second)
+		auto it = range.first; 
+		while(it != range.second)
 		{
-			if(auto l = jt->second.lock())
+			if(auto l = it->second.lock())
 			{
 				listeners.push_back(l);
-				++jt;
+				++it;
 			}
 			else {
-				jt = mListeners.erase(jt);
+				it = mListeners.erase(it);
 			}
 		}
 	}
@@ -229,16 +239,16 @@ void MessageBus::dispatchPeer(const identifier &id)
 	std::list<shared_ptr<Listener>> listeners;
 	{
 		std::lock_guard<std::mutex> lock(mListenersMutex);
-		auto it = mOmniscientListeners.begin();
-		while(it != mOmniscientListeners.end())
+		auto it = mTypeListeners.begin();
+		while(it != mTypeListeners.end())
 		{
-			if(auto l = it->lock())
+			if(auto l = it->second.lock())
 			{
 				listeners.push_back(l);
 				++it;
 			}
 			else {
-				it = mOmniscientListeners.erase(it);
+				it = mTypeListeners.erase(it);
 			}
 		}
 	}
@@ -246,16 +256,16 @@ void MessageBus::dispatchPeer(const identifier &id)
 	for(auto l : listeners) l->onPeer(id);
 }
 
+void MessageBus::registerTypeListener(Message::Type type, weak_ptr<Listener> listener)
+{
+	std::lock_guard<std::mutex> lock(mListenersMutex);
+	mTypeListeners.insert(std::make_pair(type, listener));
+}
+
 void MessageBus::registerListener(const identifier &remoteId, weak_ptr<Listener> listener)
 {
 	std::lock_guard<std::mutex> lock(mListenersMutex);
 	mListeners.insert(std::make_pair(remoteId, listener));
-}
-
-void MessageBus::registerOmniscientListener(weak_ptr<Listener> listener)
-{
-	std::lock_guard<std::mutex> lock(mListenersMutex);
-	mOmniscientListeners.push_back(listener);
 }
 
 void MessageBus::route(Message &message)

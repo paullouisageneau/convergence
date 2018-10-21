@@ -23,6 +23,7 @@
 
 #include "src/include.hpp"
 #include "src/messagebus.hpp"
+#include "src/ledger.hpp"
 #include "src/networking.hpp"
 #include "src/world.hpp"
 
@@ -56,6 +57,7 @@ public:
 
 private:
 	sptr<MessageBus> mMessageBus;
+	sptr<Ledger> mLedger;
 	sptr<Networking> mNetworking;
 	sptr<World> mWorld;
 	
