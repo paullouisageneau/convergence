@@ -20,10 +20,10 @@
 
 #include "src/surface.hpp"
 
-using pla::LogImpl;
-
 namespace convergence
 {
+
+using pla::LogImpl;
 
 const int Surface::Size;
 const int Surface::BlocksSize;
@@ -129,11 +129,6 @@ void Surface::setValue(const int3 &p, value v)
 	blk->setValue(p.cell(), v, !mInit);
 }
 
-void Surface::setValue(const vec3 &p, value v)
-{
-	setValue(int3(p), v);
-}
-
 void Surface::setType(const int3 &p, uint8_t t)
 {
 	sptr<Block> blk = getBlock(p.block());
@@ -152,62 +147,17 @@ Surface::int84 Surface::getGradient(const int3 &p)
 	return blk->getGradient(p.cell());
 }
 
-Surface::value Surface::getValue(const vec3 &p)
-{
-	return getValue(int3(p));
-}
-
-Surface::int84 Surface::getGradient(const vec3 &p)
-{
-	return getGradient(int3(p));
-}
-
-int Surface::addWeight(const int3 &p, int weight, int newType)
+Surface::value Surface::addWeight(const int3 &p, int weight, int newType)
 {
 	sptr<Block> blk = getBlock(p.block());
 
 	int3 c = p.cell();
-	value value = blk->getValue(c);
-	int w = int(value.weight) + weight;
-	if(w < 0) {
-		weight = w;
-		w = 0;
-	}
-	if(w > 255) {
-		weight = w - 255;
-		w = 255;
-	}
-	value.weight = uint8_t(w);
-	if(newType >= 0) value.type = uint8_t(newType);
-	blk->setValue(c, value, !mInit);
-
-	return weight;
-}
-
-int Surface::addWeight(const vec3 &p, int w, int newType)
-{
-	return addWeight(int3(p), w, newType);
-}
-
-void Surface::addWeight(const vec3 &p, int weight, float radius, int newType)
-{
-	if(radius <= 0.f) return;
-
-	int3 origin(p);
-	int d = int(radius) + 1;
-	for(int dx=-d; dx<=d+1; ++dx)
-		for(int dy=-d; dy<=d+1; ++dy)
-			for(int dz=-d; dz<=d+1; ++dz)
-			{
-				int3 i = origin + int3(dx, dy, dz);
-				vec3 c = vec3(i.x, i.y, i.z);
-				float t = 1.f - glm::distance(p, c)/radius;
-				if(t > 0.f)
-				{
-					addWeight(i, int(weight*t));
-					if(weight > 0 && newType >= 0) setType(i, newType);
-				}
-			}
+	value v = blk->getValue(c);
+	weight = pla::bounds(int(v.weight) + weight, 0, 255);
+	v.weight = uint8_t(weight);
+	if(newType >= 0) v.type = uint8_t(newType);
+	blk->setValue(c, v, !mInit);
+	return v;
 }
 
 void Surface::changedBlock(const int3 &b)

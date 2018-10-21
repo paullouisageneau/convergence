@@ -41,7 +41,7 @@ using pla::Context;
 class World : public MessageBus::AsyncListener
 {
 public:
-	World(sptr<MessageBus> messageBus);
+	World(shared_ptr<MessageBus> messageBus, shared_ptr<Ledger> ledger);
 	~World(void);
 
 	sptr<Player> localPlayer(void) const;

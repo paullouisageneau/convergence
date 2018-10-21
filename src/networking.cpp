@@ -48,11 +48,9 @@ void Networking::onPeer(const identifier &id)
 
 void Networking::onMessage(const Message &message)
 {
-	if(message.type == Message::Description) {
-		const identifier &id = message.source;
-		std::cout << "Incoming peer: " << to_hex(id) << std::endl;
-		createPeering(id);
-	}
+	const identifier &id = message.source;
+	std::cout << "Incoming peer: " << to_hex(id) << std::endl;
+	createPeering(id);
 }
 
 void Networking::connectWebSocket(const string &url)

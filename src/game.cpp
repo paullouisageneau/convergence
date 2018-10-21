@@ -42,13 +42,17 @@ void Game::onInit(Engine *engine)
 {
 	const string url = "ws://127.0.0.1:8080/test";
 	
-	mMessageBus = std::make_shared<MessageBus>();
+	mMessageBus = std::make_shared<MessageBus>();	
+	
+	mLedger = std::make_shared<Ledger>(mMessageBus);
+	mMessageBus->registerTypeListener(Message::LedgerBlock, mLedger);
+	mMessageBus->registerTypeListener(Message::LedgerRequest, mLedger);
 	
 	mNetworking = std::make_shared<Networking>(mMessageBus, url);
-	mMessageBus->registerOmniscientListener(mNetworking);
+	mMessageBus->registerTypeListener(Message::Description, mNetworking);
 	
-	mWorld = std::make_shared<World>(mMessageBus);
-	mMessageBus->registerOmniscientListener(mWorld);
+	mWorld = std::make_shared<World>(mMessageBus, mLedger);
+	mMessageBus->registerTypeListener(Message::PlayerPosition, mWorld);
 }
 
 void Game::onCleanup(Engine *engine)
@@ -61,6 +65,8 @@ bool Game::onUpdate(Engine *engine, double time)
 {
 	if(engine->isKeyDown(KEY_ESCAPE)) return false;
 
+	mLedger->update();
+	
 	const float mouseSensitivity = 0.025f;
 	double mx, my;
 	engine->getMouseMove(&mx, &my);

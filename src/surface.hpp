@@ -111,6 +111,9 @@ public:
 		value(uint8_t _type = 0, uint8_t _weight = 0) : type(_type), weight(_weight) {}
 		float w(void) const { return float(weight)/255.f; }
 
+		bool operator==(const value &v) const { return type == v.type && weight == v.weight; }
+		bool operator!=(const value &v) const { return type != v.type || weight != v.weight; }
+
 		uint8_t type;
 		uint8_t weight;
 	};
@@ -123,16 +126,11 @@ public:
 	float intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *intersection = NULL);
 
 	void setValue(const int3 &p, value v);
-	void setValue(const vec3 &p, value v);
 	void setType(const int3 &p, uint8_t t);
 	value getValue(const int3 &p);
-	value getValue(const vec3 &p);
 	int84 getGradient(const int3 &p);
-	int84 getGradient(const vec3 &p);
 
-	int addWeight(const int3 &p, int weight, int newType = -1);
-	int addWeight(const vec3 &p, int weight, int newType = -1);
-	void addWeight(const vec3 &p, int weight, float radius, int newType = -1);
+	value addWeight(const int3 &p, int weight, int newType = -1);
 
 protected:
 	static const int Size = 8;

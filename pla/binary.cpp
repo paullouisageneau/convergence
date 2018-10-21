@@ -221,4 +221,11 @@ uint64_t checksum64(const binary &b)
 	return checksum(b, i);
 }
 
+std::size_t binary_hash::operator()(const binary &b) const noexcept
+{
+	std::size_t i = 0;
+	checksum(b, i);
+	return i;
+}
+
 }

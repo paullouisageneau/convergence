@@ -75,8 +75,8 @@ public:
 		std::mutex mQueueMutex;
 	};
 	
+	void registerTypeListener(Message::Type type, weak_ptr<Listener> listener);
 	void registerListener(const identifier &remoteId, weak_ptr<Listener> listener);
-	void registerOmniscientListener(weak_ptr<Listener> listener);
 	
 private:
 	void dispatchPeer(const identifier &id);
@@ -88,8 +88,8 @@ private:
 	std::mutex mChannelsMutex;
 	std::map<identifier, std::map<Priority, shared_ptr<Channel>>> mRoutes;
 	std::mutex mRoutesMutex;
+	std::multimap<Message::Type, weak_ptr<Listener>> mTypeListeners;
 	std::multimap<identifier, weak_ptr<Listener>> mListeners;
-	std::list<weak_ptr<Listener>> mOmniscientListeners;
 	std::mutex mListenersMutex;
 };
 

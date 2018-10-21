@@ -25,14 +25,14 @@ namespace convergence
 
 using pla::to_hex;
 
-World::World(sptr<MessageBus> messageBus) :
-	mMessageBus(messageBus)
+World::World(sptr<MessageBus> messageBus, shared_ptr<Ledger> ledger) :
+	mMessageBus(messageBus),
+	mLedger(ledger)
 {
-	unsigned seed = 42;
+	unsigned seed = 180;
+	mTerrain = std::make_shared<Terrain>(mLedger, seed);
+	mLedger->registerProcessor(Ledger::Entry::Terrain, mTerrain);
 	
-	mLedger = std::make_shared<Ledger>();
-	mTerrain = std::make_shared<Terrain>(seed);
-
 	mLocalPlayer = std::make_shared<LocalPlayer>(mMessageBus);
 	mMessageBus->registerListener(mLocalPlayer->id(), mLocalPlayer);
 	mPlayers[mLocalPlayer->id()] = mLocalPlayer;
@@ -75,7 +75,7 @@ int World::draw(Context &context)
 
 void World::processMessage(const Message &message)
 {
-	if(!message.source.isNull() && message.type == Message::PlayerPosition)
+	if(!message.source.isNull())
 	{
 		const identifier &id = message.source;
 		if(mPlayers.find(id) == mPlayers.end())

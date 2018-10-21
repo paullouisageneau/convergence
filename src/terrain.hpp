@@ -23,14 +23,15 @@
 
 #include "src/include.hpp"
 #include "src/surface.hpp"
+#include "src/ledger.hpp"
 
 namespace convergence
 {
 
-class Terrain : public Collidable
+class Terrain : public Collidable, public Ledger::Processor
 {
 public:
-	Terrain(unsigned int seed);
+	Terrain(shared_ptr<Ledger> ledger, unsigned int seed);
 	~Terrain(void);
 
 	void update(double time);
@@ -40,7 +41,27 @@ public:
 	void build(const vec3 &p, int weight);
 	void dig(const vec3 &p, int weight, float radius);
 
-protected:
+private:
+	class Operation : public Ledger::Entry
+	{
+	public:
+		Operation(const Surface::int3 &p, Surface::value v);
+		Operation(const binary &data);
+		Type type(void) const { return Entry::Terrain; }
+		binary toBinary(void) const;
+		
+		void apply(Surface *surface) const;
+		
+	private:
+		Surface::int3 mPosition;
+		Surface::value mValue;
+	};
+	
+	shared_ptr<Ledger::Entry> createEntry(Ledger::Entry::Type type, const binary &data);
+	void applyEntry(shared_ptr<Ledger::Entry> entry);
+	void appendEntries(const std::list<shared_ptr<Operation>> &ops);
+	
+	sptr<Ledger> mLedger;
 	Surface mSurface;
 };
 

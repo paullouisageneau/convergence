@@ -46,7 +46,11 @@ public:
 		// Player
 		PlayerReserved = 0x20,
 		PlayerPosition = 0x21,
-		PlayerControl  = 0x22
+		PlayerControl  = 0x22,
+		
+		// Ledger
+		LedgerBlock = 0x30,
+		LedgerRequest = 0x31
 	};
 	
 	Message(Type _type = Dummy);
