@@ -61,10 +61,12 @@ binary from_string(const string &str)
 string to_hex(const binary &data)
 {
 	std::ostringstream oss;
-	oss.width(2);
-	oss.fill('0');
 	for(int i=0; i<data.size(); ++i)
-		oss << std::hex << std::uppercase << unsigned(uint8_t(data[i]));
+	{
+		oss << std::hex << std::uppercase;
+		oss << std::setfill('0') << std::setw(2);
+		oss << unsigned(uint8_t(data[i]));
+	}
 	return oss.str();
 }
 
