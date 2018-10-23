@@ -38,6 +38,7 @@ public:
 	Ledger(shared_ptr<MessageBus> messageBus);
 	~Ledger(void);
 	
+	void init();
 	void update();
 	void sync(const identifier &destination);
 	
@@ -47,6 +48,7 @@ public:
 		enum Type : uint8_t
 		{
 			Dummy = 0x00,
+			Genesis = 0x01,
 			Terrain = 0x10
 		};
 		
@@ -84,8 +86,12 @@ private:
 		
 		binary toBinary(void) const;
 		
+		shared_ptr<Block> findDescendant(const binary &digest, const std::unordered_set<binary, binary_hash> &blacklist) const;
+		
 		std::set<binary> parents;
 		std::list<shared_ptr<Entry>> entries;
+		
+		std::map<binary, shared_ptr<Block>> childs;
 	};
 	
 	void processMessage(const Message &message);
@@ -101,11 +107,14 @@ private:
 	void apply(shared_ptr<Block> block);
 	void apply(shared_ptr<Entry> entry);
 	
+	bool addCurrentBlock(const binary &digest, shared_ptr<Block> block);
+	
 	shared_ptr<MessageBus> mMessageBus;
 	std::map<Entry::Type, weak_ptr<Processor>> mProcessors;
 	std::unordered_map<binary, shared_ptr<Block>, binary_hash> mBlocks;
 	std::map<binary, shared_ptr<Block>> mUnresolvedBlocks;
 	std::set<binary> mCurrentBlocks;
+	binary mCurrentAncestor;
 	
 	static binary Hash(const binary &data);
 };
