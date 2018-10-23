@@ -48,6 +48,7 @@ void Game::onInit(Engine *engine)
 	mMessageBus->registerTypeListener(Message::LedgerBlock, mLedger);
 	mMessageBus->registerTypeListener(Message::LedgerRequest, mLedger);
 	mMessageBus->registerTypeListener(Message::LedgerCurrent, mLedger);
+	mLedger->init();
 	
 	mNetworking = std::make_shared<Networking>(mMessageBus, url);
 	mMessageBus->registerTypeListener(Message::Description, mNetworking);
