@@ -54,6 +54,7 @@ public:
 		
 		virtual Type type(void) const = 0;
 		virtual binary toBinary(void) const = 0;
+		virtual bool merge(shared_ptr<Entry> entry, bool replace) = 0;
 	};
 	
 	class GenericEntry : public Entry
@@ -62,6 +63,7 @@ public:
 		GenericEntry(Type type, const binary &data);
 		Type type(void) const;
 		binary toBinary(void) const;
+		bool merge(shared_ptr<Entry> entry, bool replace);
 		
 	private:
 		Type mType;
@@ -79,6 +81,15 @@ public:
 	void append(const std::list<shared_ptr<Entry>> &entries);
 
 private:
+	struct State
+	{
+		State(void);
+		State(const std::list<shared_ptr<Entry>> &_entries);
+		void merge(shared_ptr<State> state, bool replace);
+		
+		std::list<shared_ptr<Entry>> entries;
+	};
+	
 	struct Block
 	{
 		Block(const std::set<binary> &_parents, const std::list<shared_ptr<Entry>> &_entries);
@@ -86,12 +97,10 @@ private:
 		
 		binary toBinary(void) const;
 		
-		shared_ptr<Block> findDescendant(const binary &digest, const std::unordered_set<binary, binary_hash> &blacklist) const;
-		
 		std::set<binary> parents;
 		std::list<shared_ptr<Entry>> entries;
 		
-		std::map<binary, shared_ptr<Block>> childs;
+		shared_ptr<State> state;
 	};
 	
 	void processMessage(const Message &message);
@@ -102,19 +111,16 @@ private:
 	
 	bool isResolvable(shared_ptr<Block> block);
 	void tryResolveAll(void);
-	void doResolve(const binary &digest, shared_ptr<Block> block);
 	void getMissingAncestors(shared_ptr<Block> block, std::set<binary> &missing);
-	void apply(shared_ptr<Block> block);
-	void apply(shared_ptr<Entry> entry);
 	
-	bool addCurrentBlock(const binary &digest, shared_ptr<Block> block);
+	shared_ptr<State> addCurrentBlock(const binary &digest, shared_ptr<Block> block);
+	void apply(shared_ptr<Entry> entry);
 	
 	shared_ptr<MessageBus> mMessageBus;
 	std::map<Entry::Type, weak_ptr<Processor>> mProcessors;
 	std::unordered_map<binary, shared_ptr<Block>, binary_hash> mBlocks;
-	std::map<binary, shared_ptr<Block>> mUnresolvedBlocks;
-	std::set<binary> mCurrentBlocks;
-	binary mCurrentAncestor;
+	std::unordered_map<binary, shared_ptr<Block>, binary_hash> mUnresolvedBlocks;
+	std::unordered_map<binary, shared_ptr<State>, binary_hash> mCurrentBlocks;
 	
 	static binary Hash(const binary &data);
 };

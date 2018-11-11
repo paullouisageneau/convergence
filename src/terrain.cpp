@@ -109,8 +109,8 @@ void Terrain::applyEntry(shared_ptr<Ledger::Entry> entry)
 {
 	if(entry->type() == Ledger::Entry::Terrain)
 	{
-		shared_ptr<Operation> operation = std::dynamic_pointer_cast<Operation>(entry);
-		operation->apply(&mSurface);
+		shared_ptr<Operation> op = std::dynamic_pointer_cast<Operation>(entry);
+		op->apply(&mSurface);
 	}
 }
 
@@ -154,6 +154,28 @@ binary Terrain::Operation::toBinary(void) const
 void Terrain::Operation::apply(Surface *surface) const
 {
 	surface->setValue(mPosition, mValue);
+}
+
+bool Terrain::Operation::merge(shared_ptr<Entry> entry, bool replace)
+{
+	if(entry->type() == Ledger::Entry::Terrain)
+	{
+		shared_ptr<Operation> op = std::dynamic_pointer_cast<Operation>(entry);
+		if(op->mPosition == mPosition)
+		{
+			// Keep highest value
+			if(replace
+				|| mValue.weight < op->mValue.weight 
+				|| (mValue.weight == op->mValue.weight && mValue.type < op->mValue.type))
+			{
+				mValue = op->mValue;
+			}
+			
+			return true;
+		}
+	}
+	
+	return false;
 }
 
 }

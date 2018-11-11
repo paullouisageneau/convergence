@@ -49,7 +49,7 @@ private:
 		Operation(const binary &data);
 		Type type(void) const { return Entry::Terrain; }
 		binary toBinary(void) const;
-		
+		bool merge(shared_ptr<Entry> entry, bool replace);
 		void apply(Surface *surface) const;
 		
 	private:

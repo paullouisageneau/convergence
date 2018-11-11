@@ -45,7 +45,6 @@ void Ledger::init(void)
 	mBlocks.clear();
 	mUnresolvedBlocks.clear();
 	mCurrentBlocks.clear();
-	mCurrentAncestor.clear();
 	
 	binary data;
 	auto entry = std::make_shared<GenericEntry>(Entry::Genesis, data);
@@ -64,7 +63,7 @@ void Ledger::update(void)
 void Ledger::sync(const identifier &destination)
 {
 	BinaryFormatter formatter;
-	for(const auto &b : mCurrentBlocks) formatter << b;
+	for(const auto &p : mCurrentBlocks) formatter << p.first;
 	
 	Message message(Message::LedgerCurrent);
 	message.payload = formatter.data();
@@ -79,19 +78,20 @@ void Ledger::registerProcessor(Entry::Type type, weak_ptr<Processor> processor)
 
 void Ledger::append(const std::list<shared_ptr<Entry>> &entries)
 {
-	auto block = std::make_shared<Block>(mCurrentBlocks, entries);
+	std::set<binary> parents;
+	for(const auto &p : mCurrentBlocks) parents.insert(p.first);
 	
+	auto block = std::make_shared<Block>(parents, entries);
 	binary data = block->toBinary();
 	binary digest = Hash(data);
 	
-	if(addCurrentBlock(digest, block))
-	{
-		std::cout << "Emitting block " << to_hex(digest) << std::endl;
+	addCurrentBlock(digest, block);
+	
+	std::cout << "Emitting block " << to_hex(digest) << std::endl;
 		
-		Message message(Message::LedgerBlock);
-		message.payload = data;
-		mMessageBus->send(message);
-	}
+	Message message(Message::LedgerBlock);
+	message.payload = data;
+	mMessageBus->send(message);
 }
 
 void Ledger::processMessage(const Message &message)
@@ -196,9 +196,12 @@ std::pair<shared_ptr<Ledger::Block>, bool> Ledger::createBlock(const binary &dat
 	if(jt != mUnresolvedBlocks.end()) return std::make_pair(jt->second, false);
 	
 	auto block = std::make_shared<Block>(this, data);
+	
 	if(isResolvable(block)) 
 	{
-		doResolve(digest, block);
+		auto state = addCurrentBlock(digest, block);
+		for(auto e : state->entries) apply(e);
+		
 		tryResolveAll();
 		return std::make_pair(block, true);
 	}
@@ -209,6 +212,8 @@ std::pair<shared_ptr<Ledger::Block>, bool> Ledger::createBlock(const binary &dat
 
 bool Ledger::isResolvable(shared_ptr<Block> block)
 {
+	if(block->parents.empty()) return false;
+	
 	for(const auto &p : block->parents)
 		if(mBlocks.find(p) == mBlocks.end())
 			return false;
@@ -224,9 +229,12 @@ void Ledger::tryResolveAll(void)
 		auto it = mUnresolvedBlocks.begin();
 		while(it != mUnresolvedBlocks.end())
 		{
-			if(isResolvable(it->second))
+			sptr<Block> block = it->second;
+			if(isResolvable(block))
 			{
-				doResolve(it->first, it->second);
+				auto state = addCurrentBlock(it->first, block);
+				for(auto e : state->entries) apply(e);
+				
 				it = mUnresolvedBlocks.erase(it);
 				++resolved;
 			}
@@ -234,17 +242,6 @@ void Ledger::tryResolveAll(void)
 		}
 	}
 	while(resolved);
-}
-
-void Ledger::doResolve(const binary &digest, shared_ptr<Block> block)
-{
-	std::cout << "Resolved block " << to_hex(digest) << std::endl;
-	
-	if(addCurrentBlock(digest, block))
-	{
-		auto it = mBlocks.find(mCurrentAncestor);
-		if(it != mBlocks.end()) apply(it->second);
-	}
 }
 
 void Ledger::getMissingAncestors(shared_ptr<Block> block, std::set<binary> &missing)
@@ -260,9 +257,31 @@ void Ledger::getMissingAncestors(shared_ptr<Block> block, std::set<binary> &miss
 	}
 }
 
-void Ledger::apply(shared_ptr<Block> block)
+shared_ptr<Ledger::State> Ledger::addCurrentBlock(const binary &digest, shared_ptr<Block> block)
 {
-	for(auto e : block->entries) apply(e);
+	std::cout << "Adding block " << to_hex(digest) << std::endl;
+	
+	block->state = std::make_shared<State>();
+	for(const auto &b : block->parents)
+	{
+		auto it = mBlocks.find(b);
+		if(it != mBlocks.end()) 
+		{
+			block->state->merge(it->second->state, false);
+		}
+		
+		auto jt = mCurrentBlocks.find(b);
+		if(jt != mCurrentBlocks.end()) 
+		{
+			mCurrentBlocks.erase(jt);
+		}
+	}
+	
+	block->state->merge(std::make_shared<State>(block->entries), true); // replace
+
+	mBlocks[digest] = block;
+	mCurrentBlocks[digest] = block->state;
+	return block->state;
 }
 
 void Ledger::apply(shared_ptr<Entry> entry)
@@ -270,72 +289,9 @@ void Ledger::apply(shared_ptr<Entry> entry)
 	auto it = mProcessors.find(entry->type());
 	if(it != mProcessors.end())
 	{
-		if(auto processor = it->second.lock())
-		{
-			processor->applyEntry(entry);
-		}
-		else {
-			mProcessors.erase(it);
-		}
+		if(auto processor = it->second.lock()) processor->applyEntry(entry);
+		else mProcessors.erase(it);
 	}
-}
-
-bool Ledger::addCurrentBlock(const binary &digest, shared_ptr<Block> block)
-{
-	mBlocks[digest] = block;
-	
-	for(const auto &p : block->parents)
-	{
-		mCurrentBlocks.erase(p);
-		
-		auto it = mBlocks.find(p);
-		if(it != mBlocks.end()) it->second->childs[digest] = block;
-	}
-	
-	if(mCurrentBlocks.empty())
-	{
-		// The block is a merge
-		mCurrentAncestor = digest;
-		mCurrentBlocks.insert(digest);
-		return true;
-	}
-	
-	std::unordered_set<binary, binary_hash> ancestors, visited;
-	ancestors.insert(mCurrentAncestor);
-	while(!ancestors.empty())
-	{
-		for(const auto &a : ancestors)
-		{
-			auto it = mBlocks.find(a);
-			if(it != mBlocks.end() && it->second->findDescendant(digest, visited))
-			{
-				std::cout << "Found ancestor block " << to_hex(a) << std::endl;
-				
-				mCurrentAncestor = a;
-				mCurrentBlocks.insert(digest);
-				return true;
-			}
-			
-			visited.insert(a);
-		}
-
-		std::unordered_set<binary, binary_hash> nextAncestors;
-		for(const auto &a : ancestors)
-		{
-			auto it = mBlocks.find(a);
-			if(it != mBlocks.end())
-			{
-				for(const auto &p : it->second->parents)
-					if(visited.find(p) == visited.end())
-						nextAncestors.insert(p);
-			}
-		}
-		
-		std::swap(ancestors, nextAncestors);
-	}
-	
-	std::cerr << "Unable to add current block: no common ancestor" << std::endl;
-	return false;
 }
 
 Ledger::GenericEntry::GenericEntry(Entry::Type type, const binary &data) :
@@ -353,6 +309,13 @@ Ledger::Entry::Type Ledger::GenericEntry::type(void) const
 binary Ledger::GenericEntry::toBinary(void) const
 {
 	return mData;
+}
+
+bool Ledger::GenericEntry::merge(shared_ptr<Entry> entry, bool replace)
+{
+	// Degraded behavior: just return true if entries are the same
+	// If the types are equal, then the other entry is generic too and toBinary() is just a getter
+	return entry->type() == mType && entry->toBinary() == mData;
 }
 
 Ledger::Block::Block(const std::set<binary> &_parents, const std::list<shared_ptr<Entry>> &_entries) :
@@ -410,17 +373,34 @@ binary Ledger::Block::toBinary(void) const
 	return formatter.data();
 }
 
-shared_ptr<Ledger::Block> Ledger::Block::findDescendant(const binary &digest, const std::unordered_set<binary, binary_hash> &blacklist) const
+Ledger::State::State(void)
 {
-	auto it = childs.find(digest);
-	if(it != childs.end()) return it->second;
 	
-	for(const auto &c : childs)
-		if(blacklist.find(c.first) == blacklist.end())
-			if(shared_ptr<Block> block = c.second->findDescendant(digest, blacklist))
-				return block;
+}
+
+Ledger::State::State(const std::list<shared_ptr<Entry>> &_entries) :
+	entries(_entries)
+{
 	
-	return nullptr;
+}
+
+void Ledger::State::merge(shared_ptr<State> state, bool replace)
+{
+	std::list<shared_ptr<Entry>> left;
+	
+	for(auto e : state->entries)
+	{	
+		bool merged = false;
+		for(auto m : entries)
+		{
+			merged = m->merge(e, replace);
+			if(merged) break;
+		}
+		
+		if(!merged) left.push_back(e);
+	}
+	
+	entries.insert(entries.end(), left.begin(), left.end());
 }
 
 binary Ledger::Hash(const binary &data)
