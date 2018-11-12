@@ -38,7 +38,8 @@ PerlinNoise::PerlinNoise(unsigned int seed)
 	for(unsigned int i = 255; i > 0; --i) 
 	{
 		seed = (seed*a + c) % m;
-		std::swap(p[i], p[seed % (i+1)]);
+		unsigned int r = seed / (m / (i+1) + 1);
+		std::swap(p[i], p[r]);
 	}
 	
 	p.insert(p.end(), p.begin(), p.end());
