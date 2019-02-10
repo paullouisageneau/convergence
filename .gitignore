@@ -6,3 +6,5 @@
 native/convergence
 emscripten/convergence.*
 
+compile_commands.json
+
