@@ -199,8 +199,8 @@ std::pair<shared_ptr<Ledger::Block>, bool> Ledger::createBlock(const binary &dat
 	
 	if(isResolvable(block)) 
 	{
-		auto state = addCurrentBlock(digest, block);
-		for(auto e : state->entries) apply(e);
+		addCurrentBlock(digest, block);
+		for(auto e : block->state->entries) apply(e);
 		
 		tryResolveAll();
 		return std::make_pair(block, true);
@@ -232,8 +232,8 @@ void Ledger::tryResolveAll(void)
 			sptr<Block> block = it->second;
 			if(isResolvable(block))
 			{
-				auto state = addCurrentBlock(it->first, block);
-				for(auto e : state->entries) apply(e);
+				addCurrentBlock(it->first, block);
+				for(auto e : block->state->entries) apply(e);
 				
 				it = mUnresolvedBlocks.erase(it);
 				++resolved;
@@ -257,7 +257,7 @@ void Ledger::getMissingAncestors(shared_ptr<Block> block, std::set<binary> &miss
 	}
 }
 
-shared_ptr<Ledger::State> Ledger::addCurrentBlock(const binary &digest, shared_ptr<Block> block)
+void Ledger::addCurrentBlock(const binary &digest, shared_ptr<Block> block)
 {
 	std::cout << "Adding block " << to_hex(digest) << std::endl;
 	
@@ -281,7 +281,6 @@ shared_ptr<Ledger::State> Ledger::addCurrentBlock(const binary &digest, shared_p
 
 	mBlocks[digest] = block;
 	mCurrentBlocks[digest] = block->state;
-	return block->state;
 }
 
 void Ledger::apply(shared_ptr<Entry> entry)

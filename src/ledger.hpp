@@ -113,7 +113,7 @@ private:
 	void tryResolveAll(void);
 	void getMissingAncestors(shared_ptr<Block> block, std::set<binary> &missing);
 	
-	shared_ptr<State> addCurrentBlock(const binary &digest, shared_ptr<Block> block);
+	void addCurrentBlock(const binary &digest, shared_ptr<Block> block);
 	void apply(shared_ptr<Entry> entry);
 	
 	shared_ptr<MessageBus> mMessageBus;

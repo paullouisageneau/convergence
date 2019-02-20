@@ -161,7 +161,7 @@ bool Terrain::Operation::merge(shared_ptr<Entry> entry, bool replace)
 	if(entry->type() == Ledger::Entry::Terrain)
 	{
 		shared_ptr<Operation> op = std::dynamic_pointer_cast<Operation>(entry);
-		if(op->mPosition == mPosition)
+		if(mPosition == op->mPosition)
 		{
 			// Keep highest value
 			if(replace
