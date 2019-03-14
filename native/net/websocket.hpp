@@ -47,15 +47,15 @@ public:
 	bool isClosed(void) const;
 
 	void setMaxPayloadSize(size_t size);
-	
+
 private:
 	void run(void);
-	
+
 	string mUrl;
 	pla::WebSocket mWebSocket;
 	std::atomic<bool> mConnected;
 	std::atomic<size_t> mMaxPayloadSize;
-	
+
 	std::thread mThread;
 };
 
