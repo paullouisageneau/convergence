@@ -1,3 +1,23 @@
+/*************************************************************************
+ *   Copyright (C) 2017-2018 by Paul-Louis Ageneau                       *
+ *   paul-louis (at) ageneau (dot) org                                   *
+ *                                                                       *
+ *   This file is part of Plateform.                                     *
+ *                                                                       *
+ *   Plateform is free software: you can redistribute it and/or modify   *
+ *   it under the terms of the GNU Affero General Public License as      *
+ *   published by the Free Software Foundation, either version 3 of      *
+ *   the License, or (at your option) any later version.                 *
+ *                                                                       *
+ *   Plateform is distributed in the hope that it will be useful, but    *
+ *   WITHOUT ANY WARRANTY; without even the implied warranty of          *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the        *
+ *   GNU Affero General Public License for more details.                 *
+ *                                                                       *
+ *   You should have received a copy of the GNU Affero General Public    *
+ *   License along with Plateform.                                       *
+ *   If not, see <http://www.gnu.org/licenses/>.                         *
+ *************************************************************************/
 
 #include "net/webrtc.hpp"
 
@@ -37,15 +57,15 @@ PeerConnection::PeerConnection(const vector<string> &iceServers) : mInitiated(fa
 		}
 		config.ice_servers.emplace_back(rtcdcpp::RTCIceServer{host, port});
 	}
-	
+
 	std::function<void(rtcdcpp::PeerConnection::IceCandidate)> onLocalIceCandidate = [this](rtcdcpp::PeerConnection::IceCandidate candidate) {
 		triggerLocalCandidate(IceCandidate(candidate.candidate, candidate.sdpMid));
 	};
-	
+
 	std::function<void(shared_ptr<rtcdcpp::DataChannel> channel)> onDataChannel = [this](shared_ptr<rtcdcpp::DataChannel> channel) {
 		triggerDataChannel(std::make_shared<DataChannel>(channel));
 	};
-	
+
 	mPeerConnection = std::make_unique<rtcdcpp::PeerConnection>(config, onLocalIceCandidate, onDataChannel);
 }
 
@@ -126,7 +146,7 @@ DataChannel::DataChannel(shared_ptr<rtcdcpp::DataChannel> dataChannel) :
 		mConnected = true;
 		triggerOpen();
 	});
-	
+
 	mDataChannel->SetOnStringMsgCallback([this](string str) {
 		binary tmp(str.begin(), str.end());
 		triggerMessage(tmp);
@@ -136,19 +156,19 @@ DataChannel::DataChannel(shared_ptr<rtcdcpp::DataChannel> dataChannel) :
 		binary tmp(chunk->Data(), chunk->Data() + chunk->Size());
 		triggerMessage(tmp);
 	});
-	
+
 	mDataChannel->SetOnClosedCallback([this]() {
 		mConnected = false;
 		mClosed = true;
 		triggerClosed();
 	});
-	
+
 	mDataChannel->SetOnErrorCallback([this](string description) {
 		triggerError(description);
 	});
 }
 
-DataChannel::~DataChannel(void) 
+DataChannel::~DataChannel(void)
 {
 
 }

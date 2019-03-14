@@ -49,9 +49,9 @@ public:
 
 	bool isOpen(void) const;
 	bool isClosed(void) const;
-	
+
 	string label(void) const;
-	
+
 private:
 	shared_ptr<rtcdcpp::DataChannel> mDataChannel;
 	bool mConnected;
@@ -67,38 +67,38 @@ public:
 		string sdp;
 		string type;
 	};
-	
+
 	struct IceCandidate {
 		IceCandidate(const string &candidate, const string &sdpMid)
 			: candidate(candidate), sdpMid(sdpMid) {}
 		string candidate;
 		string sdpMid;
 	};
-	
+
 	explicit PeerConnection(const vector<string> &iceServers = vector<string>());
 	~PeerConnection(void);
-	
+
 	shared_ptr<DataChannel> createDataChannel(const string &label);
-	
+
 	void setRemoteDescription(const SessionDescription &description);
 	void setRemoteCandidate(const IceCandidate &candidate);
-	
+
 	void onDataChannel(function<void(shared_ptr<DataChannel>)> callback);
 	void onLocalDescription(function<void(const SessionDescription&)> callback);
 	void onLocalCandidate(function<void(const IceCandidate&)> callback);
-	
+
 private:
 	void generateOffer(void);
 	void generateAnswer(void);
-	
+
 	void triggerDataChannel(shared_ptr<DataChannel> channel);
 	void triggerLocalDescription(const SessionDescription &description);
 	void triggerLocalCandidate(const IceCandidate &candidate);
-	
+
 	function<void(shared_ptr<DataChannel>)> mDataChannelCallback;
 	function<void(const SessionDescription&)> mLocalDescriptionCallback;
 	function<void(const IceCandidate&)> mLocalCandidateCallback;
-	
+
 	unique_ptr<rtcdcpp::PeerConnection> mPeerConnection;
 	bool mInitiated;
 };

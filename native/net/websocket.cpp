@@ -1,3 +1,23 @@
+/*************************************************************************
+ *   Copyright (C) 2017-2018 by Paul-Louis Ageneau                       *
+ *   paul-louis (at) ageneau (dot) org                                   *
+ *                                                                       *
+ *   This file is part of Plateform.                                     *
+ *                                                                       *
+ *   Plateform is free software: you can redistribute it and/or modify   *
+ *   it under the terms of the GNU Affero General Public License as      *
+ *   published by the Free Software Foundation, either version 3 of      *
+ *   the License, or (at your option) any later version.                 *
+ *                                                                       *
+ *   Plateform is distributed in the hope that it will be useful, but    *
+ *   WITHOUT ANY WARRANTY; without even the implied warranty of          *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the        *
+ *   GNU Affero General Public License for more details.                 *
+ *                                                                       *
+ *   You should have received a copy of the GNU Affero General Public    *
+ *   License along with Plateform.                                       *
+ *   If not, see <http://www.gnu.org/licenses/>.                         *
+ *************************************************************************/
 
 #include "net/websocket.hpp"
 
@@ -19,7 +39,7 @@ WebSocket::WebSocket(const string &url) : WebSocket()
 	open(url);
 }
 
-WebSocket::~WebSocket(void) 
+WebSocket::~WebSocket(void)
 {
 
 }
@@ -61,13 +81,13 @@ void WebSocket::send(const binary &data)
 void WebSocket::run(void)
 {
 	if(mUrl.empty()) return;
-	
+
 	try {
 		mWebSocket.connect(mUrl);
-		
+
 		mConnected = true;
 		triggerOpen();
-		
+
 		binary buffer;
 		while(mWebSocket.read(buffer, mMaxPayloadSize))
 			triggerMessage(buffer);
@@ -76,9 +96,9 @@ void WebSocket::run(void)
 	{
 		triggerError(e.what());
 	}
-	
+
 	mWebSocket.close();
-	
+
 	if(mConnected) triggerClosed();
 	mConnected = false;
 }
