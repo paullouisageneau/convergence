@@ -1,3 +1,23 @@
+/*************************************************************************
+ *   Copyright (C) 2017-2018 by Paul-Louis Ageneau                       *
+ *   paul-louis (at) ageneau (dot) org                                   *
+ *                                                                       *
+ *   This file is part of Plateform.                                     *
+ *                                                                       *
+ *   Plateform is free software: you can redistribute it and/or modify   *
+ *   it under the terms of the GNU Affero General Public License as      *
+ *   published by the Free Software Foundation, either version 3 of      *
+ *   the License, or (at your option) any later version.                 *
+ *                                                                       *
+ *   Plateform is distributed in the hope that it will be useful, but    *
+ *   WITHOUT ANY WARRANTY; without even the implied warranty of          *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the        *
+ *   GNU Affero General Public License for more details.                 *
+ *                                                                       *
+ *   You should have received a copy of the GNU Affero General Public    *
+ *   License along with Plateform.                                       *
+ *   If not, see <http://www.gnu.org/licenses/>.                         *
+ *************************************************************************/
 
 #include "net/webrtc.hpp"
 
@@ -33,7 +53,7 @@ void PeerConnection::DataChannelCallback(int dc, void *ptr)
 }
 
 void PeerConnection::DescriptionCallback(const char *sdp, const char *type, void *ptr)
-{	
+{
 	PeerConnection *p = static_cast<PeerConnection*>(ptr);
 	if(p) p->triggerLocalDescription(PeerConnection::SessionDescription(sdp, type));
 }
@@ -73,7 +93,7 @@ void DataChannel::MessageCallback(const char *data, int size, void *ptr)
 	}
 }
 
-PeerConnection::PeerConnection(const vector<string> &iceServers) 
+PeerConnection::PeerConnection(const vector<string> &iceServers)
 {
 	vector<const char*> ptrs;
 	ptrs.reserve(iceServers.size());
@@ -88,12 +108,12 @@ PeerConnection::PeerConnection(const vector<string> &iceServers)
 	rtcSetLocalCandidateCallback(mId, CandidateCallback);
 }
 
-PeerConnection::~PeerConnection(void) 
+PeerConnection::~PeerConnection(void)
 {
 	rtcDeletePeerConnection(mId);
 }
 
-shared_ptr<DataChannel> PeerConnection::createDataChannel(const string &label) 
+shared_ptr<DataChannel> PeerConnection::createDataChannel(const string &label)
 {
 	return std::make_shared<DataChannel>(rtcCreateDataChannel(mId, label.c_str()));
 }
@@ -152,7 +172,7 @@ DataChannel::DataChannel(int id) :
 	mLabel = str;
 }
 
-DataChannel::~DataChannel(void) 
+DataChannel::~DataChannel(void)
 {
 	close();
 }
