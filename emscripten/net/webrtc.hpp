@@ -24,6 +24,7 @@
 
 #include "net/channel.hpp"
 
+#include <memory>
 #include <functional>
 #include <vector>
 
@@ -45,14 +46,14 @@ public:
 
 	bool isOpen(void) const;
 	bool isClosed(void) const;
-	
+
 	string label(void) const;
-	
+
 private:
 	int mId;
 	string mLabel;
 	bool mConnected;
-	
+
 	static void OpenCallback(void *ptr);
 	static void ErrorCallback(const char *error, void *ptr);
 	static void MessageCallback(const char *data, int size, void *ptr);
@@ -67,38 +68,38 @@ public:
 		string sdp;
 		string type;
 	};
-	
+
 	struct IceCandidate {
 		IceCandidate(const string &candidate, const string &sdpMid)
 			: candidate(candidate), sdpMid(sdpMid) {}
 		string candidate;
 		string sdpMid;
 	};
-	
+
 	explicit PeerConnection(const vector<string> &iceServers);
 	~PeerConnection(void);
-  
+
 	shared_ptr<DataChannel> createDataChannel(const string &label);
-	
+
 	void setRemoteDescription(const SessionDescription &description);
 	void setRemoteCandidate(const IceCandidate &candidate);
-	
+
 	void onDataChannel(function<void(shared_ptr<DataChannel>)> callback);
 	void onLocalDescription(function<void(const SessionDescription&)> callback);
 	void onLocalCandidate(function<void(const IceCandidate&)> callback);
-	
+
 protected:
 	void triggerDataChannel(shared_ptr<DataChannel> dataChannel);
 	void triggerLocalDescription(const SessionDescription &description);
 	void triggerLocalCandidate(const IceCandidate &candidate);
-	
+
 	function<void(shared_ptr<DataChannel>)> mDataChannelCallback;
 	function<void(const SessionDescription&)> mLocalDescriptionCallback;
 	function<void(const IceCandidate&)> mLocalCandidateCallback;
-	
+
 private:
 	int mId;
-	
+
 	static void DataChannelCallback(int dc, void *ptr);
 	static void DescriptionCallback(const char *sdp, const char *type, void *ptr);
 	static void CandidateCallback(const char *candidate, const char *sdpMid, void *ptr);
