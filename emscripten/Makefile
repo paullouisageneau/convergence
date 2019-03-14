@@ -1,6 +1,6 @@
 
 CC=emcc
-CXX=em++
+CXX=emcc
 RM=rm -f
 EMFLAGS=-D USE_OPENGL_ES -s USE_GLFW=3 -s TOTAL_MEMORY=256MB -s BINARYEN_METHOD=native-wasm -s DISABLE_EXCEPTION_CATCHING=0 -s BINARYEN_TRAP_MODE='clamp'
 CPPFLAGS=-std=c++14 -g -O2 $(EMFLAGS)
@@ -20,7 +20,7 @@ all: $(OUTPUT)
 -include $(subst .o,.d,$(OBJS))
 
 $(OUTPUT): $(OBJS) webrtc.js websocket.js ../shader/*
-	$(CXX) $(LDFLAGS) -o $(OUTPUT) $(OBJS) $(LDLIBS) 
+	$(CXX) $(LDFLAGS) -o $(OUTPUT) $(OBJS) $(LDLIBS)
 
 clean:
 	$(RM) net/*.o net/*.d
