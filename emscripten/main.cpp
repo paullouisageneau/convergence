@@ -1,7 +1,7 @@
 
 #include <iostream>
 #include <emscripten/emscripten.h>
- 
+
 #include "pla/engine.hpp"
 #include "src/game.hpp"
 
@@ -22,7 +22,7 @@ int main()
 		std::cout << "Error: " << e.what() << std::endl;
 		return 1;
 	}
-	
+
 	emscripten_set_main_loop(loop, 0, 1);
 	return 0;
 }
@@ -35,7 +35,7 @@ void loop()
 			emscripten_cancel_main_loop();
 			return;
 		}
-		
+
 		//int count = engine.display();
 		//std::cout << count << std::endl;
 		engine.display();

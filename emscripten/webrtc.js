@@ -49,12 +49,12 @@
 						var pType = WEBRTC.allocUTF8FromString(desc.type);
 						var callback =  peerConnection.rtcDescriptionCallback;
 						var userPointer = peerConnection.rtcUserPointer || 0;
-						Runtime.dynCall('viii', callback, [pSdp, pType, userPointer]);
+						Module.dyncall_viii(callback, pSdp, pType, userPointer);
 						_free(pSdp);
 						_free(pType);
 					});
 			},
-			
+
 			handleIceCandidate: function(peerConnection, candidate) {
 				if(peerConnection.rtcUserDeleted) return;
 				if(!peerConnection.rtcCandidateCallback) return;
@@ -62,12 +62,12 @@
 				var pSdpMid = WEBRTC.allocUTF8FromString(candidate ? candidate.sdpMid : "");
 				var candidateCallback =  peerConnection.rtcCandidateCallback;
 				var userPointer = peerConnection.rtcUserPointer || 0;
-				Runtime.dynCall('viii', candidateCallback, [pCandidate, pSdpMid, userPointer]);
+				Module.dynCall_viii(candidateCallback, pCandidate, pSdpMid, userPointer);
 				_free(pCandidate);
 				_free(pSdpMid);
 			},
 		},
- 
+
 		rtcCreatePeerConnection: function(pIceServers) {
 			if(!window.RTCPeerConnection) return 0;
 			var iceServers = [];
@@ -87,7 +87,7 @@
 			};
 			return WEBRTC.registerPeerConnection(new RTCPeerConnection(config));
 		},
-		
+
 		rtcDeletePeerConnection: function(pc) {
 			var peerConnection = WEBRTC.peerConnectionsMap[pc];
 			if(peerConnection) {
@@ -95,7 +95,7 @@
 				delete WEBRTC.peerConnectionsMap[pc];
 			}
 		},
-		
+
 		rtcCreateDataChannel: function(pc, pLabel) {
 			if(!pc) return 0;
 			var label = UTF8ToString(pLabel);
@@ -103,7 +103,7 @@
 			var channel = peerConnection.createDataChannel(label);
 			return WEBRTC.registerDataChannel(channel);
 		},
- 
+
  		rtcDeleteDataChannel: function(dc) {
 			var dataChannel = WEBRTC.dataChannelsMap[dc];
 			if(dataChannel) {
@@ -119,7 +119,7 @@
 				if(peerConnection.rtcUserDeleted) return;
 				var dc = WEBRTC.registerDataChannel(evt.channel);
 				var userPointer = peerConnection.rtcUserPointer || 0;
-				Runtime.dynCall('vii', dataChannelCallback, [dc, userPointer]);
+				Module.dynCall_vii(dataChannelCallback, dc, userPointer);
 			};
 		},
 
@@ -128,7 +128,7 @@
 			var peerConnection = WEBRTC.peerConnectionsMap[pc];
 			peerConnection.rtcDescriptionCallback = descriptionCallback;
 		},
-  
+
 		rtcSetLocalCandidateCallback: function(pc, candidateCallback) {
 			if(!pc) return;
 			var peerConnection = WEBRTC.peerConnectionsMap[pc];
@@ -170,8 +170,8 @@
 					console.error(err);
 				});
 		},
- 
-		rtcGetDataChannelLabel: function(dc, pBuffer, size) {	
+
+		rtcGetDataChannelLabel: function(dc, pBuffer, size) {
 			var label = WEBRTC.dataChannelsMap[dc].label;
 			stringToUTF8(label, pBuffer, size);
 			return lengthBytesUTF8(label);
@@ -182,26 +182,26 @@
 			var cb = function() {
 				if(dataChannel.rtcUserDeleted) return;
 				var userPointer = dataChannel.rtcUserPointer || 0;
-				Runtime.dynCall('vi', openCallback, [userPointer]);
+				Module.dynCall_vi(openCallback, userPointer);
 			};
 			// dataChannel.bufferedAmountLowThreshold = 0;
 			// dataChannel.onbufferedamountlow = cb;
 			dataChannel.onopen = cb;
 			if(dataChannel.readyState == 'open') setTimeout(cb, 0);
 		},
- 
+
 		rtcSetErrorCallback: function(dc, openCallback) {
 			var dataChannel = WEBRTC.dataChannelsMap[dc];
 			var cb = function(evt) {
 				if(dataChannel.rtcUserDeleted) return;
 				var userPointer = dataChannel.rtcUserPointer || 0;
 				var pError = WEBRTC.allocUTF8FromString(evt.message);
-				Runtime.dynCall('vii', messageCallback, [pError, userPointer]);
+				Module.dynCall_vii(messageCallback, pError, userPointer);
 				_free(pError);
 			};
 			dataChannel.onerror = cb;
 		},
- 
+
 		rtcSetMessageCallback: function(dc, messageCallback) {
 			var dataChannel = WEBRTC.dataChannelsMap[dc];
 			dataChannel.onmessage = function(evt) {
@@ -213,13 +213,13 @@
 				var heapBytes = new Uint8Array(Module.HEAPU8.buffer, pBuffer, size);
 				heapBytes.set(byteArray);
 				var userPointer = dataChannel.rtcUserPointer || 0;
-				Runtime.dynCall('viii', messageCallback, [pBuffer, size, userPointer]);
+				Module.dynCall_viii(messageCallback, pBuffer, size, userPointer);
 				_free(pBuffer);
 			};
 			dataChannel.onclose = function(evt) {
 				if(dataChannel.rtcUserDeleted) return;
 				var userPointer = dataChannel.rtcUserPointer || 0;
-				Runtime.dynCall('viii', messageCallback, [0, 0, userPointer]);
+				Module.dynCall_viii(messageCallback, 0, 0, userPointer);
 			};
 		},
 
