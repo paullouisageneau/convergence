@@ -30,8 +30,8 @@ extern "C" {
 	extern int  wsCreateWebSocket(const char *url);
 	extern void wsDeleteWebSocket(int ws);
 	extern void wsSetOpenCallback(int ws, void (*openCallback)(void*));
-	extern void wsSetErrorCallback(int dc, void (*errorCallback)(const char*, void*));
-	extern void wsSetMessageCallback(int ws, void (*messageCallback)(const char *, int, void*));
+    extern void wsSetErrorCallback(int ws, void (*errorCallback)(const char *, void *));
+    extern void wsSetMessageCallback(int ws, void (*messageCallback)(const char *, int, void*));
 	extern int  wsSendMessage(int ws, const char *buffer, int size);
 	extern void wsSetUserPointer(int ws, void *ptr);
 }
