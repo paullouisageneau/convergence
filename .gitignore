@@ -2,9 +2,6 @@
 *.d
 *.a
 *.so
-
-native/convergence
-emscripten/convergence.*
-
+build/
 compile_commands.json
 
