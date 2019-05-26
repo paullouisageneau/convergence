@@ -33,17 +33,17 @@ class BinaryFormatter
 public:
 	BinaryFormatter(void);
 	BinaryFormatter(const binary &b);
-	
+
 	binary remaining(void) const;
 	binary data(void) const;
 	binary data(const binary &data);
-	
+
 	void append(const binary &b);
 	void clear(void);
-	
+
 	size_t read(char *data, size_t size);
 	void write(const char *data, size_t size);
-	
+
 	BinaryFormatter &operator>> (binary &b);
 	BinaryFormatter &operator>> (string &s);
 	BinaryFormatter &operator>> (uint8_t &i);
@@ -56,7 +56,7 @@ public:
 	BinaryFormatter &operator>> (int64_t &i);
 	BinaryFormatter &operator>> (float32_t &f);
 	BinaryFormatter &operator>> (float64_t &f);
-	
+
 	BinaryFormatter &operator<< (const binary &b);
 	BinaryFormatter &operator<< (const string &s);
 	BinaryFormatter &operator<< (const char *s);
@@ -70,15 +70,15 @@ public:
 	BinaryFormatter &operator<< (int64_t i);
 	BinaryFormatter &operator<< (float32_t f);
 	BinaryFormatter &operator<< (float64_t f);
-	
+
 	bool operator!(void) const { return mReadFailed; }
 	operator bool(void) const { return !mReadFailed; }
-	
+
 protected:
 	static uint16_t toBigEndian(uint16_t n);
 	static uint32_t toBigEndian(uint32_t n);
 	static uint64_t toBigEndian(uint64_t n);
-	
+
 	binary mData;
 	size_t mReadPosition = 0;
 	bool mReadFailed = false;
@@ -88,13 +88,13 @@ template<typename T>
 T checksum(const binary &b, T &result)
 {
 	BinaryFormatter formatter(b);
-	
+
 	size_t padding = (sizeof(T) - (b.size() % sizeof(T))) % sizeof(T);
-	for(size_t i = 0; i < padding; ++i) 
+	for (size_t i = 0; i < padding; ++i)
 		formatter << uint8_t(0);
 
 	result = 0;
-	T value;
+	T value = 0;
 	while(formatter >> value)
 		result = result ^ value;
 

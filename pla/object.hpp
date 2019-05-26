@@ -39,12 +39,12 @@ public:
 		size_t nvertices,
 		sptr<Program> program);
 	virtual ~Object(void);
-	
+
 	void setProgram(sptr<Program> program, size_t firstIndex = 0);
 	void unsetProgram(size_t firstIndex = 0);
-	
+
 	virtual int draw(const Context &context);
-	
+
 protected:
 	std::map<size_t, sptr<Program> > mPrograms;
 };

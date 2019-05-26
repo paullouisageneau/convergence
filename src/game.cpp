@@ -41,19 +41,21 @@ Game::~Game(void)
 void Game::onInit(Engine *engine)
 {
 	const string url = "ws://127.0.0.1:8080/test";
-	
-	mMessageBus = std::make_shared<MessageBus>();	
-	
+
+	mMessageBus = std::make_shared<MessageBus>();
+
+	/*
 	mLedger = std::make_shared<Ledger>(mMessageBus);
 	mMessageBus->registerTypeListener(Message::LedgerBlock, mLedger);
 	mMessageBus->registerTypeListener(Message::LedgerRequest, mLedger);
 	mMessageBus->registerTypeListener(Message::LedgerCurrent, mLedger);
 	mLedger->init();
-	
+	*/
+
 	mNetworking = std::make_shared<Networking>(mMessageBus, url);
 	mMessageBus->registerTypeListener(Message::Description, mNetworking);
-	
-	mWorld = std::make_shared<World>(mMessageBus, mLedger);
+
+	mWorld = std::make_shared<World>(mMessageBus);
 	mMessageBus->registerTypeListener(Message::PlayerPosition, mWorld);
 }
 
@@ -67,8 +69,6 @@ bool Game::onUpdate(Engine *engine, double time)
 {
 	if(engine->isKeyDown(KEY_ESCAPE)) return false;
 
-	mLedger->update();
-	
 	const float mouseSensitivity = 0.025f;
 	double mx, my;
 	engine->getMouseMove(&mx, &my);
@@ -92,7 +92,7 @@ bool Game::onUpdate(Engine *engine, double time)
 	if(engine->isMouseButtonDown(MOUSE_BUTTON_LEFT) || engine->isMouseButtonDown(MOUSE_BUTTON_RIGHT))
 	{
 		sptr<Terrain> terrain = mWorld->terrain();
-		
+
 		vec3 position = localPlayer->getPosition();
 		vec3 front = localPlayer->getDirection();
 		vec3 intersection;
@@ -101,7 +101,7 @@ bool Game::onUpdate(Engine *engine, double time)
 			bool diggingMode = engine->isMouseButtonDown(MOUSE_BUTTON_RIGHT);
 			if(diggingMode) mAccumulator-= 200.f*time;
 			else mAccumulator+= 200.f*time;
-				
+
 			int delta = int(mAccumulator);
 			if(delta)
 			{
@@ -111,7 +111,7 @@ bool Game::onUpdate(Engine *engine, double time)
 			}
 		}
 	}
-	
+
 	++mUpdateCount;
 	return true;
 }
@@ -135,7 +135,7 @@ int Game::onDraw(Engine *engine)
 	context.setUniform("lightPosition", mWorld->localPlayer()->getPosition());
 
 	count+= mWorld->draw(context);
-	
+
 	return count;
 }
 

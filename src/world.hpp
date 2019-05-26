@@ -22,11 +22,11 @@
 #define CONVERGENCE_WORLD_H
 
 #include "src/include.hpp"
-#include "src/messagebus.hpp"
-#include "src/ledger.hpp"
-#include "src/terrain.hpp"
-#include "src/player.hpp"
 #include "src/localplayer.hpp"
+#include "src/messagebus.hpp"
+#include "src/player.hpp"
+#include "src/store.hpp"
+#include "src/terrain.hpp"
 
 #include "pla/context.hpp"
 
@@ -38,10 +38,9 @@ namespace convergence
 using pla::string;
 using pla::Context;
 
-class World : public MessageBus::AsyncListener
-{
+class World final : public MessageBus::AsyncListener {
 public:
-	World(shared_ptr<MessageBus> messageBus, shared_ptr<Ledger> ledger);
+	World(shared_ptr<MessageBus> messageBus);
 	~World(void);
 
 	sptr<Player> localPlayer(void) const;
@@ -53,14 +52,13 @@ public:
 private:
 	void processMessage(const Message &message);
 	shared_ptr<Player> createPlayer(const identifier &id);
-	
+
 	sptr<MessageBus> mMessageBus;
-	sptr<Ledger> mLedger;
+	sptr<Store> mStore;
 	sptr<Terrain> mTerrain;
 	sptr<LocalPlayer> mLocalPlayer;
 	std::map<identifier, sptr<Player>> mPlayers;
 };
-
 }
 
 #endif

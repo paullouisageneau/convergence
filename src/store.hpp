@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2015-2018 by Paul-Louis Ageneau                         *
+ *   Copyright (C) 2017-2019 by Paul-Louis Ageneau                         *
  *   paul-louis (at) ageneau (dot) org                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -18,50 +18,43 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef CONVERGENCE_GAME_H
-#define CONVERGENCE_GAME_H
+#ifndef CONVERGENCE_STORE_H
+#define CONVERGENCE_STORE_H
 
-#include "src/include.hpp"
 #include "src/messagebus.hpp"
-#include "src/networking.hpp"
-#include "src/world.hpp"
+#include "src/include.hpp"
 
-#include "pla/engine.hpp"
-#include "pla/context.hpp"
-
-#include <map>
+#include <unordered_map>
 
 namespace convergence
 {
 
-using pla::string;
-using pla::Engine;
-using pla::Context;
-
-class Game final : public Engine::State {
+class Store : public MessageBus::AsyncListener {
 public:
-	Game(void);
-	~Game(void);
+	Store(sptr<MessageBus> messageBus);
+	~Store(void);
 
-	void onInit(Engine *engine);
-	void onCleanup(Engine *engine);
+	binary insert(const binary &data);
+	shared_ptr<binary> retrieve(const binary &digest) const;
 
-	bool onUpdate(Engine *engine, double time);
-	int  onDraw(Engine *engine);
+	class Notifiable {
+	public:
+		virtual void notify(const binary &digest, shared_ptr<binary> data) = 0;
+	};
 
-	void onKey(Engine *engine, int key, bool down);
-	void onMouse(Engine *engine, int button, bool down);
-	void onInput(Engine *engine, string text);
+	void addSource(const binary &digest, const identifier &source);
+	void request(const binary &digest, weak_ptr<Notifiable> notifiable);
 
 private:
-	sptr<MessageBus> mMessageBus;
-	sptr<Networking> mNetworking;
-	sptr<World> mWorld;
+	void processMessage(const Message &message);
+	void sendRequest(const binary &digest, const identifier &destination);
 
-	float mYaw, mPitch;
-	float mAccumulator;
+	shared_ptr<MessageBus> mMessageBus;
+	std::unordered_map<binary, shared_ptr<binary>, binary_hash> mData;
+	std::unordered_multimap<binary, weak_ptr<Notifiable>, binary_hash> mNotifiables;
+	std::unordered_multimap<binary, identifier, binary_hash> mSources;
 
-	unsigned mUpdateCount;
+	static binary Hash(const binary &data);
 };
 }
 

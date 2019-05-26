@@ -32,8 +32,7 @@ namespace net
 {
 
 // WebSocket wrapper for emscripten
-class WebSocket : public Channel
-{
+class WebSocket final : public Channel {
 public:
 	WebSocket(void);
 	WebSocket(const string &url);
@@ -58,7 +57,6 @@ private:
 
 	std::thread mThread;
 };
-
 }
 
 #endif // NET_WEBSOCKET_H

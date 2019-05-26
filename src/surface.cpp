@@ -23,15 +23,8 @@
 namespace convergence
 {
 
-using pla::LogImpl;
-
-const int Surface::Size;
-const int Surface::BlocksSize;
-
-Surface::Surface(unsigned int seed) :
-	mPerlin(seed),
-	mInit(true)
-{
+Surface::Surface(std::function<shared_ptr<Block>(const int3 &b)> retrieveFunc)
+    : mRetrieveFunc(retrieveFunc) {
 	mProgram = std::make_shared<Program>(
 		std::make_shared<VertexShader>("shader/ground.vert"),
 		std::make_shared<FragmentShader>("shader/ground.frag")
@@ -56,9 +49,9 @@ void Surface::update(double time)
 int Surface::draw(const Context &context)
 {
 	const vec3 pos = context.cameraPosition();
-	const int3 b = int3(pos).block();
-	const float d = (float(Size) + 1.f) * 0.5f * pla::Sqrt2;
-	
+	const int3 b = Block::blockCoord(int3(pos));
+	const float d = (float(Block::Size) + 1.f) * 0.5f * pla::Sqrt2;
+
 	std::unordered_set<sptr<Block> > blocks, processed;
 	getBlocksRec(b, blocks, processed, [context, pos, b, d](sptr<Block> blk)
 	{
@@ -79,7 +72,6 @@ int Surface::draw(const Context &context)
 	}
 
 	mProgram->unbind();
-	mInit = false;
 	return count;
 }
 
@@ -88,11 +80,11 @@ float Surface::intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *
 	const vec3 p1 = pos;
 	const vec3 p2 = pos + move;
 	const vec3 n = glm::normalize(move);
-	const float d = (float(Size) + 1.f) * 0.5f * pla::Sqrt2;
+	const float d = (float(Block::Size) + 1.f) * 0.5f * pla::Sqrt2;
 	const float r = d + radius;
 	const float r2 = r*r;
 
-	int3 b = int3(pos).block();
+	int3 b = Block::blockCoord(int3(pos));
 	std::unordered_set<sptr<Block> > blocks, processed;
 	getBlocksRec(b, blocks, processed, [p1, p2, n, r2](sptr<Block> blk)
 	{
@@ -110,7 +102,7 @@ float Surface::intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *
 	for(auto blk : blocks)
 	{
 		blk->update();
-		
+
 		float t = blk->intersect(pos, move, radius, intersection);
 		if(t < nearest)
 		{
@@ -123,66 +115,10 @@ float Surface::intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *
 	return nearest;
 }
 
-void Surface::setValue(const int3 &p, value v)
-{
-	sptr<Block> blk = getBlock(p.block());
-	blk->setValue(p.cell(), v, !mInit);
-}
-
-void Surface::setType(const int3 &p, uint8_t t)
-{
-	sptr<Block> blk = getBlock(p.block());
-	blk->setType(p.cell(), t);
-}
-
-Surface::value Surface::getValue(const int3 &p)
-{
-	sptr<Block> blk = getBlock(p.block());
-	return blk->getValue(p.cell());
-}
-
-Surface::int84 Surface::getGradient(const int3 &p)
-{
-	sptr<Block> blk = getBlock(p.block());
-	return blk->getGradient(p.cell());
-}
-
-Surface::value Surface::addWeight(const int3 &p, int weight, int newType)
-{
-	sptr<Block> blk = getBlock(p.block());
-
-	int3 c = p.cell();
-	value v = blk->getValue(c);
-	weight = pla::bounds(int(v.weight) + weight, 0, 255);
-	v.weight = uint8_t(weight);
-	if(newType >= 0) v.type = uint8_t(newType);
-	blk->setValue(c, v, !mInit);
-	return v;
-}
-
-void Surface::changedBlock(const int3 &b)
-{
-	// Don't create the block if it doesn't exist
-	auto it = mBlocks.find(b);
-	if(it != mBlocks.end())
-		it->second->mChanged = true;
-}
-
-sptr<Surface::Block> Surface::getBlock(const int3 &b)
-{
-	auto it = mBlocks.find(b);
-	if(it != mBlocks.end())
-		return it->second;
-	
-	sptr<Block> block = std::make_shared<Block>(this, b);
-	mBlocks[b] = block;
-	populateBlock(block);
-	return block;
-}
-
-void Surface::getBlocksRec(const int3 &b, std::unordered_set<sptr<Block> > &result, std::unordered_set<sptr<Block> > &processed, std::function<bool(sptr<Block>)> check)
-{
-	sptr<Block> block = getBlock(b);
+void Surface::getBlocksRec(const int3 &b, std::unordered_set<sptr<Block>> &result,
+                           std::unordered_set<sptr<Block>> &processed,
+                           std::function<bool(sptr<Block>)> check) const {
+	sptr<Block> block = mRetrieveFunc(b);
 	if(processed.find(block) != processed.end())
 		return;
 
@@ -198,209 +134,45 @@ void Surface::getBlocksRec(const int3 &b, std::unordered_set<sptr<Block> > &resu
 					getBlocksRec(int3(b.x+dx, b.y+dy, b.z+dz), result, processed, check);
 }
 
-void Surface::populateBlock(sptr<Block> block)
-{
-	// Layer 0
-	const float f1 = 0.15f;
-	const float f2 = 0.03f;
-	for(int x = 0; x < Size; ++x)
-		for(int y = 0; y < Size; ++y)
-		{
-			bool inside = false;
-			for(int z = -1; z < Size; ++z)
-			{
-				const float ax = float(block->mPos.x*Size+x);
-				const float ay = float(block->mPos.y*Size+y);
-				const float az = float(block->mPos.z*Size+z);
-				const float d2 = ax*ax + ay*ay + az*az;
-				const float noise1 = mPerlin.noise(ax*f1,ay*f1,az*f1*0.1f);
-				const float noise2 = mPerlin.noise(ax*f2,ay*f2,az*f2*4.f);
-				const float noise = noise1*noise1*0.53f + (noise2-0.5f)*2.f*0.47f - 20.f/d2;
-				uint8_t weight = uint8_t(pla::bounds(int(noise*10000.f), 0, 255));
-				
-				if(z >= 0) block->setValue(int3(x, y, z), value(0, weight));
-				
-				// Material 1 on top
-				if(weight != 0) inside = true;
-				else if(inside)
-				{
-					inside = false;
-					if(z >= 0) {
-						block->setType(int3(x, y, z), 1);
-						setType(int3(ax, ay, az-1), 1);
-					}
-				}
-			}
-		}
-}
-
-int Surface::int3::blockCoord(int v)
+int Surface::Block::blockCoord(int v)
 {
 	// Circumvent modulo implementation for negative values with an offset
 	const unsigned offset = 0x80000000;
-	const unsigned offsetBySize = offset / Size;
-	return int(unsigned(offset + v) / Size) - offsetBySize;
+	const unsigned offsetBySize = offset / Block::Size;
+	return int(unsigned(offset + v) / Block::Size) - offsetBySize;
 }
 
-int Surface::int3::cellCoord(int v)
+int3 Surface::Block::blockCoord(const int3 &p)
+{
+	return int3(blockCoord(p.x), blockCoord(p.y), blockCoord(p.z));
+}
+
+int Surface::Block::cellCoord(int v)
 {
 	// Circumvent modulo implementation for negative values with an offset
 	const unsigned offset = 0x80000000;
-	return int(unsigned(offset + v) % Size);
+	return int(unsigned(offset + v) % Block::Size);
 }
 
-Surface::int3::int3(int _x, int _y, int _z) :
-	x(_x), y(_y), z(_z)
+int3 Surface::Block::cellCoord(const int3 &p)
 {
-
+    return int3(cellCoord(p.x), cellCoord(p.y), cellCoord(p.z));
 }
 
-Surface::int3::int3(const vec3 &v) :
-	x(int(std::floor(double(v.x)))),
-	y(int(std::floor(double(v.y)))),
-	z(int(std::floor(double(v.z))))
+int3 Surface::Block::fullCoord(const int3 &b, const int3 &c)
 {
-
+	return b*Block::Size + c;
 }
 
-Surface::int3::int3(const int3 &block, const int3 &cell)
-{
-	*this = block*Size + cell;
-}
-
-Surface::int3 Surface::int3::block(void) const
-{
-	return int3(blockCoord(x), blockCoord(y), blockCoord(z));
-}
-
-Surface::int3 Surface::int3::cell(void) const
-{
-	return int3(cellCoord(x), cellCoord(y), cellCoord(z));
-}
-
-bool Surface::int3::operator==(const int3 &i) const
-{
-	return (x == i.x && y == i.y && z == i.z);
-}
-
-bool Surface::int3::operator!=(const int3 &i) const
-{
-	return (x != i.x || y != i.y || z != i.z);
-}
-
-Surface::int3 Surface::int3::operator-(void) const
-{
-	return int3(-x, -y, -z);
-}
-
-Surface::int3 Surface::int3::operator+ (const int3 &i) const
-{
-	return int3(x + i.x, y + i.y, z + i.z);
-}
-
-Surface::int3 Surface::int3::operator- (const int3 &i) const
-{
-	return int3(x - i.x, y - i.y, z - i.z);
-}
-
-Surface::int3 Surface::int3::operator* (int i) const
-{
-	return int3(x*i, y*i, z*i);
-}
-
-Surface::int3 Surface::int3::operator* (float f) const
-{
-	return int3(vec3(float(x), float(y), float(z))*f);
-}
-
-Surface::int84::int84(int8_t _x, int8_t _y, int8_t _z, int8_t _w) :
-	x(_x), y(_y), z(_z), w(_w)
-{
-
-}
-
-Surface::int84::int84(const vec4 &v) :
-	x(int8_t(std::floor(v.x))),
-	y(int8_t(std::floor(v.y))),
-	z(int8_t(std::floor(v.z))),
-	w(int8_t(std::floor(v.w)))
-{
-
-}
-
-Surface::int84::int84(const vec3 &v) :
-	x(int8_t(std::floor(v.x))),
-	y(int8_t(std::floor(v.y))),
-	z(int8_t(std::floor(v.z))),
-	w(0)
-{
-
-}
-
-Surface::int84 Surface::int84::normalize(void) const
-{
-	const int ix(x);
-	const int iy(y);
-	const int iz(z);
-	const int iw(w);
-	const int norm = (ix*ix + iy*iy + iz*iz + iw*iw);
-	if(norm)
-	{
-		const float inv = 127.f/std::sqrt(float(norm));
-		return int84(int(ix*inv), int(iy*inv), int(iz*inv), int(iw*inv));
-	}
-	else return *this;
-}
-
-bool Surface::int84::operator==(const int84 &i) const
-{
-	return (x == i.x && y == i.y && z == i.z && w == i.w);
-}
-
-bool Surface::int84::operator!=(const int84 &i) const
-{
-	return (x != i.x || y != i.y || z != i.z || w != i.w);
-}
-
-Surface::int84 Surface::int84::operator-(void) const
-{
-	return int84(-x, -y, -z, -w);
-}
-
-Surface::int84 Surface::int84::operator+ (const int84 &i) const
-{
-	return int84(x + i.x, y + i.y, z + i.z, w + i.w);
-}
-
-Surface::int84 Surface::int84::operator- (const int84 &i) const
-{
-	return int84(x - i.x, y - i.y, z - i.z, w - i.w);
-}
-
-Surface::int84 Surface::int84::operator* (int i) const
-{
-	return int84(x*i, y*i, z*i, w*i);
-}
-
-Surface::int84 Surface::int84::operator* (float f) const
-{
-	return int84(vec4(float(x), float(y), float(z), float(w))*f);
-}
-
-Surface::Block::Block(Surface *grid, const int3 &b) :
-	mSurface(grid),
-	mPos(b),
-	mChanged(true)
-{
-
-}
+Surface::Block::Block(const int3 &b, std::function<shared_ptr<Block>(const int3 &b)> retrieveFunc)
+    : mPos(b), mRetrieveFunc(retrieveFunc) {}
 
 Surface::Block::~Block(void)
 {
 
 }
 
-Surface::int3 Surface::Block::position(void) const
+int3 Surface::Block::position(void) const
 {
 	return mPos;
 }
@@ -412,16 +184,34 @@ vec3 Surface::Block::center(void) const
 			(float(mPos.z) + 0.5f)*Size);
 }
 
-bool Surface::Block::isChanged(void) const
+Surface::value Surface::Block::getValue(const int3 &c)
 {
-	return mChanged;
+	if(c.x >= 0 && c.y >= 0 && c.z >= 0 && c.x < Size && c.y < Size && c.z < Size)
+	{
+		return readValue(c);
+	} else {
+		int3 p = fullCoord(mPos, c);
+		sptr<Block> block = mRetrieveFunc(blockCoord(p));
+		return block->readValue(cellCoord(p));
+	}
+}
+
+int84 Surface::Block::getGradient(const int3 &c)
+{
+	if(c.x >= 0 && c.y >= 0 && c.z >= 0 && c.x < Size && c.y < Size && c.z < Size)
+	{
+		return computeGradient(c);
+	} else {
+		int3 p = fullCoord(mPos, c);
+		sptr<Block> block = mRetrieveFunc(blockCoord(p));
+		return block->computeGradient(cellCoord(p));
+	}
 }
 
 int Surface::Block::update(void)
 {
-	if(!mChanged) return indicesCount()/3;
-	mChanged = false;
-	
+	if(!hasChanged()) return indicesCount()/3;
+
 	std::vector<vec3> vertices;
 	std::vector<int84> normals;
 	std::vector<int84> materials;
@@ -506,7 +296,7 @@ int Surface::Block::polygonizeCell(const int3 &c,
 	vec3 vert[12];
 	int84 grad[12];
 	int84 mat[12];
-	
+
 	if(edge & 0x001) vert[0]  = interpolate(p[0], p[1], g[0], g[1], v[0], v[1], grad[0],  mat[0]);
 	if(edge & 0x002) vert[1]  = interpolate(p[1], p[2], g[1], g[2], v[1], v[2], grad[1],  mat[1]);
 	if(edge & 0x004) vert[2]  = interpolate(p[2], p[3], g[2], g[3], v[2], v[3], grad[2],  mat[2]);
@@ -519,7 +309,7 @@ int Surface::Block::polygonizeCell(const int3 &c,
 	if(edge & 0x200) vert[9]  = interpolate(p[1], p[5], g[1], g[5], v[1], v[5], grad[9],  mat[9]);
 	if(edge & 0x400) vert[10] = interpolate(p[2], p[6], g[2], g[6], v[2], v[6], grad[10], mat[10]);
 	if(edge & 0x800) vert[11] = interpolate(p[3], p[7], g[3], g[7], v[3], v[7], grad[11], mat[11]);
-	
+
 	// Create the triangles
 	int n = 0;
 	std::map<int, index_t> mapping;
@@ -570,38 +360,17 @@ vec3 Surface::Block::interpolate(vec3 p1, vec3 p2, int84 g1, int84 g2, value v1,
 	}
 
 	float mu = v1.weight == 0 ? 1.f - v2.w() : v1.w();
-	
+
 	grad = g1 + (g2 - g1)*mu;
-	
+
 	vec4 m1 = (v1.type < 4 ? MaterialTable[v1.type]*127.f : vec4(0.f, 0.f, 0.f, 0.f));
 	vec4 m2 = (v2.type < 4 ? MaterialTable[v2.type]*127.f : vec4(0.f, 0.f, 0.f, 0.f));
 	mat = int84(m1 + (m2 - m1)*mu);
-	
+
 	return p1 + (p2 - p1)*mu;
 }
 
-Surface::value Surface::Block::getValue(const int3 &p)
-{
-	if(p.x >= 0 && p.y >= 0 && p.z >= 0 && p.x < Size && p.y < Size && p.z < Size)
-	{
-		return mCells[(p.x*Size + p.y)*Size + p.z];
-	} else {
-		return mSurface->getValue(int3(mPos, p));
-	}
-}
-
-Surface::int84 Surface::Block::getGradient(const int3 &p)
-{	
-	if(p.x >= 0 && p.y >= 0 && p.z >= 0 && p.x < Size && p.y < Size && p.z < Size)
-	{
-		return computeGradient(p);
-	} else {
-		return mSurface->getGradient(int3(mPos, p));
-	}
-
-}
-
-Surface::int84 Surface::Block::computeGradient(const int3 &p)
+int84 Surface::Block::computeGradient(const int3 &p)
 {
 	int84 grad(
 		(getValue(int3(p.x+1,p.y,p.z)).weight - getValue(int3(p.x-1,p.y,p.z)).weight)/2,
@@ -612,49 +381,11 @@ Surface::int84 Surface::Block::computeGradient(const int3 &p)
 	return grad;
 }
 
-void Surface::Block::setValue(const int3 &p, value v, bool markChanged)
-{
-	if(p.x >= 0 && p.y >= 0 && p.z >= 0 && p.x < Size && p.y < Size && p.z < Size)
-	{
-		mCells[(p.x*Size + p.y)*Size + p.z] = v;
-
-		if(markChanged)
-		{
-			mChanged = true;
-
-			// Mark neighboring blocks as changed
-			for(int dx=-1; dx<=1; ++dx)
-			{
-				if((p.x != 0 && dx == -1) || (p.x != Size-1 && dx == 1)) continue;
-				for(int dy=-1; dy<=1; ++dy)
-				{
-					if((p.y != 0 && dy == -1) || (p.y != Size-1 && dy == 1)) continue;
-					for(int dz=-1; dz<=1; ++dz)
-					{
-						if((p.z != 0 && dz == -1) || (p.z != Size-1 && dz == 1)) continue;
-						if(dx == 0 && dy == 0 && dz == 0) continue;
-						mSurface->changedBlock(int3(mPos.x+dx, mPos.y+dy, mPos.z+dz));
-					}
-				}
-			}
-		}
-	}
-}
-
-void Surface::Block::setType(const int3 &p, uint8_t t)
-{
-	if(p.x >= 0 && p.y >= 0 && p.z >= 0 && p.x < Size && p.y < Size && p.z < Size)
-	{
-		mCells[(p.x*Size + p.y)*Size + p.z].type = t;
-		mChanged = true;
-	}
-}
-
 // Vertices order is:
 // {0.0, 0.0, 0.0},{1.0, 0.0, 0.0},{1.0, 1.0, 0.0},{0.0, 1.0, 0.0},
 // {0.0, 0.0, 1.0},{1.0, 0.0, 1.0},{1.0, 1.0, 1.0},{0.0, 1.0, 1.0}
 
-uint16_t Surface::EdgeTable[256] = {
+uint16_t Surface::Block::EdgeTable[256] = {
 	0x0  , 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
 	0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
 	0x190, 0x99 , 0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c,
@@ -689,7 +420,7 @@ uint16_t Surface::EdgeTable[256] = {
 	0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0
 };
 
-int8_t Surface::TriTable[256][16] =
+int8_t Surface::Block::TriTable[256][16] =
 	{{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 	{0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 	{0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
@@ -948,7 +679,7 @@ int8_t Surface::TriTable[256][16] =
 	{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
 };
 
-vec4 Surface::MaterialTable[4] = {
+vec4 Surface::Block::MaterialTable[4] = {
 	vec4( 1, 0, 0, 0),
 	vec4( 0, 1, 0, 0),
 	vec4( 0, 0, 1, 0),
