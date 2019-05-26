@@ -53,7 +53,7 @@ $(BUILDDIR):
 	mkdir -p $(BUILDDIR)
 
 clean:
-	-rm -r $(BUILDDIR)/src $(BUILDDIR)/pla $(BUILDDIR)/net
+	-rm -r $(BUILDDIR)/$(DIR) $(BUILDDIR)/pla $(BUILDDIR)/src
 
 dist-clean: clean
 	-rm -r build

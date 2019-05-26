@@ -18,21 +18,25 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef CONVERGENCE_ISLAND_H
-#define CONVERGENCE_ISLAND_H
+#ifndef CONVERGENCE_TERRAIN_H
+#define CONVERGENCE_TERRAIN_H
 
 #include "src/include.hpp"
+#include "src/merkle.hpp"
+#include "src/store.hpp"
 #include "src/surface.hpp"
-#include "src/ledger.hpp"
+
+#include "pla/context.hpp"
 
 namespace convergence
 {
 
-class Terrain : public Collidable, public Ledger::Processor
-{
+class Terrain : public Merkle, public Collidable {
 public:
-	Terrain(shared_ptr<Ledger> ledger, unsigned int seed);
+	Terrain(shared_ptr<Store> store, int seed);
 	~Terrain(void);
+
+	Surface::value addWeight(const int3 &p, int weight, int newType = -1);
 
 	void update(double time);
 	int draw(const Context &context);
@@ -41,30 +45,53 @@ public:
 	void build(const vec3 &p, int weight);
 	void dig(const vec3 &p, int weight, float radius);
 
-private:
-	class Operation : public Ledger::Entry
-	{
+protected:
+	class TerrainIndex : public Index {
 	public:
-		Operation(const Surface::int3 &p, Surface::value v);
-		Operation(const binary &data);
-		Type type(void) const { return Entry::Terrain; }
-		binary toBinary(void) const;
-		bool merge(shared_ptr<Entry> entry, bool replace);
-		void apply(Surface *surface) const;
-		
-	private:
-		Surface::int3 mPosition;
-		Surface::value mValue;
+		TerrainIndex(const Index &index);
+		TerrainIndex(int3 pos);
+		~TerrainIndex(void);
+
+		int3 position(void) const;
 	};
-	
-	shared_ptr<Ledger::Entry> createEntry(Ledger::Entry::Type type, const binary &data);
-	void applyEntry(shared_ptr<Ledger::Entry> entry);
-	void appendEntries(const std::list<shared_ptr<Operation>> &ops);
-	
-	sptr<Ledger> mLedger;
+
+	bool processData(const Index &index, const binary &data);
+
+private:
+	class Block : public Surface::Block {
+	public:
+        Block(Terrain *terrain, const int3 &b);
+        ~Block(void);
+
+		bool update(const binary &data);
+
+		bool hasChanged(void) const;
+		Surface::value readValue(const int3 &c) const;
+
+		void markChanged(void);
+        void writeValue(const int3 &c, Surface::value v, bool markChanged = true);
+        void writeType(const int3 &c, uint8_t t, bool markChanged = true);
+
+    private:
+		Terrain *mTerrain;
+		Surface::value mCells[Size*Size*Size];
+
+		mutable bool mChanged;
+	};
+
+	sptr<Block> getBlock(const int3 &b);
+	Surface::value getValue(const int3 &p);
+    void setValue(const int3 &p, Surface::value v);
+    void setType(const int3 &p, uint8_t t);
+
+	void populateBlock(sptr<Block> block);
+	void markChangedBlock(const int3 &b);
+
+	std::unordered_map<int3, sptr<Block>, int3_hash> mBlocks;
+
+	PerlinNoise mPerlin;
 	Surface mSurface;
 };
-
 }
 
 #endif

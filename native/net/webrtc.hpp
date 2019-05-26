@@ -38,8 +38,7 @@ using std::shared_ptr;
 using std::unique_ptr;
 using std::vector;
 
-class DataChannel : public Channel
-{
+class DataChannel final : public Channel {
 public:
 	explicit DataChannel(shared_ptr<rtcdcpp::DataChannel> dataChannel);
 	~DataChannel(void);

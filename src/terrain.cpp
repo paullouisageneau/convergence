@@ -22,161 +22,260 @@
 
 #include "pla/binaryformatter.hpp"
 
-namespace convergence
-{
+namespace convergence {
 
-using pla::BinaryFormatter;
+using namespace std::placeholders;
 
-Terrain::Terrain(shared_ptr<Ledger> ledger, unsigned int seed) :
-	mLedger(ledger),
-	mSurface(seed)
-{
+Terrain::Terrain(shared_ptr<Store> store, int seed)
+    : Merkle(store), mPerlin(seed), mSurface(std::bind(&Terrain::getBlock, this, _1)) {}
 
+Terrain::~Terrain(void) {}
+
+Surface::value Terrain::addWeight(const int3 &p, int weight, int newType) {
+	int3 b = Block::blockCoord(p);
+	int3 c = Block::cellCoord(p);
+
+	shared_ptr<Block> block = getBlock(b);
+	Surface::value v = block->getValue(c);
+	weight = pla::bounds(int(v.weight) + weight, 0, 255);
+	v.weight = uint8_t(weight);
+	if (newType >= 0)
+		v.type = uint8_t(newType);
+	block->writeValue(c, v);
+	return v;
 }
 
-Terrain::~Terrain(void)
-{
+void Terrain::update(double time) { mSurface.update(time); }
 
-}
-
-void Terrain::update(double time)
-{
-	mSurface.update(time);
-}
-
-int Terrain::draw(const Context &context)
-{
+int Terrain::draw(const Context &context) {
 	return mSurface.draw(context);
 }
 
-float Terrain::intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *intersection)
-{
+float Terrain::intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *intersection) {
 	return mSurface.intersect(pos, move, radius, intersection);
 }
 
-void Terrain::build(const vec3 &p, int weight)
-{
-	if(weight == 0) return;
-	
-	const Surface::int3 i(p + vec3(0.5f));
+void Terrain::build(const vec3 &p, int weight) {
+	if (weight == 0)
+		return;
+
+	const int3 i(p + vec3(0.5f));
 	const int type = 0;
-	
-	Surface::value pv = mSurface.getValue(i);
-	Surface::value v = mSurface.addWeight(i, weight, type);
-	
-	if(v != pv) 
-	{
-		std::list<shared_ptr<Operation>> ops;
-		ops.push_back(std::make_shared<Operation>(i, v));
-		appendEntries(ops);
-	}
+
+	Surface::value v = addWeight(i, weight, type);
+
+	// TODO
 }
 
-void Terrain::dig(const vec3 &p, int weight, float radius)
-{
-	if(weight == 0 || radius <= 0.f) return;
+void Terrain::dig(const vec3 &p, int weight, float radius) {
+	if (weight == 0 || radius <= 0.f)
+		return;
 
-	const Surface::int3 origin(p + vec3(0.5f));
+	const int3 origin = p + vec3(0.5f);
 	const int d = int(radius) + 1;
-	
-	std::list<shared_ptr<Operation>> ops;
-	for(int dx=-d; dx<=d+1; ++dx)
-		for(int dy=-d; dy<=d+1; ++dy)
-			for(int dz=-d; dz<=d+1; ++dz)
-			{
-				Surface::int3 i = origin + Surface::int3(dx, dy, dz);
+
+	for (int dx = -d; dx <= d + 1; ++dx) {
+		for (int dy = -d; dy <= d + 1; ++dy) {
+			for (int dz = -d; dz <= d + 1; ++dz) {
+				int3 i = origin + int3(dx, dy, dz);
 				vec3 c = vec3(i.x, i.y, i.z) + vec3(0.5f);
-				float t = 1.f - glm::distance(p, c)/radius;
-				if(t > 0.f)
-				{
-					int w = int(weight*t);
-					Surface::value pv = mSurface.getValue(i);
-					Surface::value v = mSurface.addWeight(i, w, -1);
-					if(v != pv) ops.push_back(std::make_shared<Operation>(i, v));
+				float t = 1.f - glm::distance(p, c) / radius;
+				if (t > 0.f) {
+					int w = int(weight * t);
+					Surface::value v = addWeight(i, w, -1);
 				}
 			}
-	
-	if(!ops.empty()) appendEntries(ops);
-}
-
-shared_ptr<Ledger::Entry> Terrain::createEntry(Ledger::Entry::Type type, const binary &data)
-{
-	if(type == Ledger::Entry::Terrain) return std::make_shared<Operation>(data);
-	else return nullptr;
-}
-
-void Terrain::applyEntry(shared_ptr<Ledger::Entry> entry)
-{
-	if(entry->type() == Ledger::Entry::Terrain)
-	{
-		shared_ptr<Operation> op = std::dynamic_pointer_cast<Operation>(entry);
-		op->apply(&mSurface);
-	}
-}
-
-void Terrain::appendEntries(const std::list<shared_ptr<Operation>> &ops)
-{
-	mLedger->append(std::list<shared_ptr<Ledger::Entry>>(ops.begin(), ops.end()));
-}
-
-Terrain::Operation::Operation(const Surface::int3 &p, Surface::value v) :
-	mPosition(p),
-	mValue(v)
-{
-
-}
-
-Terrain::Operation::Operation(const binary &data)
-{
-	// TODO: 16 bits is probably too small here
-	
-	BinaryFormatter formatter(data);
-	int16_t x = 0;
-	int16_t y = 0;
-	int16_t z = 0;
-	formatter >> x >> y >> z;
-	mPosition = Surface::int3(x, y, z);
-
-	uint8_t t = 0;
-	uint8_t w = 0;
-	formatter >> t >> w;
-	mValue = Surface::value(t, w);
-}
-
-binary Terrain::Operation::toBinary(void) const
-{
-	BinaryFormatter formatter;
-	formatter << int16_t(mPosition.x) << int16_t(mPosition.y) << int16_t(mPosition.z);
-	formatter << uint8_t(mValue.type) << uint8_t(mValue.weight);
-	return formatter.data();
-}
-
-void Terrain::Operation::apply(Surface *surface) const
-{
-	surface->setValue(mPosition, mValue);
-}
-
-bool Terrain::Operation::merge(shared_ptr<Entry> entry, bool replace)
-{
-	if(entry->type() == Ledger::Entry::Terrain)
-	{
-		shared_ptr<Operation> op = std::dynamic_pointer_cast<Operation>(entry);
-		if(mPosition == op->mPosition)
-		{
-			// Keep highest value
-			if(replace
-				|| mValue.weight < op->mValue.weight 
-				|| (mValue.weight == op->mValue.weight && mValue.type < op->mValue.type))
-			{
-				mValue = op->mValue;
-			}
-			
-			return true;
 		}
 	}
-	
-	return false;
 }
 
+bool Terrain::processData(const Index &index, const binary &data) {
+	TerrainIndex terrainIndex(index);
+	auto block = getBlock(terrainIndex.position());
+	return block->update(data);
 }
+
+sptr<Terrain::Block> Terrain::getBlock(const int3 &b) {
+	auto it = mBlocks.find(b);
+	if (it != mBlocks.end())
+		return it->second;
+
+	sptr<Block> block = std::make_shared<Block>(this, b);
+	mBlocks[b] = block;
+	populateBlock(block);
+	return block;
+}
+
+Surface::value Terrain::getValue(const int3 &p) {
+	sptr<Block> block = getBlock(Block::blockCoord(p));
+	return block->readValue(Block::cellCoord(p));
+}
+
+void Terrain::setValue(const int3 &p, Surface::value v) {
+	sptr<Block> block = getBlock(Block::blockCoord(p));
+	block->writeValue(Block::cellCoord(p), v);
+}
+
+void Terrain::setType(const int3 &p, uint8_t t) {
+	sptr<Block> block = getBlock(Block::blockCoord(p));
+	int3 c = Block::cellCoord(p);
+	Surface::value v = block->readValue(c);
+	v.type = t;
+	block->writeValue(c, v);
+}
+
+void Terrain::populateBlock(sptr<Block> block) {
+	// Layer 0
+	const float f1 = 0.15f;
+	const float f2 = 0.03f;
+	for (int x = 0; x < Block::Size; ++x) {
+		for (int y = 0; y < Block::Size; ++y) {
+			bool inside = false;
+			for (int z = -1; z < Block::Size; ++z) {
+				int3 pos = block->position();
+				const float ax = float(pos.x * Block::Size + x);
+				const float ay = float(pos.y * Block::Size + y);
+				const float az = float(pos.z * Block::Size + z);
+				const float d2 = ax * ax + ay * ay + az * az;
+				const float noise1 = mPerlin.noise(ax * f1, ay * f1, az * f1 * 0.1f);
+				const float noise2 = mPerlin.noise(ax * f2, ay * f2, az * f2 * 4.f);
+				const float noise =
+				    noise1 * noise1 * 0.53f + (noise2 - 0.5f) * 2.f * 0.47f - 20.f / d2;
+				uint8_t weight = uint8_t(pla::bounds(int(noise * 10000.f), 0, 255));
+
+				if (z >= 0)
+					block->writeValue(int3(x, y, z), Surface::value(0, weight), false);
+
+				// Material 1 on top
+				if (weight != 0) {
+					inside = true;
+				} else if (inside) {
+					inside = false;
+					if (z >= 0) {
+						block->writeType(int3(x, y, z), 1, false);
+						setType(int3(ax, ay, az - 1), 1);
+					}
+				}
+			}
+		}
+	}
+
+	block->markChanged();
+}
+
+void Terrain::markChangedBlock(const int3 &b) {
+	if (auto it = mBlocks.find(b); it != mBlocks.end()) {
+		it->second->markChanged();
+	}
+}
+
+Terrain::Block::Block(Terrain *terrain, const int3 &b)
+    : Surface::Block(b, std::bind(&Terrain::getBlock, mTerrain, _1)), mTerrain(terrain) {}
+
+Terrain::Block::~Block(void) {}
+
+bool Terrain::Block::update(const binary &data) {
+	if (data.size() != Size * Size * Size * 2)
+		return false;
+	int c = 0;
+	auto it = data.begin();
+	for (int x = 0; x < Size; ++x)
+		for (int y = 0; y < Size; ++y)
+			for (int z = 0; z < Size; ++z) {
+				auto &cell = mCells[c++];
+				cell.type = *(it++);
+				cell.weight = *(it++);
+			}
+	return true;
+}
+
+bool Terrain::Block::hasChanged(void) const {
+	bool tmp = false;
+	std::swap(tmp, mChanged);
+	return tmp;
+}
+
+Surface::value Terrain::Block::readValue(const int3 &c) const {
+	if (c.x >= 0 && c.y >= 0 && c.z >= 0 && c.x < Size && c.y < Size && c.z < Size) {
+		return mCells[(c.x * Size + c.y) * Size + c.z];
+	} else {
+		throw std::runtime_error("Read block value out of bounds");
+	}
+}
+
+void Terrain::Block::markChanged(void) { mChanged = true; }
+
+void Terrain::Block::writeValue(const int3 &c, Surface::value v, bool markChanged) {
+	if (c.x >= 0 && c.y >= 0 && c.z >= 0 && c.x < Size && c.y < Size && c.z < Size) {
+		mCells[(c.x * Size + c.y) * Size + c.z] = v;
+
+		if (markChanged) {
+			mChanged = true;
+
+			// Mark neighboring blocks as changed
+			int3 pos = position();
+			for (int dx = -1; dx <= 1; ++dx) {
+				if ((c.x != 0 && dx == -1) || (c.x != Size - 1 && dx == 1))
+					continue;
+				for (int dy = -1; dy <= 1; ++dy) {
+					if ((c.y != 0 && dy == -1) || (c.y != Size - 1 && dy == 1))
+						continue;
+					for (int dz = -1; dz <= 1; ++dz) {
+						if ((c.z != 0 && dz == -1) || (c.z != Size - 1 && dz == 1))
+							continue;
+						if (dx == 0 && dy == 0 && dz == 0)
+							continue;
+						mTerrain->markChangedBlock(int3(pos.x + dx, pos.y + dy, pos.z + dz));
+					}
+				}
+			}
+		}
+	} else {
+		throw std::runtime_error("Write block value out of bounds");
+	}
+}
+
+void Terrain::Block::writeType(const int3 &c, uint8_t t, bool markChanged) {
+	if (c.x >= 0 && c.y >= 0 && c.z >= 0 && c.x < Size && c.y < Size && c.z < Size) {
+		mCells[(c.x * Size + c.y) * Size + c.z].type = t;
+		if (markChanged)
+			mChanged = true;
+	} else {
+		throw std::runtime_error("Write block value out of bounds");
+	}
+}
+
+Terrain::TerrainIndex::TerrainIndex(const Index &index) : Index(index) {}
+
+Terrain::TerrainIndex::TerrainIndex(int3 pos) {
+	// Circumvent modulo implementation for negative values with an offset
+	const unsigned offset = 0x80000000;
+	pos += int3(offset, offset, offset);
+	while (pos.x && pos.y && pos.z) {
+		int n = 0;
+		n += ((offset + pos.x) % 4);
+		n += ((offset + pos.y) % 4) << 2;
+		n += ((offset + pos.z) % 4) << 4;
+		pos /= 4;
+		mValues.push_back(n);
+	}
+}
+
+Terrain::TerrainIndex::~TerrainIndex(void) {}
+
+int3 Terrain::TerrainIndex::position(void) const {
+	int3 pos;
+	std::vector<int> values(mValues);
+	while (values.size() > 0) {
+		int n = values.back();
+		pos *= 4;
+		pos.x += (n + 2) % 4 - 2;
+		pos.y += ((n >> 2) + 2) % 4 - 2;
+		pos.z += ((n >> 4) + 2) % 4 - 2;
+		values.pop_back();
+	}
+	return pos;
+}
+
+} // namespace convergence
 

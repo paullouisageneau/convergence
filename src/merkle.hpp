@@ -18,36 +18,86 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef CONVERGENCE_NETWORKING_H
-#define CONVERGENCE_NETWORKING_H
+#ifndef CONVERGENCE_MERKLE_H
+#define CONVERGENCE_MERKLE_H
 
 #include "src/include.hpp"
-#include "src/peering.hpp"
 #include "src/messagebus.hpp"
+#include "src/store.hpp"
 
+#include <unordered_map>
+#include <unordered_set>
 #include <map>
+#include <set>
 
 namespace convergence
 {
 
-using std::multimap;
-
-class Networking final : public MessageBus::Listener {
+class Merkle : public MessageBus::AsyncListener
+{
 public:
-	Networking(shared_ptr<MessageBus> messageBus, const string &url);
-	~Networking(void);
+	Merkle(shared_ptr<Store> store);
+	~Merkle(void);
+
+	void init(void);
+	void update(void);
+
+	class Index {
+	public:
+		Index(void);
+		Index(const binary &data);
+		template <typename Iterator> Index(Iterator begin, Iterator end) : mValues(begin, end) {}
+		~Index(void);
+
+		int length(void) const;
+		int pop(void);
+		Index parent(void) const;
+		int child(void) const;
+
+	protected:
+		std::vector<int> mValues;
+	};
+
+	class Node : public Store::Notifiable {
+	public:
+		Node(Merkle *merkle);
+		Node(Merkle *merkle, const binary &digest);
+		~Node(void);
+
+		void notify(const binary &digest, shared_ptr<binary> data);
+		void updateChild(Index &index, shared_ptr<Node> node);
+		shared_ptr<Node> child(Index &index);
+
+		void markChanged(void);
+
+		binary digest(void) const;
+		binary toBinary(void) const;
+
+	private:
+		Merkle *mMerkle;
+		binary mDigest;
+		shared_ptr<binary> mData;
+		std::vector<shared_ptr<Node>> mChildren;
+	};
+
+	shared_ptr<Node> get(const binary &digest) const;
+	shared_ptr<Node> get(Index index) const;
+	shared_ptr<Node> root(void) const;
+
+	void setRoot(const binary &digest);
 
 protected:
-	void onPeer(const identifier &id);
-	void onMessage(const Message &message);
+	void updateData(const Index &index, const binary &data);
+	virtual bool processData(const Index &index, const binary &data) = 0;
 
 private:
-	void connectWebSocket(const string &url);
-	shared_ptr<Peering> createPeering(const identifier &id);
+	shared_ptr<Node> createNode(const binary &digest);
 
-	shared_ptr<MessageBus> mMessageBus;
-	std::map<identifier, shared_ptr<Peering>> mPeerings;
+	const shared_ptr<Store> mStore;
+	shared_ptr<Node> mRoot;
+	std::unordered_map<binary, shared_ptr<Node>, binary_hash> mNodes;
 };
+
 }
 
 #endif

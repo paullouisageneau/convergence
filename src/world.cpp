@@ -25,23 +25,17 @@ namespace convergence
 
 using pla::to_hex;
 
-World::World(sptr<MessageBus> messageBus, shared_ptr<Ledger> ledger) :
-	mMessageBus(messageBus),
-	mLedger(ledger)
-{
-	unsigned seed = 180;
-	mTerrain = std::make_shared<Terrain>(mLedger, seed);
-	mLedger->registerProcessor(Ledger::Entry::Terrain, mTerrain);
-	
+World::World(sptr<MessageBus> messageBus) : mMessageBus(messageBus) {
+	mStore = std::make_shared<Store>(mMessageBus);
+	unsigned seed = 130;
+	mTerrain = std::make_shared<Terrain>(mStore, seed);
+
 	mLocalPlayer = std::make_shared<LocalPlayer>(mMessageBus);
 	mMessageBus->registerListener(mLocalPlayer->id(), mLocalPlayer);
 	mPlayers[mLocalPlayer->id()] = mLocalPlayer;
 }
 
-World::~World(void)
-{
-
-}
+World::~World(void) {}
 
 sptr<Player> World::localPlayer(void) const
 {
@@ -59,7 +53,7 @@ void World::update(double time)
 	while(readMessage(message)) processMessage(message);
 
 	mTerrain->update(time);
-	
+
 	for(auto &p : mPlayers) p.second->update(mTerrain, time);
 }
 
@@ -69,7 +63,7 @@ int World::draw(Context &context)
 	count+= mTerrain->draw(context);
 
 	for(const auto &p : mPlayers) count+= p.second->draw(context);
-	
+
 	return count;
 }
 
@@ -90,8 +84,6 @@ shared_ptr<Player> World::createPlayer(const identifier &id)
 {
 	auto player = std::make_shared<Player>(mMessageBus, id);
 	mMessageBus->registerListener(id, player);
-	
-	mLedger->sync(id);
 	return player;
 }
 

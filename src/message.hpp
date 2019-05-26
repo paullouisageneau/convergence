@@ -31,34 +31,32 @@ using pla::binary;
 class Message
 {
 public:
-	enum Type : uint32_t
-	{
+	enum Type : uint32_t {
 		Dummy = 0x00,
-		
+
 		// Signaling
 		Join = 0x01,
 		List = 0x02,
-		
+
 		// Peering
 		Description = 0x11,
 		Candidate = 0x12,
-		
+
 		// Player
 		PlayerReserved = 0x20,
 		PlayerPosition = 0x21,
-		PlayerControl  = 0x22,
-		
-		// Ledger
-		LedgerBlock = 0x30,
-		LedgerRequest = 0x31,
-		LedgerCurrent = 0x32
+		PlayerControl = 0x22,
+
+		// Store
+		Store = 0x30,
+		Request = 0x31
 	};
-	
+
 	Message(Type _type = Dummy);
 	Message(const binary &data);
 
 	operator binary(void) const;
-	
+
 	Type type;
 	identifier source;
 	identifier destination;
