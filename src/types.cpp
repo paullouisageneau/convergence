@@ -42,6 +42,8 @@ int3 int3::operator*(int i) const { return int3(x * i, y * i, z * i); }
 
 int3 int3::operator/(int i) const { return int3(x / i, y / i, z / i); }
 
+int3::operator vec3(void) const { return vec3(x, y, z); }
+
 int4::int4(int _x, int _y, int _z, int _w) : x(_x), y(_y), z(_z), w(_w) {}
 
 int4::int4(const int3 &i, int _w) : x(i.x), y(i.y), z(i.z), w(_w) {}
@@ -69,6 +71,8 @@ int4 int4::operator*(int i) const { return int4(x * i, y * i, z * i, w * i); }
 int4 int4::operator/(int i) const { return int3(x / i, y / i, z / i); }
 
 int4::operator int3(void) const { return int3(x, y, z); }
+
+int4::operator vec4(void) const { return vec4(x, y, z, w); }
 
 int84::int84(int8_t _x, int8_t _y, int8_t _z, int8_t _w) : x(_x), y(_y), z(_z), w(_w) {}
 
@@ -109,6 +113,8 @@ int84 int84::operator-(const int84 &i) const { return int84(x - i.x, y - i.y, z 
 int84 int84::operator*(int i) const { return int84(x * i, y * i, z * i, w * i); }
 
 int84 int84::operator/(int i) const { return int84(x / i, y / i, z / i); }
+
+int84::operator vec4(void) const { return vec4(x, y, z, w); }
 
 } // namespace convergence
 
