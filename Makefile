@@ -1,6 +1,6 @@
 NAME=convergence
 
-CPPFLAGS=-std=c++14 -g -O1 -fPIC -Wall -Wno-reorder -Wno-sign-compare -Wno-switch
+CPPFLAGS=-std=c++17 -g -O1 -fPIC -Wall -Wno-reorder -Wno-sign-compare -Wno-switch
 LDFLAGS=-g -O1
 LDLIBS=-lpthread -lGL -lglfw
 INCLUDE=-I. -Iglm
@@ -30,11 +30,12 @@ LIBS:=$(DIR)/librtcdcpp/librtcdcpp.a $(DIR)/librtcdcpp/libusrsctp.a
 INCLUDE+=-I$(DIR)/librtcdcpp/include
 INCLUDE+=-I$(DIR)/librtcdcpp/spdlog/include
 CPPFLAGS+=-DSPDLOG_DISABLED
+LDLIBS+=$(shell pkg-config --libs glib-2.0 gobject-2.0 nice) -lGLEW -lnettle -lhogweed -lgmp -lgnutls -largon2
 LDLIBS+=$(LIBS)
 endif
 
 INCLUDE+=-I$(DIR)
-SRCS+=$(shell printf "%s " $(DIR)/net/*.cpp $(DIR)/*.cpp)
+SRCS+=$(shell printf "%s " $(DIR)/net/*.cpp $(DIR)/pla/*.cpp $(DIR)/*.cpp)
 OBJS:=$(addprefix $(OBJDIR)/, $(SRCS:.cpp=.o))
 
 all: $(OUTPUT)
