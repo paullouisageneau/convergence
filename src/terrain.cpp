@@ -62,9 +62,7 @@ void Terrain::build(const vec3 &p, int weight) {
 	const int3 i(p + vec3(0.5f));
 	const int type = 0;
 
-	Surface::value v = addWeight(i, weight, type);
-
-	// TODO
+	addWeight(i, weight, type);
 }
 
 void Terrain::dig(const vec3 &p, int weight, float radius) {
@@ -82,7 +80,7 @@ void Terrain::dig(const vec3 &p, int weight, float radius) {
 				float t = 1.f - glm::distance(p, c) / radius;
 				if (t > 0.f) {
 					int w = int(weight * t);
-					Surface::value v = addWeight(i, w, -1);
+					addWeight(i, w, -1);
 				}
 			}
 		}
@@ -96,11 +94,10 @@ bool Terrain::processData(const Index &index, const binary &data) {
 }
 
 sptr<Terrain::Block> Terrain::getBlock(const int3 &b) {
-	auto it = mBlocks.find(b);
-	if (it != mBlocks.end())
+	if (auto it = mBlocks.find(b); it != mBlocks.end())
 		return it->second;
 
-	sptr<Block> block = std::make_shared<Block>(this, b);
+	auto block = std::make_shared<Block>(this, b);
 	mBlocks[b] = block;
 	populateBlock(block);
 	return block;
@@ -170,7 +167,7 @@ void Terrain::markChangedBlock(const int3 &b) {
 }
 
 Terrain::Block::Block(Terrain *terrain, const int3 &b)
-    : Surface::Block(b, std::bind(&Terrain::getBlock, mTerrain, _1)), mTerrain(terrain) {}
+    : Surface::Block(b, std::bind(&Terrain::getBlock, terrain, _1)), mTerrain(terrain) {}
 
 Terrain::Block::~Block(void) {}
 
