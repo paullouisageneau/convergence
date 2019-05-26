@@ -42,6 +42,8 @@ struct int3 {
 	int3 &operator*=(int i) { return *this = *this * i; }
 	int3 &operator/=(int i) { return *this = *this / i; }
 
+	operator vec3(void) const;
+
 	int x, y, z;
 };
 
@@ -69,6 +71,7 @@ struct int4 {
 	int4 operator/(int i) const;
 
 	operator int3(void) const;
+	operator vec4(void) const;
 
 	int4 &operator+=(const int4 &i) { return *this = *this + i; }
 	int4 &operator-=(const int4 &i) { return *this = *this - i; }
@@ -109,6 +112,8 @@ struct int84 {
 	int84 &operator-=(const int84 &i) { return *this = *this - i; }
 	int84 &operator*=(int i) { return *this = *this * i; }
 	int84 &operator/=(int i) { return *this = *this / i; }
+
+	operator vec4(void) const;
 
 	int8_t x, y, z, w;
 };

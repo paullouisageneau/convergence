@@ -361,24 +361,23 @@ vec3 Surface::Block::interpolate(vec3 p1, vec3 p2, int84 g1, int84 g2, value v1,
 
 	float mu = v1.weight == 0 ? 1.f - v2.w() : v1.w();
 
-	grad = g1 + (g2 - g1)*mu;
+	vec4 grad1(g1);
+	vec4 grad2(g2);
+	grad = int84(grad1 + (grad2 - grad1) * mu);
 
-	vec4 m1 = (v1.type < 4 ? MaterialTable[v1.type]*127.f : vec4(0.f, 0.f, 0.f, 0.f));
-	vec4 m2 = (v2.type < 4 ? MaterialTable[v2.type]*127.f : vec4(0.f, 0.f, 0.f, 0.f));
-	mat = int84(m1 + (m2 - m1)*mu);
+	vec4 mat1 = (v1.type < 4 ? MaterialTable[v1.type] * 127.f : vec4(0.f, 0.f, 0.f, 0.f));
+	vec4 mat2 = (v2.type < 4 ? MaterialTable[v2.type] * 127.f : vec4(0.f, 0.f, 0.f, 0.f));
+	mat = int84(mat1 + (mat2 - mat1) * mu);
 
 	return p1 + (p2 - p1)*mu;
 }
 
 int84 Surface::Block::computeGradient(const int3 &p)
 {
-	int84 grad(
-		(getValue(int3(p.x+1,p.y,p.z)).weight - getValue(int3(p.x-1,p.y,p.z)).weight)/2,
-		(getValue(int3(p.x,p.y+1,p.z)).weight - getValue(int3(p.x,p.y-1,p.z)).weight)/2,
-		(getValue(int3(p.x,p.y,p.z+1)).weight - getValue(int3(p.x,p.y,p.z-1)).weight)/2
-	);
-
-	return grad;
+	return int84(
+	    (getValue(int3(p.x + 1, p.y, p.z)).weight - getValue(int3(p.x - 1, p.y, p.z)).weight) / 2,
+	    (getValue(int3(p.x, p.y + 1, p.z)).weight - getValue(int3(p.x, p.y - 1, p.z)).weight) / 2,
+	    (getValue(int3(p.x, p.y, p.z + 1)).weight - getValue(int3(p.x, p.y, p.z - 1)).weight) / 2);
 }
 
 // Vertices order is:

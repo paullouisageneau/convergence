@@ -183,6 +183,8 @@ bool Terrain::Block::update(const binary &data) {
 				cell.type = *(it++);
 				cell.weight = *(it++);
 			}
+
+	mChanged = true;
 	return true;
 }
 
