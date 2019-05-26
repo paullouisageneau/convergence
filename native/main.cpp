@@ -34,11 +34,11 @@ int main(int argc, char **argv)
 		// TODO
 		//Server server;
 		//server.start();
-		
+
 		pla::Engine engine;
-		engine.openWindow(1024, 768);
+		engine.openWindow(1024, 768, "Convergence");
 		engine.pushState(std::make_shared<Game>());
-		
+
 		while(engine.update())
 		{
 			//int count = engine.display();
