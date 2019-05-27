@@ -36,8 +36,6 @@ public:
 	Terrain(shared_ptr<Store> store, int seed);
 	~Terrain(void);
 
-	Surface::value addWeight(const int3 &p, int weight, int newType = -1);
-
 	void update(double time);
 	int draw(const Context &context);
 	float intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *intersection = NULL);
@@ -56,6 +54,7 @@ protected:
 	};
 
 	bool processData(const Index &index, const binary &data);
+	void commitData(const int3 &b, const binary &data);
 
 private:
 	class Block : public Surface::Block {
@@ -64,15 +63,17 @@ private:
         ~Block(void);
 
 		bool update(const binary &data);
+		void commit(void);
 
 		bool hasChanged(void) const;
+		void markChanged(void);
+
 		Surface::value readValue(const int3 &c) const;
 
-		void markChanged(void);
-        void writeValue(const int3 &c, Surface::value v, bool markChanged = true);
-        void writeType(const int3 &c, uint8_t t, bool markChanged = true);
+		void writeValue(const int3 &c, Surface::value v, bool markChanged = true);
+		void writeType(const int3 &c, uint8_t t, bool markChanged = true);
 
-    private:
+	private:
 		Terrain *mTerrain;
 		Surface::value mCells[Size*Size*Size];
 
@@ -84,10 +85,10 @@ private:
     void setValue(const int3 &p, Surface::value v);
     void setType(const int3 &p, uint8_t t);
 
-	void populateBlock(sptr<Block> block);
+	void populateBlock(shared_ptr<Block> block);
 	void markChangedBlock(const int3 &b);
 
-	std::unordered_map<int3, sptr<Block>, int3_hash> mBlocks;
+	std::unordered_map<int3, shared_ptr<Block>, int3_hash> mBlocks;
 
 	PerlinNoise mPerlin;
 	Surface mSurface;
