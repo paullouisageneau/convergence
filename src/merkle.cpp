@@ -28,7 +28,11 @@ namespace convergence {
 using pla::BinaryFormatter;
 using pla::to_hex;
 
-Merkle::Merkle(shared_ptr<Store> store) : mStore(store) {}
+Merkle::Merkle(shared_ptr<Store> store) : mStore(store) {
+	binary data;
+	auto digest = mStore->insert(data);
+	setRoot(digest);
+}
 
 Merkle::~Merkle(void) {}
 
@@ -57,13 +61,12 @@ void Merkle::updateData(const Index &index, const binary &data) {
 }
 
 shared_ptr<Merkle::Node> Merkle::createNode(const binary &digest) {
-	auto it = mNodes.find(digest);
-	if (it != mNodes.end())
+	if (auto it = mNodes.find(digest); it != mNodes.end())
 		return it->second;
 
 	auto node = std::make_shared<Node>(this, digest);
-	mStore->request(digest, node);
 	mNodes[digest] = node;
+	mStore->request(digest, node);
 	return node;
 }
 
@@ -111,13 +114,12 @@ void Merkle::Node::updateChild(Index &index, shared_ptr<Node> node) {
 		return;
 
 	int i = index.pop();
+	if (i >= mChildren.size())
+		mChildren.resize(i + 1, nullptr);
+
 	if (index.length()) {
-		if (i < mChildren.size())
-			mChildren.resize(i + 1, nullptr);
-		if (index.length()) {
-			if (!mChildren[i])
-				mChildren[i] = shared_ptr<Node>(this);
-		}
+		if (!mChildren[i])
+			mChildren[i] = shared_ptr<Node>(this);
 		mChildren[i]->updateChild(index, node);
 	} else {
 		mChildren[i] = node;

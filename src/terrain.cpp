@@ -22,6 +22,8 @@
 
 #include "pla/binaryformatter.hpp"
 
+#include <set>
+
 namespace convergence {
 
 using namespace std::placeholders;
@@ -30,20 +32,6 @@ Terrain::Terrain(shared_ptr<Store> store, int seed)
     : Merkle(store), mPerlin(seed), mSurface(std::bind(&Terrain::getBlock, this, _1)) {}
 
 Terrain::~Terrain(void) {}
-
-Surface::value Terrain::addWeight(const int3 &p, int weight, int newType) {
-	int3 b = Block::blockCoord(p);
-	int3 c = Block::cellCoord(p);
-
-	shared_ptr<Block> block = getBlock(b);
-	Surface::value v = block->getValue(c);
-	weight = pla::bounds(int(v.weight) + weight, 0, 255);
-	v.weight = uint8_t(weight);
-	if (newType >= 0)
-		v.type = uint8_t(newType);
-	block->writeValue(c, v);
-	return v;
-}
 
 void Terrain::update(double time) { mSurface.update(time); }
 
@@ -60,9 +48,16 @@ void Terrain::build(const vec3 &p, int weight) {
 		return;
 
 	const int3 i(p + vec3(0.5f));
-	const int type = 0;
-
-	addWeight(i, weight, type);
+	const auto block = getBlock(Block::blockCoord(i));
+	const int3 c = Block::cellCoord(i);
+	Surface::value v = block->getValue(c);
+	const int newWeight = pla::bounds(int(v.weight) + weight, 0, 255);
+	if (newWeight != v.weight) {
+		v.weight = newWeight;
+		v.type = 0;
+		block->writeValue(c, v);
+		block->commit();
+	}
 }
 
 void Terrain::dig(const vec3 &p, int weight, float radius) {
@@ -72,25 +67,30 @@ void Terrain::dig(const vec3 &p, int weight, float radius) {
 	const int3 origin = p + vec3(0.5f);
 	const int d = int(radius) + 1;
 
+	std::set<shared_ptr<Block>> changed;
 	for (int dx = -d; dx <= d + 1; ++dx) {
 		for (int dy = -d; dy <= d + 1; ++dy) {
 			for (int dz = -d; dz <= d + 1; ++dz) {
-				int3 i = origin + int3(dx, dy, dz);
-				vec3 c = vec3(i.x, i.y, i.z) + vec3(0.5f);
-				float t = 1.f - glm::distance(p, c) / radius;
+				const int3 i = origin + int3(dx, dy, dz);
+				const vec3 q = vec3(i.x, i.y, i.z) + vec3(0.5f);
+				const float t = 1.f - glm::distance(p, q) / radius;
 				if (t > 0.f) {
-					int w = int(weight * t);
-					addWeight(i, w, -1);
+					auto block = getBlock(Block::blockCoord(i));
+					const int3 c = Block::cellCoord(i);
+					Surface::value v = block->getValue(c);
+					const int newWeight = pla::bounds(int(v.weight) + int(weight * t), 0, 255);
+					if (newWeight != v.weight) {
+						v.weight = newWeight;
+						block->writeValue(c, v);
+						changed.insert(block);
+					}
 				}
 			}
 		}
 	}
-}
 
-bool Terrain::processData(const Index &index, const binary &data) {
-	TerrainIndex terrainIndex(index);
-	auto block = getBlock(terrainIndex.position());
-	return block->update(data);
+	for (auto &block : changed)
+		block->commit();
 }
 
 sptr<Terrain::Block> Terrain::getBlock(const int3 &b) {
@@ -121,7 +121,18 @@ void Terrain::setType(const int3 &p, uint8_t t) {
 	block->writeValue(c, v);
 }
 
-void Terrain::populateBlock(sptr<Block> block) {
+bool Terrain::processData(const Index &index, const binary &data) {
+	TerrainIndex terrainIndex(index);
+	auto block = getBlock(terrainIndex.position());
+	return block->update(data);
+}
+
+void Terrain::commitData(const int3 &b, const binary &data) {
+	TerrainIndex index(b);
+	updateData(index, data);
+}
+
+void Terrain::populateBlock(shared_ptr<Block> block) {
 	// Layer 0
 	const float f1 = 0.15f;
 	const float f2 = 0.03f;
@@ -180,12 +191,27 @@ bool Terrain::Block::update(const binary &data) {
 		for (int y = 0; y < Size; ++y)
 			for (int z = 0; z < Size; ++z) {
 				auto &cell = mCells[c++];
-				cell.type = *(it++);
-				cell.weight = *(it++);
+				cell.type = uint8_t(*(it++));
+				cell.weight = uint8_t(*(it++));
 			}
 
 	mChanged = true;
 	return true;
+}
+
+void Terrain::Block::commit(void) {
+	binary data;
+	data.reserve(Size * Size * Size * 2);
+	int c = 0;
+	for (int x = 0; x < Size; ++x)
+		for (int y = 0; y < Size; ++y)
+			for (int z = 0; z < Size; ++z) {
+				const auto &cell = mCells[c++];
+				data.push_back(char(cell.type));
+				data.push_back(char(cell.weight));
+			}
+	mTerrain->commitData(position(), data);
+	mChanged = true;
 }
 
 bool Terrain::Block::hasChanged(void) const {
@@ -194,6 +220,8 @@ bool Terrain::Block::hasChanged(void) const {
 	return tmp;
 }
 
+void Terrain::Block::markChanged(void) { mChanged = true; }
+
 Surface::value Terrain::Block::readValue(const int3 &c) const {
 	if (c.x >= 0 && c.y >= 0 && c.z >= 0 && c.x < Size && c.y < Size && c.z < Size) {
 		return mCells[(c.x * Size + c.y) * Size + c.z];
@@ -201,8 +229,6 @@ Surface::value Terrain::Block::readValue(const int3 &c) const {
 		throw std::runtime_error("Read block value out of bounds");
 	}
 }
-
-void Terrain::Block::markChanged(void) { mChanged = true; }
 
 void Terrain::Block::writeValue(const int3 &c, Surface::value v, bool markChanged) {
 	if (c.x >= 0 && c.y >= 0 && c.z >= 0 && c.x < Size && c.y < Size && c.z < Size) {
@@ -249,8 +275,7 @@ Terrain::TerrainIndex::TerrainIndex(const Index &index) : Index(index) {}
 Terrain::TerrainIndex::TerrainIndex(int3 pos) {
 	// Circumvent modulo implementation for negative values with an offset
 	const unsigned offset = 0x80000000;
-	pos += int3(offset, offset, offset);
-	while (pos.x && pos.y && pos.z) {
+	while (pos.x || pos.y || pos.z) {
 		int n = 0;
 		n += ((offset + pos.x) % 4);
 		n += ((offset + pos.y) % 4) << 2;
