@@ -24,12 +24,13 @@
 #include "src/messagebus.hpp"
 #include "src/include.hpp"
 
+#include <mutex>
 #include <unordered_map>
 
 namespace convergence
 {
 
-class Store : public MessageBus::AsyncListener {
+class Store : public MessageBus::Listener {
 public:
 	Store(sptr<MessageBus> messageBus);
 	~Store(void);
@@ -42,17 +43,18 @@ public:
 		virtual void notify(const binary &digest, shared_ptr<binary> data) = 0;
 	};
 
-	void addSource(const binary &digest, const identifier &source);
 	void request(const binary &digest, weak_ptr<Notifiable> notifiable);
 
 private:
-	void processMessage(const Message &message);
-	void sendRequest(const binary &digest, const identifier &destination);
+	void onMessage(const Message &message);
+	void sendRequest(const binary &digest);
+	void insertNotifiable(const binary &digest, weak_ptr<Notifiable> notifiable);
 
 	shared_ptr<MessageBus> mMessageBus;
 	std::unordered_map<binary, shared_ptr<binary>, binary_hash> mData;
 	std::unordered_multimap<binary, weak_ptr<Notifiable>, binary_hash> mNotifiables;
-	std::unordered_multimap<binary, identifier, binary_hash> mSources;
+
+	mutable std::mutex mMutex;
 
 	static binary Hash(const binary &data);
 };

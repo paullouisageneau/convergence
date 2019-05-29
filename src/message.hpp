@@ -49,7 +49,10 @@ public:
 
 		// Store
 		Store = 0x30,
-		Request = 0x31
+		Request = 0x31,
+
+		// Terrain
+		TerrainRoot = 0x40
 	};
 
 	Message(Type _type = Dummy);

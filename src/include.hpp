@@ -24,13 +24,14 @@
 #include "pla/binary.hpp"
 #include "pla/linalg.hpp"
 
-#include <memory>
-#include <functional>
-#include <tuple>
 #include <algorithm>
-#include <mutex>
-#include <shared_mutex>
 #include <cassert>
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <optional>
+#include <shared_mutex>
+#include <tuple>
 
 namespace convergence
 {
@@ -41,6 +42,11 @@ using std::unique_ptr;
 template<typename T> using sptr = shared_ptr<T>;
 template<typename T> using wptr = weak_ptr<T>;
 template<typename T> using uptr = unique_ptr<T>;
+
+using std::nullopt;
+using std::optional;
+using std::pair;
+using std::tuple;
 
 using std::mutex;
 using std::recursive_mutex;
@@ -76,18 +82,14 @@ class identifier : public binary
 {
 public:
 	identifier(void) : binary(8, 0) {}
-	
-	inline bool isNull(void) const
-	{ 
+
+	inline bool isNull(void) const {
 		return std::all_of(begin(), end(), [](char chr) {
 			return chr == 0;
 		});
 	}
-	
-	inline void clear(void) 
-	{ 
-		assign(8, 0);
-	}
+
+	inline void clear(void) { assign(8, 0); }
 };
 
 template <class T>

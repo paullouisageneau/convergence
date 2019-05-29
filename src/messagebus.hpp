@@ -40,49 +40,49 @@ class MessageBus
 {
 public:
 	enum class Priority : int { Default = 0, Relay = 1, Direct = 2 };
-	
+
 	MessageBus(void);
 	~MessageBus(void);
-	
+
 	identifier localId(void) const;
-	
+
 	void addChannel(shared_ptr<Channel> channel, Priority priority);
 	void removeChannel(shared_ptr<Channel> channel);
-	
+
 	void addRoute(const identifier &id, shared_ptr<Channel> channel, Priority priority);
 	void removeRoute(const identifier &id, shared_ptr<Channel> channel);
 	void removeAllRoutes(shared_ptr<Channel> channel);
-	
+
 	void send(Message &message);
 	void broadcast(Message &message);
 	void dispatch(const Message &message);
-	
+
 	class Listener
 	{
 	public:
 		virtual void onPeer(const identifier &id) {};
 		virtual void onMessage(const Message &message) = 0;
 	};
-	
+
 	class AsyncListener : public Listener
 	{
 	public:
 		void onMessage(const Message &message);
 		bool readMessage(Message &message);
-		
+
 	private:
 		std::queue<Message> mQueue;
 		std::mutex mQueueMutex;
 	};
-	
+
 	void registerTypeListener(Message::Type type, weak_ptr<Listener> listener);
 	void registerListener(const identifier &remoteId, weak_ptr<Listener> listener);
-	
+
 private:
 	void dispatchPeer(const identifier &id);
 	void route(Message &message);
 	shared_ptr<Channel> findRoute(const identifier &remoteId);
-	
+
 	identifier mLocalId;
 	std::set<shared_ptr<Channel>> mChannels;
 	std::mutex mChannelsMutex;

@@ -41,9 +41,9 @@ Player::Player(sptr<MessageBus> messageBus, const identifier &id) :
 	mGravity = 0.f;
 	mIsOnGround = false;
 	mIsJumping = false;
-	
+
 	mPosition = vec3(0.f, 0.f, 0.f);
-	
+
 	auto program = std::make_shared<Program>(
 		std::make_shared<VertexShader>("shader/color.vert"),
 		std::make_shared<FragmentShader>("shader/color.frag")
@@ -53,7 +53,7 @@ Player::Player(sptr<MessageBus> messageBus, const identifier &id) :
 	program->bindAttribLocation(1, "normal");
 	program->bindAttribLocation(2, "color");
 	program->link();
-	
+
 	float cube_vertices[] = {
 		-1.0, -1.0,  1.0,
 		 1.0, -1.0,  1.0,
@@ -64,7 +64,7 @@ Player::Player(sptr<MessageBus> messageBus, const identifier &id) :
 		 1.0,  1.0, -1.0,
 		-1.0,  1.0, -1.0,
 	};
-	
+
 	Object::index_t cube_indices[] = {
 		0, 1, 2,
 		2, 3, 0,
@@ -79,7 +79,7 @@ Player::Player(sptr<MessageBus> messageBus, const identifier &id) :
 		3, 2, 6,
 		6, 7, 3,
 	};
-	
+
 	mObject = std::make_shared<Object>(
 		cube_indices,
 		12*3,
@@ -150,21 +150,21 @@ void Player::update(sptr<Collidable> terrain, double time)
 {
 	Message message;
 	while(readMessage(message)) processMessage(message);
-	
+
 	vec3 move(0.f);
 	mGravity+= 10.f*time;
 	if(mIsOnGround && mIsJumping) mGravity-= 10.f;
 	move.z-= mGravity*time;
-	
+
 	vec3 dir = vec3(std::sin(-mYaw), std::cos(-mYaw), 0.f);
 	move+= dir*float(time)*mSpeed;
-	
+
 	mIsOnGround = false;
 	vec3 newmove, intersection, normal;
 	if(terrain->collide(mPosition - vec3(0.f, 0.5f, 0.f), move, 1.f, &newmove, &intersection, &normal))
 	{
 		move = newmove;
-		
+
 		if(normal.z > 0.f)
 		{
 			mIsOnGround = true;
@@ -187,7 +187,7 @@ int Player::draw(const Context &context)
 void Player::processMessage(const Message &message)
 {
 	BinaryFormatter formatter(message.payload);
-	
+
 	switch(message.type)
 	{
 		case Message::PlayerPosition:
@@ -199,28 +199,28 @@ void Player::processMessage(const Message &message)
 			mPosition = vec3(x, y, z);
 			break;
 		}
-		
-		case Message::PlayerControl:
+
+	    case Message::PlayerControl:
 		{
 			float32_t yaw = 0.f;
 			float32_t pitch = 0.f;
 			formatter >> yaw >> pitch;
 			rotate(yaw, pitch);
-			
-			float32_t speed = 0.f;
+
+		    float32_t speed = 0.f;
 			formatter >> speed;
 			move(speed);
-			
-			float32_t gravity = 0.f;
+
+		    float32_t gravity = 0.f;
 			formatter >> gravity;
 			mGravity = gravity;
-			
-			uint32_t flags = 0;
+
+		    uint32_t flags = 0;
 			formatter >> flags;
 			break;
 		}
-		
-		default:
+
+	    default:
 			// Ignore
 			break;
 	}

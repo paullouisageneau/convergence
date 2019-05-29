@@ -27,8 +27,12 @@ using pla::to_hex;
 
 World::World(sptr<MessageBus> messageBus) : mMessageBus(messageBus) {
 	mStore = std::make_shared<Store>(mMessageBus);
+	mMessageBus->registerTypeListener(Message::Store, mStore);
+	mMessageBus->registerTypeListener(Message::Request, mStore);
+
 	unsigned seed = 130;
-	mTerrain = std::make_shared<Terrain>(mStore, seed);
+	mTerrain = std::make_shared<Terrain>(mMessageBus, mStore, seed);
+	mMessageBus->registerTypeListener(Message::TerrainRoot, mTerrain);
 
 	mLocalPlayer = std::make_shared<LocalPlayer>(mMessageBus);
 	mMessageBus->registerListener(mLocalPlayer->id(), mLocalPlayer);

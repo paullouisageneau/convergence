@@ -23,6 +23,7 @@
 
 #include "src/include.hpp"
 #include "src/merkle.hpp"
+#include "src/messagebus.hpp"
 #include "src/store.hpp"
 #include "src/surface.hpp"
 
@@ -31,9 +32,9 @@
 namespace convergence
 {
 
-class Terrain : public Merkle, public Collidable {
+class Terrain : public Merkle, public MessageBus::AsyncListener, public Collidable {
 public:
-	Terrain(shared_ptr<Store> store, int seed);
+	Terrain(shared_ptr<MessageBus> messageBus, shared_ptr<Store> store, int seed);
 	~Terrain(void);
 
 	void update(double time);
@@ -53,6 +54,8 @@ protected:
 		int3 position(void) const;
 	};
 
+	void processMessage(const Message &message);
+	bool processRoot(const binary &digest);
 	bool processData(const Index &index, const binary &data);
 	void commitData(const int3 &b, const binary &data);
 
@@ -80,7 +83,7 @@ private:
 		mutable bool mChanged;
 	};
 
-	sptr<Block> getBlock(const int3 &b);
+	shared_ptr<Block> getBlock(const int3 &b);
 	Surface::value getValue(const int3 &p);
     void setValue(const int3 &p, Surface::value v);
     void setType(const int3 &p, uint8_t t);
@@ -90,6 +93,7 @@ private:
 
 	std::unordered_map<int3, shared_ptr<Block>, int3_hash> mBlocks;
 
+	shared_ptr<MessageBus> mMessageBus;
 	PerlinNoise mPerlin;
 	Surface mSurface;
 };
