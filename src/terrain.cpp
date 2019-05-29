@@ -28,12 +28,19 @@ namespace convergence {
 
 using namespace std::placeholders;
 
-Terrain::Terrain(shared_ptr<Store> store, int seed)
-    : Merkle(store), mPerlin(seed), mSurface(std::bind(&Terrain::getBlock, this, _1)) {}
+Terrain::Terrain(shared_ptr<MessageBus> messageBus, shared_ptr<Store> store, int seed)
+    : Merkle(store), mMessageBus(messageBus), mPerlin(seed),
+      mSurface(std::bind(&Terrain::getBlock, this, _1)) {}
 
 Terrain::~Terrain(void) {}
 
-void Terrain::update(double time) { mSurface.update(time); }
+void Terrain::update(double time) {
+	Message message;
+	while (readMessage(message))
+		processMessage(message);
+
+	mSurface.update(time);
+}
 
 int Terrain::draw(const Context &context) {
 	return mSurface.draw(context);
@@ -121,9 +128,36 @@ void Terrain::setType(const int3 &p, uint8_t t) {
 	block->writeValue(c, v);
 }
 
+void Terrain::processMessage(const Message &message) {
+	switch (message.type) {
+	case Message::TerrainRoot: {
+		const binary &digest = message.payload;
+		std::cout << "Received terrain root " << pla::to_hex(digest) << std::endl;
+		updateRoot(digest);
+		break;
+	}
+
+	default:
+		// Ignore
+		break;
+	}
+}
+
+bool Terrain::processRoot(const binary &digest) {
+	std::cout << "Publishing terrain root " << pla::to_hex(digest) << std::endl;
+
+	Message message(Message::TerrainRoot);
+	message.payload = digest;
+	mMessageBus->broadcast(message);
+	return true;
+}
+
 bool Terrain::processData(const Index &index, const binary &data) {
 	TerrainIndex terrainIndex(index);
-	auto block = getBlock(terrainIndex.position());
+	int3 pos(terrainIndex.position());
+	std::cout << "Updating block at position " << pos.x << "," << pos.y << "," << pos.z
+	          << std::endl;
+	auto block = getBlock(pos);
 	return block->update(data);
 }
 
@@ -183,8 +217,10 @@ Terrain::Block::Block(Terrain *terrain, const int3 &b)
 Terrain::Block::~Block(void) {}
 
 bool Terrain::Block::update(const binary &data) {
-	if (data.size() != Size * Size * Size * 2)
+	if (data.size() != Size * Size * Size * 2) {
+		std::cerr << "Wrong block data size: " << data.size() << std::endl;
 		return false;
+	}
 	int c = 0;
 	auto it = data.begin();
 	for (int x = 0; x < Size; ++x)
@@ -275,7 +311,7 @@ Terrain::TerrainIndex::TerrainIndex(const Index &index) : Index(index) {}
 Terrain::TerrainIndex::TerrainIndex(int3 pos) {
 	// Circumvent modulo implementation for negative values with an offset
 	const unsigned offset = 0x80000000;
-	while (pos.x || pos.y || pos.z) {
+	for (int i = 0; i < 16; ++i) {
 		int n = 0;
 		n += ((offset + pos.x) % 4);
 		n += ((offset + pos.y) % 4) << 2;
@@ -293,9 +329,9 @@ int3 Terrain::TerrainIndex::position(void) const {
 	while (values.size() > 0) {
 		int n = values.back();
 		pos *= 4;
-		pos.x += (n + 2) % 4 - 2;
-		pos.y += ((n >> 2) + 2) % 4 - 2;
-		pos.z += ((n >> 4) + 2) % 4 - 2;
+		pos.x += (n % 4 + 2) % 4 - 2;
+		pos.y += ((n >> 2) % 4 + 2) % 4 - 2;
+		pos.z += ((n >> 4) % 4 + 2) % 4 - 2;
 		values.pop_back();
 	}
 	return pos;

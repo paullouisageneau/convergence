@@ -19,7 +19,6 @@
  ***************************************************************************/
 
 #include "src/merkle.hpp"
-#include "src/sha3.hpp"
 
 #include "pla/binaryformatter.hpp"
 
@@ -29,16 +28,9 @@ using pla::BinaryFormatter;
 using pla::to_hex;
 
 Merkle::Merkle(shared_ptr<Store> store) : mStore(store) {
-	binary data;
-	auto digest = mStore->insert(data);
-	setRoot(digest);
 }
 
 Merkle::~Merkle(void) {}
-
-void Merkle::init(void) {}
-
-void Merkle::update(void) {}
 
 shared_ptr<Merkle::Node> Merkle::get(const binary &digest) const {
 	auto it = mNodes.find(digest);
@@ -46,25 +38,35 @@ shared_ptr<Merkle::Node> Merkle::get(const binary &digest) const {
 }
 
 shared_ptr<Merkle::Node> Merkle::get(Index index) const {
-	return index.length() ? mRoot->child(index) : mRoot;
+	return index.length() && mRoot ? mRoot->child(index) : mRoot;
 }
 
 shared_ptr<Merkle::Node> Merkle::root(void) const { return mRoot; }
 
-void Merkle::setRoot(const binary &digest) { mRoot = createNode(digest); }
+void Merkle::updateRoot(const binary &digest) { mRoot = createNode(nullptr, digest); }
 
 void Merkle::updateData(const Index &index, const binary &data) {
 	auto digest = mStore->insert(data);
-	auto node = std::make_shared<Node>(this, digest);
-	Index copy(index);
-	mRoot->updateChild(copy, node);
+	if (index.length()) {
+		if (!mRoot)
+			mRoot = createNode(nullptr);
+		Index copy(index);
+		mRoot->updateChild(copy, digest);
+	} else {
+		mRoot = createNode(nullptr, digest);
+	}
+	processRoot(mRoot->digest());
 }
 
-shared_ptr<Merkle::Node> Merkle::createNode(const binary &digest) {
+shared_ptr<Merkle::Node> Merkle::createNode(Node *parent) {
+	return std::make_shared<Node>(this, parent);
+}
+
+shared_ptr<Merkle::Node> Merkle::createNode(Node *parent, const binary &digest) {
 	if (auto it = mNodes.find(digest); it != mNodes.end())
 		return it->second;
 
-	auto node = std::make_shared<Node>(this, digest);
+	auto node = std::make_shared<Node>(this, parent, digest);
 	mNodes[digest] = node;
 	mStore->request(digest, node);
 	return node;
@@ -95,21 +97,49 @@ int Merkle::Index::pop(void) {
 	return tmp;
 }
 
+void Merkle::Index::push(int child) { mValues.push_back(child); }
+
 Merkle::Index Merkle::Index::parent(void) const {
 	return !mValues.empty() ? Index(++mValues.begin(), mValues.end()) : *this;
 }
 
 int Merkle::Index::child(void) const { return !mValues.empty() ? mValues.front() : 0; }
 
-Merkle::Node::Node(Merkle *merkle) : mMerkle(merkle) {}
-
-Merkle::Node::Node(Merkle *merkle, const binary &digest) : mMerkle(merkle), mDigest(digest) {}
+Merkle::Node::Node(Merkle *merkle, Node *parent) : mMerkle(merkle), mParent(parent) {}
+Merkle::Node::Node(Merkle *merkle, Node *parent, const binary &digest) : Node(merkle, parent) {
+	mDigest = digest;
+}
 
 Merkle::Node::~Node(void) {}
 
-void Merkle::Node::notify(const binary &digest, shared_ptr<binary> data) { mData = data; }
+void Merkle::Node::notify(const binary &digest, shared_ptr<binary> data) {
+	if (data) {
+		mData = data;
 
-void Merkle::Node::updateChild(Index &index, shared_ptr<Node> node) {
+		Index index;
+		computeIndex(index);
+		if (index.length() < 16) {
+			std::cout << "Processing block " << to_hex(digest) << " at level " << index.length()
+			          << std::endl;
+			mChildren.clear();
+			BinaryFormatter formatter(*data);
+			binary childDigest(16);
+			while (formatter >> childDigest) {
+				if (std::any_of(childDigest.begin(), childDigest.end(),
+				                [](char c) { return c != 0; })) {
+					auto child = mMerkle->createNode(this, childDigest);
+					mChildren.push_back(child);
+				}
+			}
+		} else {
+			std::cout << "Processing data block " << to_hex(digest) << " at level "
+			          << index.length() << std::endl;
+			mMerkle->processData(index, *data);
+		}
+	}
+}
+
+void Merkle::Node::updateChild(Index &index, const binary &digest) {
 	if (!index.length())
 		return;
 
@@ -117,13 +147,23 @@ void Merkle::Node::updateChild(Index &index, shared_ptr<Node> node) {
 	if (i >= mChildren.size())
 		mChildren.resize(i + 1, nullptr);
 
+	auto &child = mChildren[i];
 	if (index.length()) {
-		if (!mChildren[i])
-			mChildren[i] = shared_ptr<Node>(this);
-		mChildren[i]->updateChild(index, node);
+		if (!child)
+			child = mMerkle->createNode(this);
+		child->updateChild(index, digest);
 	} else {
-		mChildren[i] = node;
+		child = mMerkle->createNode(this, digest);
 	}
+
+	// Rebuild data
+	BinaryFormatter formatter;
+	for (const auto &child : mChildren) {
+		formatter << (child ? child->digest() : binary(16, char(0)));
+	}
+
+	mDigest = mMerkle->mStore->insert(formatter.data());
+	mData = mMerkle->mStore->retrieve(mDigest);
 }
 
 shared_ptr<Merkle::Node> Merkle::Node::child(Index &index) {
@@ -141,10 +181,28 @@ void Merkle::Node::markChanged(void) { mDigest.clear(); }
 binary Merkle::Node::digest(void) const { return mDigest; }
 
 binary Merkle::Node::toBinary(void) const {
-	if (auto data_ptr = mMerkle->mStore->retrieve(mDigest)) {
-		return *data_ptr;
+	if (mData) {
+		return *mData;
 	} else {
 		throw std::runtime_error("Cannot convert unresolved node to binary");
+	}
+}
+
+void Merkle::Node::computeIndex(Index &index) {
+	if (mParent) {
+		int n = -1;
+		for (int i = 0; i < mParent->mChildren.size(); ++i) {
+			if (mParent->mChildren[i].get() == this) {
+				n = i;
+				break;
+			}
+		}
+		if (n < 0) {
+			std::cerr << "Children array mismatch!" << std::endl;
+			n = 0;
+		}
+		index.push(n);
+		mParent->computeIndex(index);
 	}
 }
 

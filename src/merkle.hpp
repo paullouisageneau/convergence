@@ -22,7 +22,6 @@
 #define CONVERGENCE_MERKLE_H
 
 #include "src/include.hpp"
-#include "src/messagebus.hpp"
 #include "src/store.hpp"
 
 #include <unordered_map>
@@ -33,14 +32,10 @@
 namespace convergence
 {
 
-class Merkle : public MessageBus::AsyncListener
-{
+class Merkle {
 public:
 	Merkle(shared_ptr<Store> store);
 	~Merkle(void);
-
-	void init(void);
-	void update(void);
 
 	class Index {
 	public:
@@ -51,6 +46,8 @@ public:
 
 		int length(void) const;
 		int pop(void);
+		void push(int child);
+
 		Index parent(void) const;
 		int child(void) const;
 
@@ -60,12 +57,12 @@ public:
 
 	class Node : public Store::Notifiable {
 	public:
-		Node(Merkle *merkle);
-		Node(Merkle *merkle, const binary &digest);
+		Node(Merkle *merkle, Node *parent);
+		Node(Merkle *merkle, Node *parent, const binary &digest);
 		~Node(void);
 
 		void notify(const binary &digest, shared_ptr<binary> data);
-		void updateChild(Index &index, shared_ptr<Node> node);
+		void updateChild(Index &index, const binary &digest);
 		shared_ptr<Node> child(Index &index);
 
 		void markChanged(void);
@@ -74,7 +71,10 @@ public:
 		binary toBinary(void) const;
 
 	private:
+		void computeIndex(Index &index);
+
 		Merkle *mMerkle;
+		Node *mParent;
 		binary mDigest;
 		shared_ptr<binary> mData;
 		std::vector<shared_ptr<Node>> mChildren;
@@ -84,20 +84,20 @@ public:
 	shared_ptr<Node> get(Index index) const;
 	shared_ptr<Node> root(void) const;
 
-	void setRoot(const binary &digest);
-
 protected:
+	void updateRoot(const binary &digest);
+	virtual bool processRoot(const binary &digest) = 0;
+
 	void updateData(const Index &index, const binary &data);
 	virtual bool processData(const Index &index, const binary &data) = 0;
-
 private:
-	shared_ptr<Node> createNode(const binary &digest);
+	shared_ptr<Node> createNode(Node *parent);
+	shared_ptr<Node> createNode(Node *parent, const binary &digest);
 
 	const shared_ptr<Store> mStore;
 	shared_ptr<Node> mRoot;
 	std::unordered_map<binary, shared_ptr<Node>, binary_hash> mNodes;
 };
-
 }
 
 #endif
