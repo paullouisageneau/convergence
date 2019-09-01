@@ -43,7 +43,13 @@ shared_ptr<Merkle::Node> Merkle::get(Index index) const {
 
 shared_ptr<Merkle::Node> Merkle::root(void) const { return mRoot; }
 
-void Merkle::updateRoot(const binary &digest) { mRoot = createNode(nullptr, digest); }
+void Merkle::updateRoot(const binary &digest) {
+	if (mRoot && mRoot->digest() == digest)
+		return;
+	if (mCandidates.find(digest) != mCandidates.end())
+		return;
+	mCandidates[digest] = createNode(nullptr, digest);
+}
 
 void Merkle::updateData(const Index &index, const binary &data) {
 	auto digest = mStore->insert(data);
@@ -176,7 +182,13 @@ shared_ptr<Merkle::Node> Merkle::Node::child(Index &index) {
 	return nullptr;
 }
 
-void Merkle::Node::markChanged(void) { mDigest.clear(); }
+bool Merkle::Node::isResolved(void) { return mResolved; }
+
+void Merkle::Node::markResolved(void) {
+	mResolved = true;
+	if (mParent)
+		mParent->checkResolved();
+}
 
 binary Merkle::Node::digest(void) const { return mDigest; }
 
@@ -204,6 +216,12 @@ void Merkle::Node::computeIndex(Index &index) {
 		index.push(n);
 		mParent->computeIndex(index);
 	}
+}
+
+void Merkle::Node::checkResolved(void) {
+	if (mData && std::all_of(mChildren.begin(), mChildren.end(),
+	                         [](shared_ptr<Node> child) { return !child || child->isResolved(); }))
+		markResolved();
 }
 
 } // namespace convergence

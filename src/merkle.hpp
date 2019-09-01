@@ -25,9 +25,6 @@
 #include "src/store.hpp"
 
 #include <unordered_map>
-#include <unordered_set>
-#include <map>
-#include <set>
 
 namespace convergence
 {
@@ -65,19 +62,23 @@ public:
 		void updateChild(Index &index, const binary &digest);
 		shared_ptr<Node> child(Index &index);
 
-		void markChanged(void);
+		void markResolved(void);
+		bool isResolved(void);
 
 		binary digest(void) const;
 		binary toBinary(void) const;
 
 	private:
 		void computeIndex(Index &index);
+		void checkResolved(void);
 
 		Merkle *mMerkle;
 		Node *mParent;
 		binary mDigest;
 		shared_ptr<binary> mData;
 		std::vector<shared_ptr<Node>> mChildren;
+
+		bool mResolved = false;
 	};
 
 	shared_ptr<Node> get(const binary &digest) const;
@@ -96,6 +97,7 @@ private:
 
 	const shared_ptr<Store> mStore;
 	shared_ptr<Node> mRoot;
+	std::unordered_map<binary, shared_ptr<Node>, binary_hash> mCandidates;
 	std::unordered_map<binary, shared_ptr<Node>, binary_hash> mNodes;
 };
 }
