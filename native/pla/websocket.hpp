@@ -42,14 +42,14 @@ public:
 	void connect(const string &url);
 	void close(void);
 
-	size_t readSome(char *buffer, size_t size);
-	size_t writeSome(const char *data, size_t size);
+	size_t readSome(byte *buffer, size_t size);
+	size_t writeSome(const byte *data, size_t size);
 	bool isMessage(void) const { return true; }
-	
+
 protected:
-	int recvFrame(char *buffer, size_t size, bool &fin);
-	int sendFrame(uint8_t opcode, const char *data, size_t size, bool fin = true);
-	
+	int recvFrame(byte *buffer, size_t size, bool &fin);
+	int sendFrame(uint8_t opcode, const byte *data, size_t size, bool fin = true);
+
 private:
 	Stream *mStream;
 	bool mSendMask;

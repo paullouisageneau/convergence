@@ -24,83 +24,11 @@
 
 #include "net/channel.hpp"
 
-#include <rtcdcpp/PeerConnection.hpp>
-#include <rtcdcpp/DataChannel.hpp>
+#include <rtc/rtc.hpp>
 
-#include <functional>
-#include <vector>
+namespace net {
 
-namespace net
-{
-
-using std::function;
-using std::shared_ptr;
-using std::unique_ptr;
-using std::vector;
-
-class DataChannel final : public Channel {
-public:
-	explicit DataChannel(shared_ptr<rtcdcpp::DataChannel> dataChannel);
-	~DataChannel(void);
-
-	void close(void);
-	void send(const binary &data);
-
-	bool isOpen(void) const;
-	bool isClosed(void) const;
-
-	string label(void) const;
-
-private:
-	shared_ptr<rtcdcpp::DataChannel> mDataChannel;
-	bool mConnected;
-	bool mClosed;
-};
-
-class PeerConnection
-{
-public:
-	struct SessionDescription {
-		SessionDescription(const string &sdp, const string &type)
-			: sdp(sdp), type(type) {}
-		string sdp;
-		string type;
-	};
-
-	struct IceCandidate {
-		IceCandidate(const string &candidate, const string &sdpMid)
-			: candidate(candidate), sdpMid(sdpMid) {}
-		string candidate;
-		string sdpMid;
-	};
-
-	explicit PeerConnection(const vector<string> &iceServers = vector<string>());
-	~PeerConnection(void);
-
-	shared_ptr<DataChannel> createDataChannel(const string &label);
-
-	void setRemoteDescription(const SessionDescription &description);
-	void setRemoteCandidate(const IceCandidate &candidate);
-
-	void onDataChannel(function<void(shared_ptr<DataChannel>)> callback);
-	void onLocalDescription(function<void(const SessionDescription&)> callback);
-	void onLocalCandidate(function<void(const IceCandidate&)> callback);
-
-private:
-	void generateOffer(void);
-	void generateAnswer(void);
-
-	void triggerDataChannel(shared_ptr<DataChannel> channel);
-	void triggerLocalDescription(const SessionDescription &description);
-	void triggerLocalCandidate(const IceCandidate &candidate);
-
-	function<void(shared_ptr<DataChannel>)> mDataChannelCallback;
-	function<void(const SessionDescription&)> mLocalDescriptionCallback;
-	function<void(const IceCandidate&)> mLocalCandidateCallback;
-
-	unique_ptr<rtcdcpp::PeerConnection> mPeerConnection;
-	bool mInitiated;
-};
+using namespace rtc;
 
 }
 

@@ -196,8 +196,8 @@ public:
 	virtual bool getAuthenticationTag(binary &tag) { return false; }
 
 	// Stream
-	size_t readSome(char *buffer, size_t size);
-	size_t writeSome(const char *data, size_t size);
+	size_t readSome(byte *buffer, size_t size);
+	size_t writeSome(const byte *data, size_t size);
 	void close(void);
 
 protected:
@@ -262,10 +262,10 @@ public:
 		PublicKey(const PublicKey &key);
 		PublicKey(gnutls_x509_crt_t crt);
 		virtual ~PublicKey(void);
-		
+
 		virtual PublicKey &operator=(const PublicKey &key);
 		virtual void clear(void);
-		
+
 		bool operator==(const PublicKey &key) const;
 		bool isNull(void) const;
 
@@ -296,7 +296,7 @@ public:
 		PrivateKey(void);
 		PrivateKey(const PrivateKey &key);
 		~PrivateKey(void);
-		
+
 		PrivateKey &operator=(const PrivateKey &key);
 		void clear(void);
 
@@ -353,19 +353,19 @@ class DerSequence
 public:
 	DerSequence(void);
 	DerSequence(const binary &b);
-	
+
 	binary data(void) const;
-	
+
 	DerSequence &operator>> (mpz_t n);
 	DerSequence &operator>> (unsigned long &n);
-	
+
 	DerSequence &operator<< (const mpz_t n);
 	DerSequence &operator<< (unsigned long n);
 
 private:
 	static bool readLength(BinaryFormatter &formatter, size_t &length);
 	static void writeLength(BinaryFormatter &formatter, size_t length);
-	
+
 	BinaryFormatter mFormatter;
 };
 

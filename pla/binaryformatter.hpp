@@ -41,8 +41,8 @@ public:
 	void append(const binary &b);
 	void clear(void);
 
-	size_t read(char *data, size_t size);
-	void write(const char *data, size_t size);
+	size_t read(byte *data, size_t size);
+	void write(const byte *data, size_t size);
 
 	BinaryFormatter &operator>> (binary &b);
 	BinaryFormatter &operator>> (string &s);

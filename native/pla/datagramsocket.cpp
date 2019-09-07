@@ -173,7 +173,7 @@ void DatagramSocket::getHardwareAddresses(std::set<binary> &set) const
 	{
 		if(pAdapterInfo->PhysicalAddressLength)
 		{
-			const char *data = reinterpret_cast<char*>(pAdapterInfo->PhysicalAddress);
+			auto data = reinterpret_cast<const byte *>(pAdapterInfo->PhysicalAddress);
 			size_t size = pAdapterInfo->PhysicalAddressLengthconst;
 			set.insert(binary(data, data + size));
 		}
@@ -202,7 +202,7 @@ void DatagramSocket::getHardwareAddresses(std::set<binary> &set) const
 				if(ioctl(mSock, SIOCGIFHWADDR, &ifr) == 0)
 				{
 					// Note: hwaddr.sa_data is big endian
-					const char *data = reinterpret_cast<char*>(ifr.ifr_hwaddr.sa_data);
+					auto *data = reinterpret_cast<const byte *>(ifr.ifr_hwaddr.sa_data);
 					size_t size = IFHWADDRLEN;
 					set.insert(binary(data, data + size));
 				}
@@ -344,18 +344,15 @@ void DatagramSocket::close(void)
 	}
 }
 
-int DatagramSocket::read(char *buffer, size_t size, Address &sender, duration timeout)
-{
+int DatagramSocket::read(byte *buffer, size_t size, Address &sender, duration timeout) {
 	return recv(buffer, size, sender, timeout, 0);
 }
 
-int DatagramSocket::peek(char *buffer, size_t size,  Address &sender, duration timeout)
-{
+int DatagramSocket::peek(byte *buffer, size_t size, Address &sender, duration timeout) {
 	return recv(buffer, size, sender, timeout, MSG_PEEK);
 }
 
-int DatagramSocket::write(const char *data, size_t size, const Address &receiver)
-{
+int DatagramSocket::write(const byte *data, size_t size, const Address &receiver) {
 	return send(data, size, receiver, 0);
 }
 
@@ -393,8 +390,7 @@ bool DatagramSocket::wait(duration timeout)
 	return (ret > 0);
 }
 
-int DatagramSocket::recv(char *buffer, size_t size, Address &sender, duration timeout, int flags)
-{
+int DatagramSocket::recv(byte *buffer, size_t size, Address &sender, duration timeout, int flags) {
 	using clock = std::chrono::steady_clock;
 	std::chrono::time_point<clock> end;
 	if(timeout >= duration::zero()) end = clock::now() + std::chrono::duration_cast<clock::duration>(timeout);
@@ -428,8 +424,10 @@ int DatagramSocket::recv(char *buffer, size_t size, Address &sender, duration ti
 			DatagramStream *stream = it->second;
 
 			std::unique_lock<std::mutex> lock(stream->mMutex);
-			if(stream->mIncoming.size() < DatagramStream::MaxQueueSize)
-				stream->mIncoming.push(binary(datagramBuffer, datagramBuffer + result));
+			if (stream->mIncoming.size() < DatagramStream::MaxQueueSize) {
+				auto b = reinterpret_cast<const byte *>(datagramBuffer);
+				stream->mIncoming.push(binary(b, b + result));
+			}
 
 			stream->mCondition.notify_all();
 			++it;
@@ -442,9 +440,9 @@ int DatagramSocket::recv(char *buffer, size_t size, Address &sender, duration ti
 	return -1;
 }
 
-int DatagramSocket::send(const char *buffer, size_t size, const Address &receiver, int flags)
-{
-	int result = ::sendto(mSock, buffer, size, flags, receiver.addr(), receiver.addrLen());
+int DatagramSocket::send(const byte *buffer, size_t size, const Address &receiver, int flags) {
+	int result = ::sendto(mSock, reinterpret_cast<const char *>(buffer), size, flags,
+	                      receiver.addr(), receiver.addrLen());
 	if(result < 0) throw std::runtime_error("Unable to write to socket (error " + to_string(sockerrno) + ")");
 	return result;
 }
@@ -529,8 +527,7 @@ void DatagramStream::setTimeout(duration timeout)
 	mTimeout = timeout;
 }
 
-size_t DatagramStream::readSome(char *buffer, size_t size)
-{
+size_t DatagramStream::readSome(byte *buffer, size_t size) {
 	std::unique_lock<std::mutex> lock(mMutex);
 
 	if(!mCondition.wait_for(lock, mTimeout, [this]() {
@@ -545,8 +542,7 @@ size_t DatagramStream::readSome(char *buffer, size_t size)
 	return size;
 }
 
-size_t DatagramStream::writeSome(const char *data, size_t size)
-{
+size_t DatagramStream::writeSome(const byte *data, size_t size) {
 	std::unique_lock<std::mutex> lock(mMutex);
 
 	if(!mSock) throw std::runtime_error("Datagram stream closed");

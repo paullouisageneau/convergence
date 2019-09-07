@@ -92,13 +92,13 @@ public:
 
 	void addCredentials(Credentials *creds, bool mustDelete = false);	// creds will be deleted if mustDelete == true
 	void setHostname(const string &hostname);	// remote hostname for client
-	
+
 	void handshake(void);
 	void close(void);
 
 	// Stream
-	size_t readSome(char *buffer, size_t size);
-	size_t writeSome(const char *data, size_t size);
+	size_t readSome(byte *buffer, size_t size);
+	size_t writeSome(const byte *data, size_t size);
 
 	virtual bool isClient(void) const;
 	bool isHandshakeDone(void) const;
@@ -107,7 +107,7 @@ public:
 	bool hasPrivateSharedKey(void) const;
 	bool hasCertificate(void) const;
 	string getPrivateSharedKeyHint(void) const;	// only valid on client side
-	
+
 	struct Verifier
 	{
 		virtual bool verifyPublicKey(const std::vector<Rsa::PublicKey> &chain) { return false; }

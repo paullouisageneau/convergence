@@ -34,31 +34,31 @@ class Stream
 public:
 	Stream(void) {}
 	virtual ~Stream(void) {}
-	
-	size_t read(char *buffer, size_t size);
+
+	size_t read(byte *buffer, size_t size);
 	size_t read(binary &buf, size_t size);
 	size_t read(string &str, size_t size);
-	
-	void write(const char *data, size_t size);
+
+	void write(const byte *data, size_t size);
 	void write(const binary &buf);
 	void write(const string &str);
-	
+
 	size_t readAll(binary &buf);
 	size_t readAll(string &str);
-	
+
 	bool readLine(string &str);
 	void writeLine(const string &str);
 
-	virtual size_t readSome(char *buffer, size_t size) = 0;
-	virtual size_t writeSome(const char *data, size_t size) = 0;
-	
+	virtual size_t readSome(byte *buffer, size_t size) = 0;
+	virtual size_t writeSome(const byte *data, size_t size) = 0;
+
 	virtual bool wait(duration timeout) { return true; }
 	virtual bool isMessage(void) const { return false; }
 	virtual void setTimeout(duration timeout) {}
 	virtual size_t ignore(size_t size = 1);
 	virtual void discard(void);
 	virtual void close(void) {}
-	
+
 private:
 	bool readUntil(string &output, const string &delimiters, const string &ignored);
 };

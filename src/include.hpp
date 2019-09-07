@@ -58,38 +58,39 @@ using glm::mat2;
 using glm::mat3;
 using glm::mat4;
 
-using pla::string;
-using pla::binary;
-using pla::binary_hash;
-
-using pla::Pi;
-using pla::Sqrt2;
-using pla::Epsilon;
-
-using pla::int8_t;
+using pla::byte;
+using pla::float32_t;
+using pla::float64_t;
 using pla::int16_t;
 using pla::int32_t;
 using pla::int64_t;
-using pla::uint8_t;
+using pla::int8_t;
 using pla::uint16_t;
 using pla::uint32_t;
 using pla::uint64_t;
-using pla::float32_t;
-using pla::float64_t;
-using pla::byte;
+using pla::uint8_t;
+
+using pla::binary;
+using pla::binary_hash;
+using pla::string;
+
+using pla::to_binary;
+using pla::to_integer;
+
+using pla::Epsilon;
+using pla::Pi;
+using pla::Sqrt2;
 
 class identifier : public binary
 {
 public:
-	identifier(void) : binary(8, 0) {}
+	identifier(void) : binary(8, byte(0)) {}
 
 	inline bool isNull(void) const {
-		return std::all_of(begin(), end(), [](char chr) {
-			return chr == 0;
-		});
+		return std::all_of(begin(), end(), [](byte b) { return b == byte(0); });
 	}
 
-	inline void clear(void) { assign(8, 0); }
+	inline void clear(void) { assign(8, byte(0)); }
 };
 
 template <class T>

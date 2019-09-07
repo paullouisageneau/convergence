@@ -175,9 +175,7 @@ typedef int ctl_t;
 #define MSG_NOSIGNAL 0
 #endif
 
-namespace pla
-{
-// Using
+namespace pla {
 using std::int8_t;
 using std::int16_t;
 using std::int32_t;
@@ -187,20 +185,17 @@ using std::uint16_t;
 using std::uint32_t;
 using std::uint64_t;
 
-// Aliases
+typedef float float32_t;  // 32 bits float
+typedef double float64_t; // 64 bits float
+
+using duration = std::chrono::duration<double>;
+using seconds = std::chrono::duration<double>;
+using milliseconds = std::chrono::duration<double, std::milli>;
+using microseconds = std::chrono::duration<double, std::micro>;
+using nanoseconds = std::chrono::duration<double, std::nano>;
+
 template<typename T> using sptr = std::shared_ptr<T>;
 template<typename T> using wptr = std::weak_ptr<T>;
-
-// Typedefs
-typedef std::chrono::duration<double> duration;
-typedef std::chrono::duration<double> seconds;
-typedef std::chrono::duration<double, std::milli> milliseconds;
-typedef std::chrono::duration<double, std::micro> microseconds;
-typedef std::chrono::duration<double, std::nano>  nanoseconds;
-
-typedef float			float32_t;	// 32 bits float
-typedef double			float64_t;	// 64 bits float
-typedef unsigned char	byte;
 
 // Hacks
 #ifdef WINDOWS
@@ -243,15 +238,16 @@ template<typename T> unsigned int bitcount(T n)
 	return (n * h01) >> (sizeof(T)*8 - 8);  // Returns left 8 bits of x + (x<<8) + (x<<16) + (x<<24) + ...
 }
 
-inline void memxor(char *a, const char *b, size_t size)
-{
-	unsigned long *la = reinterpret_cast<unsigned long*>(a);
-	const unsigned long *lb = reinterpret_cast<const unsigned long*>(b);
+inline void memxor(void *a, const void *b, size_t size) {
+	auto *la = reinterpret_cast<unsigned long *>(a);
+	auto *lb = reinterpret_cast<const unsigned long *>(b);
 	const size_t n = size / sizeof(unsigned long);
 	for(size_t i = 0; i < n; ++i)
 		la[i]^= lb[i];
+	auto ca = reinterpret_cast<unsigned char *>(a);
+	auto cb = reinterpret_cast<const unsigned char *>(b);
 	for(size_t i = n*sizeof(unsigned long); i < size; ++i)
-		a[i]^= b[i];
+		ca[i] ^= cb[i];
 }
 
 inline duration structToDuration(const struct timeval &tv)
@@ -378,6 +374,6 @@ template<typename T> void LogImpl(const char *file, int line, int level, const c
 	#define Assert(condition) DoNothing(!(condition))
 #endif
 
-}
+    } // namespace pla
 
 #endif

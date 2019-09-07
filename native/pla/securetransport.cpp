@@ -130,7 +130,7 @@ void SecureTransport::close(void)
 	if(!mIsByeDone)
 	{
 		gnutls_bye(mSession, GNUTLS_SHUT_RDWR);
-		
+
 		mIsByeDone = true;
 
 		if(mStream)
@@ -170,26 +170,24 @@ string SecureTransport::getPrivateSharedKeyHint(void) const
 	else return "";
 }
 
-size_t SecureTransport::readSome(char *buffer, size_t size)
-{
+size_t SecureTransport::readSome(byte *buffer, size_t size) {
 	ssize_t ret;
 	do {
 		ret = gnutls_record_recv(mSession, buffer, size);
 	}
 	while(!check_gnutls(ret));
-	
+
 	if(ret == 0 || ret == GNUTLS_E_PREMATURE_TERMINATION) return 0;
 	return size_t(ret);
 }
 
-size_t SecureTransport::writeSome(const char *data, size_t size)
-{
+size_t SecureTransport::writeSome(const byte *data, size_t size) {
 	ssize_t ret;
 	do {
 		ret = gnutls_record_send(mSession, data, size);
 	}
 	while(!check_gnutls(ret));
-	
+
 	if(ret == GNUTLS_E_PREMATURE_TERMINATION) return 0;
 	return size_t(ret);
 }
@@ -208,7 +206,7 @@ ssize_t SecureTransport::DirectWriteCallback(gnutls_transport_ptr_t ptr, const v
 {
 	try {
 		Stream *s = static_cast<Stream*>(ptr);
-		s->write(static_cast<const char*>(data), len);
+		s->write(static_cast<const byte *>(data), len);
 		return ssize_t(len);
 	}
 	catch(const std::exception &e)
@@ -224,7 +222,7 @@ ssize_t SecureTransport::WriteCallback(gnutls_transport_ptr_t ptr, const void* d
 	if(!st->mStream) return 0;
 
 	try {
-		st->mStream->write(static_cast<const char*>(data), len);
+		st->mStream->write(static_cast<const byte *>(data), len);
 		gnutls_transport_set_errno(st->mSession, 0);
 		return ssize_t(len);
 	}
@@ -248,7 +246,7 @@ ssize_t SecureTransport::ReadCallback(gnutls_transport_ptr_t ptr, void* data, si
 	if(!st->mStream) return 0;
 
 	try {
-		size_t ret = st->mStream->read(static_cast<char*>(data), maxlen);
+		size_t ret = st->mStream->read(static_cast<byte *>(data), maxlen);
 		gnutls_transport_set_errno(st->mSession, 0);
 		return ssize_t(ret);
 	}

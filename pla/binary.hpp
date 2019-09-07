@@ -25,12 +25,15 @@
 #include "pla/include.hpp"
 #include "pla/string.hpp"
 
+#include <cstddef>
 #include <vector>
 
 namespace pla
 {
 
-typedef std::vector<char> binary;
+using std::byte;
+using binary = std::vector<byte>;
+using std::to_integer;
 
 binary &operator^= (binary &a, const binary &b);
 binary operator^ (binary a, const binary &b);
@@ -39,7 +42,7 @@ binary &operator+= (binary &a, const binary &b);
 binary operator+ (binary a, const binary &b);
 
 string to_string(const binary &data);
-binary from_string(const string &str);
+binary to_binary(const string &str);
 
 string to_hex(const binary &data);
 binary from_hex(const string &str);

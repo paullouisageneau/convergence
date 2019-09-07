@@ -22,11 +22,13 @@
 #ifndef NET_WEBSOCKET_H
 #define NET_WEBSOCKET_H
 
-#include "net/channel.hpp"
+#include "channel.hpp"
+
 #include "pla/websocket.hpp"
 
-#include <thread>
 #include <atomic>
+#include <thread>
+#include <variant>
 
 namespace net
 {
@@ -40,7 +42,7 @@ public:
 
 	void open(const string &url);
 	void close(void);
-	void send(const binary &data);
+	void send(const std::variant<binary, string> &data);
 
 	bool isOpen(void) const;
 	bool isClosed(void) const;

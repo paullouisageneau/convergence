@@ -26,10 +26,8 @@ LDLIBS+=$(addprefix --preload-file ,$(BUNDLE))
 OUTPUT:=$(OUTPUT).html
 else
 DIR:=native
-LIBS:=$(DIR)/librtcdcpp/librtcdcpp.a $(DIR)/librtcdcpp/libusrsctp.a
-INCLUDE+=-I$(DIR)/librtcdcpp/include
-INCLUDE+=-I$(DIR)/librtcdcpp/spdlog/include
-CPPFLAGS+=-DSPDLOG_DISABLED
+LIBS:=$(BUILDDIR)/libdatachannel.a $(BUILDDIR)/libusrsctp.a
+INCLUDE+=-I$(DIR)/libdatachannel/include
 LDLIBS+=$(shell pkg-config --libs glib-2.0 gobject-2.0 nice) -lGLEW -lnettle -lhogweed -lgmp -lgnutls -largon2
 LDLIBS+=$(LIBS)
 endif
@@ -46,7 +44,7 @@ $(OBJDIR)/%.o: %.cpp
 
 -include $(OBJS:.o=.d)
 
-$(OUTPUT): $(OBJS) $(LIBS) $(BUNDLEDFILES) | $(BUILDDIR)
+$(OUTPUT): $(LIBS) $(OBJS) $(BUNDLEDFILES) | $(BUILDDIR)
 	$(CXX) $(LDFLAGS) -o $(OUTPUT) $(OBJS) $(LDLIBS)
 
 $(BUILDDIR):
@@ -54,10 +52,13 @@ $(BUILDDIR):
 
 clean:
 	-rm -r $(BUILDDIR)/$(DIR) $(BUILDDIR)/pla $(BUILDDIR)/src
+	-cd $(DIR)/libdatachannel && make clean
 
 dist-clean: clean
 	-rm -r build
 
-native/librtcdcpp/librtcdcpp.a:
-	cd native/librtcdcpp && $(MAKE) USE_GNUTLS=1 USE_SPDLOG=0
+$(BUILDDIR)/libdatachannel.a: | $(BUILDDIR)
+	cd $(DIR)/libdatachannel && make
+	cp $(DIR)/libdatachannel/libdatachannel.a $(BUILDDIR)
+	cp $(DIR)/libdatachannel/libusrsctp.a $(BUILDDIR)
 

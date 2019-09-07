@@ -39,8 +39,7 @@ Random::~Random(void)
 
 }
 
-void Random::generate(char *buffer, size_t size) const
-{
+void Random::generate(byte *buffer, size_t size) const {
 	gnutls_rnd_level_t level;
 	switch(mLevel)
 	{
@@ -53,15 +52,12 @@ void Random::generate(char *buffer, size_t size) const
 	if(ret < 0) throw std::runtime_error("Random generator error: " + string(gnutls_strerror(ret)));
 }
 
-size_t Random::readSome(char *buffer, size_t size)
-{
+size_t Random::readSome(byte *buffer, size_t size) {
 	generate(buffer, size);
 	return size;
 }
 
-size_t Random::writeSome(const char *data, size_t size)
-{
+size_t Random::writeSome(const byte *data, size_t size) {
 	throw std::logic_error("Writing to random generator");
 }
-
 }

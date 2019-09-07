@@ -36,18 +36,16 @@ using pla::BinaryFormatter;
 MessageBus::MessageBus(void)
 {
 	using clock = std::chrono::high_resolution_clock;
-	using random_bytes_engine = std::independent_bits_engine<std::default_random_engine, CHAR_BIT, unsigned char>;
+	using random_bytes_engine =
+	    std::independent_bits_engine<std::default_random_engine, CHAR_BIT, unsigned char>;
 	random_bytes_engine rbe;
 	rbe.seed(clock::now().time_since_epoch()/std::chrono::milliseconds(1));
-	std::generate(mLocalId.begin(), mLocalId.end(), std::ref(rbe));
-	
+	std::generate(mLocalId.begin(), mLocalId.end(), [&rbe]() { return byte(rbe()); });
+
 	std::cout << "Local identifier: " << to_hex(mLocalId) << std::endl;
 }
 
-MessageBus::~MessageBus(void) 
-{
-	
-}
+MessageBus::~MessageBus(void) {}
 
 identifier MessageBus::localId(void) const
 {
@@ -97,36 +95,36 @@ void MessageBus::removeAllRoutes(shared_ptr<Channel> channel)
 
 void MessageBus::addChannel(shared_ptr<Channel> channel, Priority priority)
 {
-	channel->onMessage([this, channel, priority](const binary &data) {
-		// This can be called on non-main thread
-		Message message(data);
+	channel->onMessage(
+	    [this, channel, priority](const binary &data) {
+		    // This can be called on non-main thread
+		    Message message(data);
 
-		if(!message.source.isNull()) {
-			addRoute(message.source, channel, priority);
-		}
+		    if (!message.source.isNull()) {
+			    addRoute(message.source, channel, priority);
+		    }
 
-		if(message.type == Message::List)
-		{
-			identifier peerId;
-			BinaryFormatter formatter(message.payload);
-			while(formatter >> peerId) 
-			{
-				if(!peerId.isNull() && peerId != mLocalId)
-				{
-					addRoute(peerId, channel, priority);
-					dispatchPeer(peerId);
-				}
-			}
-		}
-		else {
-			route(message);
-		}
-	});
-	
+		    if (message.type == Message::List) {
+			    identifier peerId;
+			    BinaryFormatter formatter(message.payload);
+			    while (formatter >> peerId) {
+				    if (!peerId.isNull() && peerId != mLocalId) {
+					    addRoute(peerId, channel, priority);
+					    dispatchPeer(peerId);
+				    }
+			    }
+		    } else {
+			    route(message);
+		    }
+	    },
+	    [](const string &data) {
+		    // Ignore
+	    });
+
 	Message message(Message::Join);
 	message.source = mLocalId;
 	channel->send(message);
-	
+
 	std::lock_guard<std::mutex> lock(mChannelsMutex);
 	mChannels.insert(channel);
 }
@@ -134,13 +132,13 @@ void MessageBus::addChannel(shared_ptr<Channel> channel, Priority priority)
 void MessageBus::removeChannel(shared_ptr<Channel> channel)
 {
 	removeAllRoutes(channel);
-	
+
 	std::lock_guard<std::mutex> lock(mChannelsMutex);
 	auto it = mChannels.find(channel);
 	if(it != mChannels.end())
 	{
 		mChannels.erase(it);
-		channel->onMessage([](const binary &data) {});
+		channel->onMessage([](const binary &data) {}, [](const string &data) {});
 	}
 }
 
@@ -154,23 +152,22 @@ void MessageBus::send(Message &message)
 void MessageBus::broadcast(Message &message)
 {
 	message.source = mLocalId;
-	
+
 	// Broadcast to remote ids that have local listeners
 	std::list<identifier> destinations;
 	{
 		std::lock_guard<std::mutex> lock(mListenersMutex);
 		binary last;
-		auto it = mListeners.begin(); 
+		auto it = mListeners.begin();
 		while(it != mListeners.end())
 		{
-			if(last == it->first) 
-			{
+			if (last == it->first) {
 				++it;
 				continue;
 			}
-			
+
 			last = it->first;
-			
+
 			if(auto l = it->second.lock())
 			{
 				if(it->first != mLocalId) destinations.push_back(it->first);
@@ -181,13 +178,13 @@ void MessageBus::broadcast(Message &message)
 			}
 		}
 	}
-	
+
 	for(auto d : destinations)
 	{
 		message.destination = d;
 		route(message);
 	}
-	
+
 	message.destination.clear();
 }
 
@@ -197,7 +194,7 @@ void MessageBus::dispatch(const Message &message)
 	{
 		std::lock_guard<std::mutex> lock(mListenersMutex);
 		auto range = mTypeListeners.equal_range(message.type);
-		auto it = range.first; 
+		auto it = range.first;
 		while(it != range.second)
 		{
 			if(auto l = it->second.lock())
@@ -210,14 +207,14 @@ void MessageBus::dispatch(const Message &message)
 			}
 		}
 	}
-	
+
 	for(auto l : listeners) l->onMessage(message);
-	
+
 	listeners.clear();
 	{
 		std::lock_guard<std::mutex> lock(mListenersMutex);
 		auto range = mListeners.equal_range(message.source);
-		auto it = range.first; 
+		auto it = range.first;
 		while(it != range.second)
 		{
 			if(auto l = it->second.lock())
@@ -230,7 +227,7 @@ void MessageBus::dispatch(const Message &message)
 			}
 		}
 	}
-	
+
 	for(auto l : listeners) l->onMessage(message);
 }
 
@@ -252,7 +249,7 @@ void MessageBus::dispatchPeer(const identifier &id)
 			}
 		}
 	}
-	
+
 	for(auto l : listeners) l->onPeer(id);
 }
 
@@ -309,7 +306,7 @@ bool MessageBus::AsyncListener::readMessage(Message &message)
 		mQueue.pop();
 		return true;
 	}
-	
+
 	return false;
 }
 
