@@ -20,14 +20,14 @@
 				peerConnection.onnegotiationneeded = function() {
 					peerConnection.createOffer()
 						.then(function(offer) {
-							return WEBRTC.handleSessionDescription(peerConnection, offer);
+							return WEBRTC.handleDescription(peerConnection, offer);
 						})
 						.catch(function(err) {
 							console.error(err);
 						});
 				};
 				peerConnection.onicecandidate = function(evt) {
-					WEBRTC.handleIceCandidate(peerConnection, evt.candidate);
+					WEBRTC.handleCandidate(peerConnection, evt.candidate);
 				};
 				return pc;
 			},
@@ -39,7 +39,7 @@
 				return dc;
 			},
 
-			handleSessionDescription: function(peerConnection, description) {
+			handleDescription: function(peerConnection, description) {
 				return peerConnection.setLocalDescription(description)
 					.then(function() {
 						if(peerConnection.rtcUserDeleted) return;
@@ -55,11 +55,11 @@
 					});
 			},
 
-			handleIceCandidate: function(peerConnection, candidate) {
+			handleCandidate: function(peerConnection, candidate) {
 				if(peerConnection.rtcUserDeleted) return;
 				if(!peerConnection.rtcCandidateCallback) return;
 				var pCandidate = WEBRTC.allocUTF8FromString(candidate ? candidate.candidate : "");
-				var pSdpMid = WEBRTC.allocUTF8FromString(candidate ? candidate.sdpMid : "");
+				var pSdpMid = WEBRTC.allocUTF8FromString(candidate ? candidate.mid : "");
 				var candidateCallback =  peerConnection.rtcCandidateCallback;
 				var userPointer = peerConnection.rtcUserPointer || 0;
 				Module.dynCall_viii(candidateCallback, pCandidate, pSdpMid, userPointer);
@@ -131,7 +131,7 @@
 		},
 
 		rtcSetRemoteDescription: function(pc, pSdp, pType) {
-			var description = new RTCSessionDescription({
+			var description = new RTCDescription({
 				sdp: UTF8ToString(pSdp),
 				type: UTF8ToString(pType),
 			});
@@ -142,7 +142,7 @@
 					if(description.type == 'offer') {
 						peerConnection.createAnswer()
 							.then(function(answer) {
-								return WEBRTC.handleSessionDescription(peerConnection, answer);
+								return WEBRTC.handleDescription(peerConnection, answer);
 							})
 							.catch(function(err) {
 								console.error(err);
@@ -155,12 +155,12 @@
 		},
 
 		rtcAddRemoteCandidate: function(pc, pCandidate, pSdpMid) {
-			var iceCandidate = new RTCIceCandidate({
+			var iceCandidate = new RTCCandidate({
 				candidate: UTF8ToString(pCandidate),
-				sdpMid: UTF8ToString(pSdpMid),
+				mid: UTF8ToString(pSdpMid),
 			});
 			var peerConnection = WEBRTC.peerConnectionsMap[pc];
-			peerConnection.addIceCandidate(iceCandidate)
+			peerConnection.addCandidate(iceCandidate)
 				.catch(function(err) {
 					console.error(err);
 				});

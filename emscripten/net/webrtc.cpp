@@ -37,7 +37,7 @@ extern void rtcSetLocalDescriptionCallback(int pc,
 extern void rtcSetLocalCandidateCallback(int pc, void (*candidateCallback)(const char *,
                                                                            const char *, void *));
 extern void rtcSetRemoteDescription(int pc, const char *sdp, const char *type);
-extern void rtcSetRemoteCandidate(int pc, const char *candidate, const char *sdpMid);
+extern void rtcSetRemoteCandidate(int pc, const char *candidate, const char *mid);
 extern int rtcGetDataChannelLabel(int dc, char *buffer, int size);
 extern void rtcSetOpenCallback(int dc, void (*openCallback)(void *));
 extern void rtcSetErrorCallback(int dc, void (*errorCallback)(const char *, void *));
@@ -46,12 +46,10 @@ extern int rtcSendMessage(int dc, const char *buffer, int size);
 extern void rtcSetUserPointer(int i, void *ptr);
 }
 
-namespace {
+namespace net {
+
 template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
 template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
-} // namespace
-
-namespace net {
 
 void PeerConnection::DataChannelCallback(int dc, void *ptr) {
 	PeerConnection *p = static_cast<PeerConnection *>(ptr);
@@ -124,23 +122,23 @@ shared_ptr<DataChannel> PeerConnection::createDataChannel(const string &label) {
 	return std::make_shared<DataChannel>(rtcCreateDataChannel(mId, label.c_str()));
 }
 
-void PeerConnection::setRemoteDescription(const SessionDescription &description) {
-	rtcSetRemoteDescription(mId, description.sdp.c_str(), description.type.c_str());
+void PeerConnection::setRemoteDescription(const Description &description) {
+	rtcSetRemoteDescription(mId, string(description).c_str(), description.typeString().c_str());
 }
 
-void PeerConnection::setRemoteCandidate(const IceCandidate &candidate) {
-	rtcSetRemoteCandidate(mId, candidate.candidate.c_str(), candidate.sdpMid.c_str());
+void PeerConnection::addRemoteCandidate(const Candidate &candidate) {
+	rtcSetRemoteCandidate(mId, string(candidate).c_str(), candidate.mid().c_str());
 }
 
 void PeerConnection::onDataChannel(function<void(shared_ptr<DataChannel>)> callback) {
 	mDataChannelCallback = callback;
 }
 
-void PeerConnection::onLocalDescription(function<void(const SessionDescription &)> callback) {
+void PeerConnection::onLocalDescription(function<void(const Description &)> callback) {
 	mLocalDescriptionCallback = callback;
 }
 
-void PeerConnection::onLocalCandidate(function<void(const IceCandidate &)> callback) {
+void PeerConnection::onLocalCandidate(function<void(const Candidate &)> callback) {
 	mLocalCandidateCallback = callback;
 }
 
@@ -149,12 +147,12 @@ void PeerConnection::triggerDataChannel(shared_ptr<DataChannel> dataChannel) {
 		mDataChannelCallback(dataChannel);
 }
 
-void PeerConnection::triggerLocalDescription(const SessionDescription &description) {
+void PeerConnection::triggerLocalDescription(const Description &description) {
 	if (mLocalDescriptionCallback)
 		mLocalDescriptionCallback(description);
 }
 
-void PeerConnection::triggerLocalCandidate(const IceCandidate &candidate) {
+void PeerConnection::triggerLocalCandidate(const Candidate &candidate) {
 	if (mLocalCandidateCallback)
 		mLocalCandidateCallback(candidate);
 }
@@ -184,8 +182,8 @@ void DataChannel::send(const std::variant<binary, string> &message) {
 	if (!mId)
 		return;
 	std::visit(overloaded{[this](const binary &b) {
-		                      auto *data = reinterpret_cast<const char *>(message.data());
-		                      rtcSendMessage(mId, data, message.size());
+		                      auto data = reinterpret_cast<const char *>(b.data());
+		                      rtcSendMessage(mId, data, b.size());
 	                      },
 	                      [this](const string &s) { rtcSendMessage(mId, s.c_str(), -1); }},
 	           message);

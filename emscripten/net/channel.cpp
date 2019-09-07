@@ -24,6 +24,9 @@
 namespace net
 {
 
+template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
+
 void Channel::onOpen(std::function<void()> callback)
 {
 	mOpenCallback = callback;
@@ -39,11 +42,17 @@ void Channel::onError(std::function<void(const string&)> callback)
 	mErrorCallback = callback;
 }
 
-void Channel::onMessage(std::function<void(const binary&)> callback)
-{
+void Channel::onMessage(std::function<void(const std::variant<binary, string> &data)> callback) {
 	mMessageCallback = callback;
 }
-	
+
+void Channel::onMessage(std::function<void(const binary &data)> binaryCallback,
+                        std::function<void(const string &data)> stringCallback) {
+	onMessage([binaryCallback, stringCallback](const std::variant<binary, string> &data) {
+		std::visit(overloaded{binaryCallback, stringCallback}, data);
+	});
+}
+
 void Channel::triggerOpen(void)
 {
 	if(mOpenCallback) mOpenCallback();
@@ -59,10 +68,8 @@ void Channel::triggerError(const string &error)
 	if(mErrorCallback) mErrorCallback(error);
 }
 
-void Channel::triggerMessage(const binary &data)
-{
+void Channel::triggerMessage(const std::variant<binary, string> &data) {
 	if(mMessageCallback) mMessageCallback(data);
 }
-
 }
 

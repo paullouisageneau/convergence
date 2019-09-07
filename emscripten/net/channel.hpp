@@ -39,15 +39,17 @@ class Channel
 {
 public:
 	virtual void close(void) = 0;
-	virtual void send(std::variant<binary, string>) = 0;
+	virtual void send(const std::variant<binary, string> &data) = 0;
 
 	virtual bool isOpen(void) const = 0;
 	virtual bool isClosed(void) const = 0;
 
 	void onOpen(function<void()> callback);
 	void onClosed(function<void()> callback);
-	void onError(function<void(const string&)> callback);
-	void onMessage(function<void(const std::variant<binary, string> &)> callback);
+	void onError(function<void(const string &error)> callback);
+	void onMessage(function<void(const std::variant<binary, string> &data)> callback);
+	void onMessage(function<void(const binary &data)> binaryCallback,
+	               function<void(const string &data)> stringCallback);
 
 protected:
 	virtual void triggerOpen(void);
@@ -58,8 +60,8 @@ protected:
 private:
 	function<void()> mOpenCallback;
 	function<void()> mClosedCallback;
-	function<void(const string&)> mErrorCallback;
-	function<void(const binary&)> mMessageCallback;
+	function<void(const string &error)> mErrorCallback;
+	function<void(const std::variant<binary, string> &data)> mMessageCallback;
 };
 
 }

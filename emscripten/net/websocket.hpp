@@ -24,6 +24,8 @@
 
 #include "net/channel.hpp"
 
+#include <variant>
+
 namespace net
 {
 
@@ -37,17 +39,17 @@ public:
 
 	void open(const string &url);
 	void close(void);
-	void send(const binary &data);
+	void send(const std::variant<binary, string> &data);
 
 	bool isOpen(void) const;
 	bool isClosed(void) const;
 
 private:
 	void triggerOpen(void);
-	
+
 	int mId;
 	bool mConnected;
-	
+
 	static void OpenCallback(void *ptr);
 	static void ErrorCallback(const char *error, void *ptr);
 	static void MessageCallback(const char *data, int size, void *ptr);
