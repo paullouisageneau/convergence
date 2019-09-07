@@ -211,32 +211,11 @@ private:
 	bool mMustDelete;
 };
 
-// AES-CTR implementation
-class AesCtr : public Cipher
-{
+// AES256-GCM implementation
+class AesGcm256 : public Cipher {
 public:
-	AesCtr(Stream *stream, bool mustDelete = false);
-	~AesCtr(void);
-
-	void setEncryptionKey(const binary &key);
-	void setDecryptionKey(const binary &key);
-	void setInitializationVector(const binary &iv);
-
-protected:
-	size_t blockSize(void) const;
-	void encryptBlock(binary &block);
-	void decryptBlock(binary &block);
-
-private:
-	struct CTR_CTX(struct aes_ctx, AES_BLOCK_SIZE) mCtx;
-};
-
-// AES-GCM implementation
-class AesGcm : public Cipher
-{
-public:
-	AesGcm(Stream *stream, bool mustDelete = false);
-	~AesGcm(void);
+	AesGcm256(Stream *stream, bool mustDelete = false);
+	~AesGcm256(void);
 
 	void setEncryptionKey(const binary &key);
 	void setDecryptionKey(const binary &key);
@@ -249,7 +228,7 @@ protected:
 	void decryptBlock(binary &block);
 
 private:
-	struct gcm_aes_ctx mCtx;
+	struct gcm_aes256_ctx mCtx;
 };
 
 class Rsa

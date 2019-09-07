@@ -361,107 +361,48 @@ void Cipher::close(void)
 	mStream->close();
 }
 
-AesCtr::AesCtr(Stream *stream, bool mustDelete) :
-	Cipher(stream, mustDelete)
-{
+AesGcm256::AesGcm256(Stream *stream, bool mustDelete) : Cipher(stream, mustDelete) {}
 
-}
-
-AesCtr::~AesCtr(void)
-{
+AesGcm256::~AesGcm256(void) {
 	close();	// must be called here and not in Cipher
 }
 
-void AesCtr::setEncryptionKey(const binary &key)
-{
-	Assert(key.size() >= AES_MIN_KEY_SIZE);
-	aes_set_encrypt_key(&mCtx.ctx, key.size(), u8(key.data()));
+void AesGcm256::setEncryptionKey(const binary &key) {
+	if (key.size() != 32)
+		throw std::runtime_error("Incorrect AES256 key length");
+	gcm_aes256_set_key(&mCtx, u8(key.data()));
 }
 
-void AesCtr::setDecryptionKey(const binary &key)
-{
-	// Counter mode also uses encrypt function for decryption
-	Assert(key.size() >= AES_MIN_KEY_SIZE);
-	aes_set_encrypt_key(&mCtx.ctx, key.size(), u8(key.data()));
+void AesGcm256::setDecryptionKey(const binary &key) {
+	if (key.size() != 32)
+		throw std::runtime_error("Incorrect AES256 key length");
+	gcm_aes256_set_key(&mCtx, u8(key.data()));
 }
 
-void AesCtr::setInitializationVector(const binary &iv)
-{
-	Assert(iv.size() >= AES_BLOCK_SIZE);
-	CTR_SET_COUNTER(&mCtx, u8(iv.data()));
+void AesGcm256::setInitializationVector(const binary &iv) {
+	if (iv.size() < GCM_IV_SIZE)
+		throw std::runtime_error("Insufficient AES IV length");
+	gcm_aes256_set_iv(&mCtx, GCM_IV_SIZE, u8(iv.data()));
 }
 
-size_t AesCtr::blockSize(void) const
-{
-	return AES_BLOCK_SIZE;
-}
-
-void AesCtr::encryptBlock(binary &block)
-{
-	uint8_t *ptr = u8(block.data());
-	CTR_CRYPT(&mCtx, aes_encrypt, block.size(), ptr, ptr);
-}
-
-void AesCtr::decryptBlock(binary &block)
-{
-	// Counter mode also uses encrypt function for decryption
-	uint8_t *ptr = u8(block.data());
-	CTR_CRYPT(&mCtx, aes_encrypt, block.size(), ptr, ptr);
-}
-
-AesGcm::AesGcm(Stream *stream, bool mustDelete) :
-	Cipher(stream, mustDelete)
-{
-
-}
-
-AesGcm::~AesGcm(void)
-{
-	close();	// must be called here and not in Cipher
-}
-
-void AesGcm::setEncryptionKey(const binary &key)
-{
-	Assert(key.size() >= AES_MIN_KEY_SIZE);
-	gcm_aes_set_key(&mCtx, key.size(), u8(key.data()));
-}
-
-void AesGcm::setDecryptionKey(const binary &key)
-{
-	Assert(key.size() >= AES_MIN_KEY_SIZE);
-	gcm_aes_set_key(&mCtx, key.size(), u8(key.data()));
-}
-
-void AesGcm::setInitializationVector(const binary &iv)
-{
-	Assert(iv.size() >= GCM_IV_SIZE);
-	gcm_aes_set_iv(&mCtx, iv.size(), u8(iv.data()));
-}
-
-bool AesGcm::getAuthenticationTag(binary &tag)
-{
-	tag.resize(GCM_BLOCK_SIZE);
-	gcm_aes_digest(&mCtx, tag.size(), u8(tag.data()));
+bool AesGcm256::getAuthenticationTag(binary &tag) {
+	tag.resize(GCM_DIGEST_SIZE);
+	gcm_aes256_digest(&mCtx, GCM_DIGEST_SIZE, u8(tag.data()));
 	return true;
 }
 
-size_t AesGcm::blockSize(void) const
-{
-	return GCM_BLOCK_SIZE;
+size_t AesGcm256::blockSize(void) const { return GCM_BLOCK_SIZE; }
+
+void AesGcm256::encryptBlock(binary &block) {
+	uint8_t *ptr = u8(block.data());
+	gcm_aes256_update(&mCtx, block.size(), ptr);
+	gcm_aes256_encrypt(&mCtx, block.size(), ptr, ptr);
 }
 
-void AesGcm::encryptBlock(binary &block)
-{
+void AesGcm256::decryptBlock(binary &block) {
 	uint8_t *ptr = u8(block.data());
-	gcm_aes_update (&mCtx, block.size(), ptr);
-	gcm_aes_encrypt(&mCtx, block.size(), ptr, ptr);
-}
-
-void AesGcm::decryptBlock(binary &block)
-{
-	uint8_t *ptr = u8(block.data());
-	gcm_aes_update(&mCtx, block.size(), ptr);
-	gcm_aes_decrypt(&mCtx, block.size(), ptr, ptr);
+	gcm_aes256_update(&mCtx, block.size(), ptr);
+	gcm_aes256_decrypt(&mCtx, block.size(), ptr, ptr);
 }
 
 Rsa::PublicKey::PublicKey(void)
