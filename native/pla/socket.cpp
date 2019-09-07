@@ -192,15 +192,9 @@ void Socket::close(void)
 	}
 }
 
-size_t Socket::readSome(char *buffer, size_t size)
-{
-	return recv(buffer, size, 0);
-}
+size_t Socket::readSome(byte *buffer, size_t size) { return recv(buffer, size, 0); }
 
-size_t Socket::writeSome(const char *data, size_t size)
-{
-	return send(data, size, 0);
-}
+size_t Socket::writeSome(const byte *data, size_t size) { return send(data, size, 0); }
 
 bool Socket::wait(duration timeout)
 {
@@ -218,13 +212,9 @@ bool Socket::wait(duration timeout)
 	return (ret != 0);
 }
 
-size_t Socket::peek(char *buffer, size_t size)
-{
-	return ::recv(mSock, buffer, size, MSG_PEEK);
-}
+size_t Socket::peek(byte *buffer, size_t size) { return ::recv(mSock, buffer, size, MSG_PEEK); }
 
-size_t Socket::recv(char *buffer, size_t size, int flags)
-{
+size_t Socket::recv(byte *buffer, size_t size, int flags) {
 	if(mSock == INVALID_SOCKET)
 		throw std::runtime_error("Socket is closed");
 
@@ -239,8 +229,7 @@ size_t Socket::recv(char *buffer, size_t size, int flags)
 	return count;
 }
 
-size_t Socket::send(const char *data, size_t size, int flags)
-{
+size_t Socket::send(const byte *data, size_t size, int flags) {
 	struct timeval tv;
 	durationToStruct(std::max(mWriteTimeout, duration::zero()), tv);
 
@@ -263,8 +252,7 @@ size_t Socket::send(const char *data, size_t size, int flags)
 	int count = ::send(mSock, data, size, flags | MSG_NOSIGNAL);
 	if(count < 0)
 		throw std::runtime_error("Connection lost (error " + to_string(sockerrno) + ")");
-	
+
 	return size_t(count);
 }
-
 }

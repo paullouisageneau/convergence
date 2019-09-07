@@ -32,45 +32,43 @@ namespace convergence
 using pla::binary;
 using pla::pack_strings;
 using pla::unpack_strings;
+using std::function;
 using std::vector;
 
 const string DataChannelName = "data";
 
-Peering::Peering(const identifier &id, shared_ptr<MessageBus> messageBus) :
-	mId(id),
-	mMessageBus(messageBus)
-{
-	vector<string> iceServers;
-	iceServers.emplace_back("stun:stun.ageneau.net:3478");
-	mPeerConnection = std::make_shared<PeerConnection>(iceServers);
-	
-	mPeerConnection->onDataChannel([this](shared_ptr<DataChannel> dataChannel) {
+Peering::Peering(const identifier &id, shared_ptr<MessageBus> messageBus)
+    : mId(id), mMessageBus(messageBus) {
+	net::Configuration config;
+	config.iceServers.emplace_back("stun:stun.ageneau.net:3478");
+	mPeerConnection = std::make_shared<net::PeerConnection>(config);
+
+	mPeerConnection->onDataChannel([this](shared_ptr<net::DataChannel> dataChannel) {
 		std::cout << "Data channel received" << std::endl;
-		if(dataChannel->label() == DataChannelName) setDataChannel(dataChannel);
+		if (dataChannel->label() == DataChannelName)
+			setDataChannel(dataChannel);
 	});
-	
-	mPeerConnection->onLocalDescription([this](const PeerConnection::SessionDescription &description) {
-		std::cout << "Local description: " << description.sdp << std::endl;
+
+	mPeerConnection->onLocalDescription([this](const net::Description &description) {
+		std::cout << "Local description: " << description << std::endl;
 		vector<string> fields;
-		fields.push_back(description.type);
-		fields.push_back(description.sdp);
+		fields.push_back(description.typeString());
+		fields.push_back(string(description));
 		sendSignaling(Message::Description, pack_strings(fields));
 	});
-	
-	mPeerConnection->onLocalCandidate([this](const PeerConnection::IceCandidate &candidate) {
-		if(candidate.candidate.empty()) return;
-		std::cout << "Local candidate: " << candidate.candidate << std::endl;
+
+	mPeerConnection->onLocalCandidate([this](const std::optional<net::Candidate> &candidate) {
+		if (!candidate)
+			return;
+		std::cout << "Local candidate: " << *candidate << std::endl;
 		vector<string> fields;
-		fields.push_back(candidate.sdpMid);
-		fields.push_back(candidate.candidate);
+		fields.push_back(candidate->mid());
+		fields.push_back(string(*candidate));
 		sendSignaling(Message::Candidate, pack_strings(fields));
 	});
 }
 
-Peering::~Peering(void) 
-{
-	disconnect();
-}
+Peering::~Peering(void) { disconnect(); }
 
 identifier Peering::id(void) const
 {
@@ -100,22 +98,20 @@ void Peering::disconnect(void)
 
 void Peering::onMessage(const Message &message)
 {
-	if(uint32_t(message.type) < 0x20) 
-	{
+	if (uint32_t(message.type) < 0x20) {
 		processSignaling(message.type, message.payload);
 	}
 }
 
-void Peering::setDataChannel(shared_ptr<DataChannel> dataChannel)
-{
+void Peering::setDataChannel(shared_ptr<net::DataChannel> dataChannel) {
 	mDataChannel = dataChannel;
-	
+
 	mDataChannel->onOpen([this]() {
 		std::cout << "Data channel open" << std::endl;
 		mMessageBus->addChannel(mDataChannel, MessageBus::Priority::Relay);
 		mMessageBus->addRoute(mId, mDataChannel, MessageBus::Priority::Direct);
 	});
-	
+
 	mDataChannel->onClosed([this]() {
 		std::cout << "Data channel closed" << std::endl;
 		mMessageBus->removeChannel(mDataChannel);
@@ -131,21 +127,21 @@ void Peering::processSignaling(Message::Type type, const binary &payload)
 			// TODO: send list message
 			break;
 		}
-		
-		case Message::Description:
+
+	    case Message::Description:
 		{
 			vector<string> fields(unpack_strings(payload));
 			std::cout << "Remote description: " << fields[1] << std::endl;
-			mPeerConnection->setRemoteDescription(PeerConnection::SessionDescription(fields[1], fields[0]));
-			break;
+		    mPeerConnection->setRemoteDescription(net::Description(fields[1], fields[0]));
+		    break;
 		}
 
 		case Message::Candidate:
 		{
 			vector<string> fields(unpack_strings(payload));
 			std::cout << "Remote candidate: " << fields[1] << std::endl;
-			mPeerConnection->setRemoteCandidate(PeerConnection::IceCandidate(fields[1], fields[0]));
-			break;
+		    mPeerConnection->addRemoteCandidate(net::Candidate(fields[1], fields[0]));
+		    break;
 		}
 
 		default:

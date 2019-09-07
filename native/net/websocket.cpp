@@ -73,9 +73,16 @@ void WebSocket::setMaxPayloadSize(size_t size) {
 	mMaxPayloadSize = size;
 }
 
-void WebSocket::send(const binary &data)
-{
-	mWebSocket.write(data);
+void WebSocket::send(const std::variant<binary, string> &data) {
+	std::visit(
+	    [this](const auto &v) {
+		    using T = std::decay_t<decltype(v)>;
+		    if constexpr (std::is_same_v<T, binary>)
+			    mWebSocket.write(v);
+		    else
+			    throw std::runtime_error("WebSocket string messages are not supported");
+	    },
+	    data);
 }
 
 void WebSocket::run(void)

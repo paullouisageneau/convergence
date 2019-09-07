@@ -24,8 +24,7 @@
 namespace pla
 {
 
-size_t Stream::read(char *buffer, size_t size)
-{
+size_t Stream::read(byte *buffer, size_t size) {
 	if(!isMessage())
 	{
 		size_t left = size;
@@ -53,13 +52,13 @@ size_t Stream::read(binary &buf, size_t size)
 size_t Stream::read(string &str, size_t size)
 {
 	str.resize(size);
-	size = read(size ? &str[0] : NULL, str.size());
+	auto b = reinterpret_cast<byte *>(str.data());
+	size = read(size ? b : NULL, str.size());
 	str.resize(size);
 	return size;
 }
 
-void Stream::write(const char *data, size_t size)
-{
+void Stream::write(const byte *data, size_t size) {
 	if(!isMessage())
 	{
 		do {
@@ -81,12 +80,13 @@ void Stream::write(const binary &buf)
 
 void Stream::write(const string &str)
 {
-	write(str.data(), str.size());
+	auto b = reinterpret_cast<const byte *>(str.data());
+	write(b, str.size());
 }
 
 size_t Stream::readAll(binary &buf)
 {
-	char tmp[BufferSize];
+	byte tmp[BufferSize];
 	size_t len;
 	while((len = read(tmp, BufferSize)) > 0)
 		buf.insert(buf.end(), tmp, tmp + len);
@@ -95,10 +95,12 @@ size_t Stream::readAll(binary &buf)
 
 size_t Stream::readAll(string &str)
 {
-	char tmp[BufferSize];
+	byte tmp[BufferSize];
 	size_t len;
-	while((len = read(tmp, BufferSize)) > 0)
-		str.append(tmp, tmp + len);
+	while ((len = read(tmp, BufferSize)) > 0) {
+		auto s = reinterpret_cast<const char *>(tmp);
+		str.append(s, s + len);
+	}
 	return str.size();
 }
 
@@ -110,12 +112,13 @@ bool Stream::readLine(string &str)
 void Stream::writeLine(const string &str)
 {
 	string line(str + "\r\n");
-	write(line.data(), line.size());
+	auto b = reinterpret_cast<const byte *>(line.data());
+	write(b, line.size());
 }
 
 size_t Stream::ignore(size_t size)
 {
-	char buffer[BufferSize];
+	byte buffer[BufferSize];
 	size_t left = size;
 	size_t len;
 	while(left && (len = read(buffer, std::min(left, BufferSize))))
@@ -126,7 +129,7 @@ size_t Stream::ignore(size_t size)
 
 void Stream::discard(void)
 {
-	char buffer[BufferSize];
+	byte buffer[BufferSize];
 	while(read(buffer, BufferSize)) {}
 }
 
@@ -137,24 +140,27 @@ bool Stream::readUntil(string &output, const string &delimiters, const string &i
 	{
 		const size_t maxCount = 102400;	// 100 Ko for security reasons
 		size_t left = maxCount;
-		char chr;
-		if(!read(&chr, 1)) return false;
+		byte b;
+		if (!read(&b, 1))
+			return false;
+		char chr = to_integer<char>(b);
 		while(delimiters.find(chr) == string::npos)
 		{
 			if(ignored.find(chr) == string::npos) output+= chr;
 			--left;
-			if(!left || !read(&chr, 1)) break;
+			if (!left || !read(&b, 1))
+				break;
+			chr = to_integer<char>(b);
 		}
 		return true;
-	} 
-	else {
-		char buffer[BufferSize];
+	} else {
+		byte buffer[BufferSize];
 		size_t len = read(buffer, BufferSize);
 		if(!len) return false;
 
 		for(size_t i=0; i<len; ++len)
 		{
-			char chr = buffer[i];
+			char chr = to_integer<char>(buffer[i]);
 			if(delimiters.find(chr) != string::npos) break;
 			if(ignored.find(chr) == string::npos) output+= chr;
 		}

@@ -38,16 +38,17 @@ public:
 	Random(QualityLevel mLevel = Nonce);
 	~Random(void);
 
-	void generate(char *buffer, size_t size) const;
+	void generate(byte *buffer, size_t size) const;
 
 	// Stream
-	size_t readSome(char *buffer, size_t size);
-	size_t writeSome(const char *data, size_t size);
+	size_t readSome(byte *buffer, size_t size);
+	size_t writeSome(const byte *data, size_t size);
 
 	template<typename T> T uniform(T min, T max)
 	{
 		uint32_t i = 0;
-		while(!i) generate(reinterpret_cast<char*>(&i), sizeof(i));
+		while (!i)
+			generate(reinterpret_cast<byte *>(&i), sizeof(i));
 		double t = double(i-1)/double(std::numeric_limits<uint32_t>::max());
 		return min + T((max-min)*t);
 	}
@@ -55,7 +56,7 @@ public:
 	inline unsigned uniformInt(void)
 	{
 		uint64_t i = 0;
-		generate(reinterpret_cast<char*>(&i), sizeof(i));
+		generate(reinterpret_cast<byte *>(&i), sizeof(i));
 		return unsigned(i);
 	}
 
@@ -71,9 +72,15 @@ public:
 #else
 	typedef unsigned wrappersize_t;
 #endif
-	static void wrapperNonce (void *dummy, wrappersize_t size, uint8_t *buffer) { Random(Nonce).generate (reinterpret_cast<char*>(buffer), size_t(size)); }
-	static void wrapperCrypto(void *dummy, wrappersize_t size, uint8_t *buffer) { Random(Crypto).generate(reinterpret_cast<char*>(buffer), size_t(size)); }
-	static void wrapperKey   (void *dummy, wrappersize_t size, uint8_t *buffer) { Random(Key).generate   (reinterpret_cast<char*>(buffer), size_t(size)); }
+	static void wrapperNonce(void *dummy, wrappersize_t size, uint8_t *buffer) {
+		Random(Nonce).generate(reinterpret_cast<byte *>(buffer), size_t(size));
+	}
+	static void wrapperCrypto(void *dummy, wrappersize_t size, uint8_t *buffer) {
+		Random(Crypto).generate(reinterpret_cast<byte *>(buffer), size_t(size));
+	}
+	static void wrapperKey(void *dummy, wrappersize_t size, uint8_t *buffer) {
+		Random(Key).generate(reinterpret_cast<byte *>(buffer), size_t(size));
+	}
 
 private:
 	QualityLevel mLevel;

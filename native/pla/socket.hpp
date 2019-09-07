@@ -54,16 +54,16 @@ public:
 	void close(void);
 
 	// Stream
-	size_t readSome(char *buffer, size_t size);
-	size_t writeSome(const char *data, size_t size);
+	size_t readSome(byte *buffer, size_t size);
+	size_t writeSome(const byte *data, size_t size);
 	bool wait(duration timeout);
 
 	// Socket-specific
-	size_t peek(char *buffer, size_t size);
+	size_t peek(byte *buffer, size_t size);
 
 private:
-	size_t recv(char *buffer, size_t size, int flags);
-	size_t send(const char *data, size_t size, int flags);
+	size_t recv(byte *buffer, size_t size, int flags);
+	size_t send(const byte *data, size_t size, int flags);
 
 	socket_t mSock;
 	duration mConnectTimeout, mReadTimeout, mWriteTimeout;

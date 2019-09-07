@@ -132,7 +132,7 @@ void Merkle::Node::notify(const binary &digest, shared_ptr<binary> data) {
 			binary childDigest(16);
 			while (formatter >> childDigest) {
 				if (std::any_of(childDigest.begin(), childDigest.end(),
-				                [](char c) { return c != 0; })) {
+				                [](byte b) { return b != byte(0); })) {
 					auto child = mMerkle->createNode(this, childDigest);
 					mChildren.push_back(child);
 				}
@@ -165,7 +165,7 @@ void Merkle::Node::updateChild(Index &index, const binary &digest) {
 	// Rebuild data
 	BinaryFormatter formatter;
 	for (const auto &child : mChildren) {
-		formatter << (child ? child->digest() : binary(16, char(0)));
+		formatter << (child ? child->digest() : binary(16, byte(0)));
 	}
 
 	mDigest = mMerkle->mStore->insert(formatter.data());

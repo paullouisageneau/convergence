@@ -24,30 +24,54 @@
 
 #include "net/channel.hpp"
 
-#include <memory>
 #include <functional>
+#include <memory>
+#include <variant>
 #include <vector>
 
-namespace net
-{
+namespace net {
 
-using std::function;
 using std::shared_ptr;
 using std::vector;
 
-class DataChannel : public Channel
-{
+struct Configuration {
+	vector<string> iceServers;
+};
+
+class Description {
+public:
+	Description(const string &sdp, const string &type) : mSdp(sdp), mType(type) {}
+	string type() const { return mType; }
+	operator string() const { return mSdp; }
+
+private:
+	string mSdp;
+	string mType;
+};
+
+class Candidate {
+public:
+	Candidate(const string &candidate, const string &mid) : mCandidate(candidate), mMid(mid) {}
+	string mid() const { return mMid; }
+	operator string() const { return mCandidate; }
+
+private:
+	string mCandidate;
+	string mMid;
+};
+
+class DataChannel : public net::Channel {
 public:
 	explicit DataChannel(int id);
-	~DataChannel(void);
+	~DataChannel();
 
-	void close(void);
-	void send(const binary &data);
+	void close();
+	void send(const std::variant<binary, string> &data);
 
-	bool isOpen(void) const;
-	bool isClosed(void) const;
+	bool isOpen() const;
+	bool isClosed() const;
 
-	string label(void) const;
+	string label() const;
 
 private:
 	int mId;
@@ -62,49 +86,36 @@ private:
 class PeerConnection
 {
 public:
-	struct SessionDescription {
-		SessionDescription(const string &sdp, const string &type)
-			: sdp(sdp), type(type) {}
-		string sdp;
-		string type;
-	};
-
-	struct IceCandidate {
-		IceCandidate(const string &candidate, const string &sdpMid)
-			: candidate(candidate), sdpMid(sdpMid) {}
-		string candidate;
-		string sdpMid;
-	};
-
-	explicit PeerConnection(const vector<string> &iceServers);
-	~PeerConnection(void);
+	PeerConnection();
+	PeerConnection(const Configuration &config);
+	~PeerConnection();
 
 	shared_ptr<DataChannel> createDataChannel(const string &label);
 
-	void setRemoteDescription(const SessionDescription &description);
-	void setRemoteCandidate(const IceCandidate &candidate);
+	void setRemoteDescription(const Description &description);
+	void addRemoteCandidate(const Candidate &candidate);
 
-	void onDataChannel(function<void(shared_ptr<DataChannel>)> callback);
-	void onLocalDescription(function<void(const SessionDescription&)> callback);
-	void onLocalCandidate(function<void(const IceCandidate&)> callback);
+	void onDataChannel(std::function<void(shared_ptr<DataChannel>)> callback);
+	void onLocalDescription(std::function<void(const Description &description)> callback);
+	void onLocalCandidate(std::function<void(const Candidate &candidate)> callback);
 
 protected:
 	void triggerDataChannel(shared_ptr<DataChannel> dataChannel);
-	void triggerLocalDescription(const SessionDescription &description);
-	void triggerLocalCandidate(const IceCandidate &candidate);
+	void triggerLocalDescription(const Description &description);
+	void triggerLocalCandidate(const Candidate &candidate);
 
-	function<void(shared_ptr<DataChannel>)> mDataChannelCallback;
-	function<void(const SessionDescription&)> mLocalDescriptionCallback;
-	function<void(const IceCandidate&)> mLocalCandidateCallback;
+	std::function<void(shared_ptr<DataChannel>)> mDataChannelCallback;
+	std::function<void(const Description &description)> mLocalDescriptionCallback;
+	std::function<void(const Candidate &candidate)> mLocalCandidateCallback;
 
 private:
 	int mId;
 
 	static void DataChannelCallback(int dc, void *ptr);
 	static void DescriptionCallback(const char *sdp, const char *type, void *ptr);
-	static void CandidateCallback(const char *candidate, const char *sdpMid, void *ptr);
+	static void CandidateCallback(const char *candidate, const char *mid, void *ptr);
 };
 
-}
+} // namespace net
 
 #endif // NET_WEBRTC_H

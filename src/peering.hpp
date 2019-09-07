@@ -31,10 +31,6 @@
 namespace convergence
 {
 
-using net::PeerConnection;
-using net::DataChannel;
-using std::function;
-
 class Peering : public MessageBus::Listener
 {
 public:
@@ -46,19 +42,19 @@ public:
 
 	void connect(void);
 	void disconnect(void);
-	
+
 protected:
 	void onMessage(const Message &message);
 
 private:
-	void setDataChannel(shared_ptr<DataChannel> dataChannel);
+	void setDataChannel(shared_ptr<net::DataChannel> dataChannel);
 	void processSignaling(Message::Type type, const binary &payload);
 	void sendSignaling(Message::Type type, const binary &payload);
 
 	identifier mId;
 	shared_ptr<MessageBus> mMessageBus;
-	shared_ptr<PeerConnection> mPeerConnection;
-	shared_ptr<DataChannel> mDataChannel;
+	shared_ptr<net::PeerConnection> mPeerConnection;
+	shared_ptr<net::DataChannel> mDataChannel;
 };
 
 }

@@ -24,35 +24,37 @@
 
 #include <functional>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace net
 {
 
+using std::byte;
 using std::function;
 using std::string;
-typedef std::vector<char> binary;
+typedef std::vector<byte> binary;
 
 class Channel
 {
 public:
 	virtual void close(void) = 0;
-	virtual void send(const binary &data) = 0;
-	
+	virtual void send(std::variant<binary, string>) = 0;
+
 	virtual bool isOpen(void) const = 0;
 	virtual bool isClosed(void) const = 0;
-	
+
 	void onOpen(function<void()> callback);
 	void onClosed(function<void()> callback);
 	void onError(function<void(const string&)> callback);
-	void onMessage(function<void(const binary&)> callback);
-	
+	void onMessage(function<void(const std::variant<binary, string> &)> callback);
+
 protected:
 	virtual void triggerOpen(void);
 	virtual void triggerClosed(void);
 	virtual void triggerError(const string &error);
-	virtual void triggerMessage(const binary &data);
-	
+	virtual void triggerMessage(const std::variant<binary, string> &data);
+
 private:
 	function<void()> mOpenCallback;
 	function<void()> mClosedCallback;

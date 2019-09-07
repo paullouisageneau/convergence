@@ -49,9 +49,9 @@ public:
 	void bind(const Address &local, bool broadcast = false);
 	void close(void);
 
-	int read(char *buffer, size_t size, Address &sender, duration timeout = seconds(-1.));
-	int peek(char *buffer, size_t size, Address &sender, duration timeout = seconds(-1.));
-	int write(const char *buffer, size_t size, const Address &receiver);
+	int read(byte *buffer, size_t size, Address &sender, duration timeout = seconds(-1.));
+	int peek(byte *buffer, size_t size, Address &sender, duration timeout = seconds(-1.));
+	int write(const byte *buffer, size_t size, const Address &receiver);
 
 	bool read(binary &buffer, Address &sender, duration timeout = seconds(-1.));
 	bool peek(binary &buffer, Address &sender, duration timeout = seconds(-1.));
@@ -64,8 +64,8 @@ public:
 	void unregisterStream(DatagramStream *stream);
 
 private:
-	int recv(char *buffer, size_t size, Address &sender, duration timeout, int flags);
-	int send(const char *buffer, size_t size, const Address &receiver, int flags);
+	int recv(byte *buffer, size_t size, Address &sender, duration timeout, int flags);
+	int send(const byte *buffer, size_t size, const Address &receiver, int flags);
 
 	socket_t mSock;
 	int mPort;
@@ -91,8 +91,8 @@ public:
 	void setTimeout(duration timeout);
 
 	// Stream
-	size_t readSome(char *buffer, size_t size);
-	size_t writeSome(const char *data, size_t size);
+	size_t readSome(byte *buffer, size_t size);
+	size_t writeSome(const byte *data, size_t size);
 	bool wait(duration timeout);
 	void close(void);
 	bool isMessage(void) const;

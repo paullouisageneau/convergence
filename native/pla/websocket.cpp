@@ -64,37 +64,38 @@ const size_t MAX_PING_PAYLOAD_SIZE = 125;
 /*
 WebSocket *WebSocket::Upgrade(Http::Request &request)
 {
-	auto it = request.headers.find("Upgrade");
-	if(it != request.headers.end())
-	{
-		std::list<string> protocols;
-		it->second.explode(protocols, ',');
-		for(string &proto : protocols)
-		{
-			proto.trim();
-			if(proto.toLower() == "websocket")
-			{
-				Http::Response response(request, 101);
-				response.headers["Connection"] = "Upgrade";
-				response.headers["Upgrade"] = "websocket";
-				
-				it = request.headers.find("Sec-WebSocket-Key");
-				if(it != request.headers.end())
-				{
-					string key = it->second.trimmed();
-					string guid = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-					string answerKey = Sha1().compute(key + guid).base64Encode();
-					response.headers["Sec-WebSocket-Accept"] = answerKey;
-				}
-				
-				response.send();
-				
-				request.stream = NULL;	// Steal the stream
-				return new WebSocket(response.stream, true);	// Masking may be disabled on server side
-			}
-		}
-	}
-	return NULL;
+    auto it = request.headers.find("Upgrade");
+    if(it != request.headers.end())
+    {
+        std::list<string> protocols;
+        it->second.explode(protocols, ',');
+        for(string &proto : protocols)
+        {
+            proto.trim();
+            if(proto.toLower() == "websocket")
+            {
+                Http::Response response(request, 101);
+                response.headers["Connection"] = "Upgrade";
+                response.headers["Upgrade"] = "websocket";
+
+                it = request.headers.find("Sec-WebSocket-Key");
+                if(it != request.headers.end())
+                {
+                    string key = it->second.trimmed();
+                    string guid = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+                    string answerKey = Sha1().compute(key + guid).base64Encode();
+                    response.headers["Sec-WebSocket-Accept"] = answerKey;
+                }
+
+                response.send();
+
+                request.stream = NULL;	// Steal the stream
+                return new WebSocket(response.stream, true);	// Masking may be disabled on server
+side
+            }
+        }
+    }
+    return NULL;
 }
 */
 
@@ -119,17 +120,14 @@ WebSocket::WebSocket(const string &url) :
 	connect(url);
 }
 
-WebSocket::~WebSocket(void) 
-{
-	NOEXCEPTION(close());
-}
+WebSocket::~WebSocket(void) { NOEXCEPTION(close()); }
 
 void WebSocket::connect(const string &url)
 {
 	close();
 	try {
 		mSendMask = true;
-	
+
 		std::regex regex(R"(^(([^:\/?#]+):)?(//([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?)", std::regex::extended);
 		std::smatch match;
 		if(!std::regex_match(url, match, regex))
@@ -151,7 +149,7 @@ void WebSocket::connect(const string &url)
 
 		binary key;
 		Random().read(key, 16);
-			
+
 		string request = "GET " + fullPath + " HTTP/1.1\r\n"
 		"Host: " + host + "\r\n"
 		"Connection: Upgrade\r\n"
@@ -163,15 +161,14 @@ void WebSocket::connect(const string &url)
 
 		string line;
 		if(!mStream->readLine(line)) throw std::runtime_error("Connection unexpectedly closed");
-		
+
 		std::istringstream ss(line);
 		string protocol;
 		unsigned int code = 0;
 		ss >> protocol >> code;
 		if(code != 101) throw std::runtime_error("Unexpected response code for WebSocket: " + to_string(code));
 
-		while(true) 
-		{
+		while (true) {
 			if(!mStream->readLine(line)) throw std::runtime_error("Connection unexpectedly closed");
 			if(line.empty()) break;
 			// TODO
@@ -199,12 +196,10 @@ void WebSocket::close(void)
 	}
 }
 
-size_t WebSocket::readSome(char *buffer, size_t size)
-{
+size_t WebSocket::readSome(byte *buffer, size_t size) {
 	size_t length = 0;
 	bool fin = false;
-	while(!fin) 
-	{
+	while (!fin) {
 		int len = recvFrame(buffer + length, size - length, fin);
 		if(len < 0) return 0;
 		length+= size_t(len);
@@ -212,13 +207,11 @@ size_t WebSocket::readSome(char *buffer, size_t size)
 	return length;
 }
 
-size_t WebSocket::writeSome(const char *data, size_t size)
-{
+size_t WebSocket::writeSome(const byte *data, size_t size) {
 	return sendFrame(BINARY_FRAME, data, size, true);
 }
 
-int WebSocket::recvFrame(char *buffer, size_t size, bool &fin)
-{
+int WebSocket::recvFrame(byte *buffer, size_t size, bool &fin) {
 	if(!mStream) throw std::runtime_error("WebSocket closed");
 
 	while(true)
@@ -251,7 +244,7 @@ int WebSocket::recvFrame(char *buffer, size_t size, bool &fin)
 				throw std::runtime_error("Connection unexpectedly closed");
 			length = extLen;
 		}
-		
+
 		binary maskKey;
 		if(mask && mStream->read(maskKey, 4) < 4)
 			throw std::runtime_error("Connection unexpectedly closed");
@@ -272,12 +265,12 @@ int WebSocket::recvFrame(char *buffer, size_t size, bool &fin)
 				}
 				return int(s);
 			}
-			
-			case PING:
+
+		    case PING:
 			{
 				const size_t s = MAX_PING_PAYLOAD_SIZE;
-				char payload[s];
-				mStream->read(payload, s);
+			    byte payload[s];
+			    mStream->read(payload, s);
 				if(length > s) mStream->ignore(length - s);
 				if(mask)
 				{
@@ -287,19 +280,18 @@ int WebSocket::recvFrame(char *buffer, size_t size, bool &fin)
 				sendFrame(PONG, payload, s, true);
 				break;
 			}
-			
-			case PONG:
+
+		    case PONG:
 			{
 				break;
 			}
-			
-			case CLOSE:
-			{ 
-				close(); 
-				return -1;
-			}
-			
-			default:
+
+		    case CLOSE: {
+			    close();
+			    return -1;
+		    }
+
+		    default:
 			{
 				close();
 				throw std::invalid_argument("Invalid WebSocket opcode");
@@ -308,13 +300,12 @@ int WebSocket::recvFrame(char *buffer, size_t size, bool &fin)
 	}
 }
 
-int WebSocket::sendFrame(uint8_t opcode, const char *data, size_t size, bool fin)
-{
+int WebSocket::sendFrame(uint8_t opcode, const byte *data, size_t size, bool fin) {
 	if(!mStream) throw std::runtime_error("WebSocket is closed");
 
 	BinaryFormatter frame;
 	frame << uint8_t((opcode & 0x0F) | (fin ? 0x80 : 0));
-	
+
 	unsigned len = size;
 	if(len < 0x7E)
 	{
@@ -329,22 +320,21 @@ int WebSocket::sendFrame(uint8_t opcode, const char *data, size_t size, bool fin
 		frame << uint8_t(0x7F | (mSendMask ? 0x80 : 0));
 		frame << uint64_t(len);
 	}
-	
+
 	binary content(data, data + size);
 	if(mSendMask)
 	{
 		binary maskKey;
 		Random().read(maskKey, 4);
 		frame << maskKey;
-		
+
 		for(size_t i = 0; i < size; ++i)
 			content[i]^= maskKey[i%4];
 	}
-	
+
 	frame << content;
 
 	mStream->write(frame.data());
 	return int(size);
 }
-
 }

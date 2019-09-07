@@ -227,8 +227,8 @@ bool Terrain::Block::update(const binary &data) {
 		for (int y = 0; y < Size; ++y)
 			for (int z = 0; z < Size; ++z) {
 				auto &cell = mCells[c++];
-				cell.type = uint8_t(*(it++));
-				cell.weight = uint8_t(*(it++));
+				cell.type = to_integer<uint8_t>(*(it++));
+				cell.weight = to_integer<uint8_t>(*(it++));
 			}
 
 	mChanged = true;
@@ -243,8 +243,8 @@ void Terrain::Block::commit(void) {
 		for (int y = 0; y < Size; ++y)
 			for (int z = 0; z < Size; ++z) {
 				const auto &cell = mCells[c++];
-				data.push_back(char(cell.type));
-				data.push_back(char(cell.weight));
+				data.push_back(byte(cell.type));
+				data.push_back(byte(cell.weight));
 			}
 	mTerrain->commitData(position(), data);
 	mChanged = true;

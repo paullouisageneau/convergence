@@ -62,8 +62,7 @@ void BinaryFormatter::clear(void)
 	mReadPosition = 0;
 }
 
-size_t BinaryFormatter::read(char *data, size_t size)
-{
+size_t BinaryFormatter::read(byte *data, size_t size) {
 	auto begin = mData.begin() + mReadPosition;
 	size = std::min(size, size_t(mData.end() - begin));
 	std::copy(begin, begin + size, data);
@@ -71,8 +70,7 @@ size_t BinaryFormatter::read(char *data, size_t size)
 	return size;
 }
 
-void BinaryFormatter::write(const char *data, size_t size)
-{
+void BinaryFormatter::write(const byte *data, size_t size) {
 	mData.insert(mData.end(), data, data + size);
 }
 
@@ -84,7 +82,7 @@ BinaryFormatter &BinaryFormatter::operator>> (binary &b)
 
 BinaryFormatter &BinaryFormatter::operator>> (std::string &s)
 {
-	mReadFailed = (read(&s[0], s.size()) != s.size());
+	mReadFailed = (read(reinterpret_cast<byte *>(s[0]), s.size()) != s.size());
 	return *this;
 }
 
@@ -118,40 +116,40 @@ BinaryFormatter &BinaryFormatter::operator>> (int64_t &i)
 
 BinaryFormatter &BinaryFormatter::operator>> (uint8_t &i)
 {
-	mReadFailed = !read(reinterpret_cast<char*>(&i), sizeof(i));
+	mReadFailed = !read(reinterpret_cast<byte *>(&i), sizeof(i));
 	return *this;
 }
 
 BinaryFormatter &BinaryFormatter::operator>> (uint16_t &i)
 {
-	mReadFailed = !read(reinterpret_cast<char*>(&i), sizeof(i));
+	mReadFailed = !read(reinterpret_cast<byte *>(&i), sizeof(i));
 	if(!mReadFailed) i = toBigEndian(i);
 	return *this;
 }
 
 BinaryFormatter &BinaryFormatter::operator>> (uint32_t &i)
 {
-	mReadFailed = !read(reinterpret_cast<char*>(&i), sizeof(i));
+	mReadFailed = !read(reinterpret_cast<byte *>(&i), sizeof(i));
 	if(!mReadFailed) i = toBigEndian(i);
 	return *this;
 }
 
 BinaryFormatter &BinaryFormatter::operator>> (uint64_t &i)
 {
-	mReadFailed = !read(reinterpret_cast<char*>(&i), sizeof(i));
+	mReadFailed = !read(reinterpret_cast<byte *>(&i), sizeof(i));
 	if(!mReadFailed) i = toBigEndian(i);
 	return *this;
 }
 
 BinaryFormatter &BinaryFormatter::operator>> (float32_t &f)
 {
-	mReadFailed = !read(reinterpret_cast<char*>(&f), sizeof(f));
+	mReadFailed = !read(reinterpret_cast<byte *>(&f), sizeof(f));
 	return *this;
 }
 
 BinaryFormatter &BinaryFormatter::operator>> (float64_t &f)
 {
-	mReadFailed = !read(reinterpret_cast<char*>(&f), sizeof(f));
+	mReadFailed = !read(reinterpret_cast<byte *>(&f), sizeof(f));
 	return *this;
 }
 
@@ -163,7 +161,7 @@ BinaryFormatter &BinaryFormatter::operator<< (const binary &b)
 
 BinaryFormatter &BinaryFormatter::operator<< (const string &s)
 {
-	write(s.data(), s.size());
+	write(reinterpret_cast<const byte *>(s.data()), s.size());
 	return *this;
 }
 
@@ -171,7 +169,7 @@ BinaryFormatter &BinaryFormatter::operator<< (const char *s)
 {
 	size_t len = strlen(s);
 	*this << uint32_t(len);
-	write(s, len);
+	write(reinterpret_cast<const byte *>(s), len);
 	return *this;
 }
 
@@ -201,40 +199,40 @@ BinaryFormatter &BinaryFormatter::operator<< (int64_t i)
 
 BinaryFormatter &BinaryFormatter::operator<< (uint8_t i)
 {
-	write(reinterpret_cast<char*>(&i), 1);
+	write(reinterpret_cast<byte *>(&i), 1);
 	return *this;
 }
 
 BinaryFormatter &BinaryFormatter::operator<< (uint16_t i)
 {
 	i = toBigEndian(i);
-	write(reinterpret_cast<char*>(&i), 2);
+	write(reinterpret_cast<byte *>(&i), 2);
 	return *this;
 }
 
 BinaryFormatter &BinaryFormatter::operator<< (uint32_t i)
 {
 	i = toBigEndian(i);
-	write(reinterpret_cast<char*>(&i), 4);
+	write(reinterpret_cast<byte *>(&i), 4);
 	return *this;
 }
 
 BinaryFormatter &BinaryFormatter::operator<< (uint64_t i)
 {
 	i = toBigEndian(i);
-	write(reinterpret_cast<char*>(&i), 8);
+	write(reinterpret_cast<byte *>(&i), 8);
 	return *this;
 }
 
 BinaryFormatter &BinaryFormatter::operator<< (float32_t f)
 {
-	write(reinterpret_cast<char*>(&f), 4);
+	write(reinterpret_cast<byte *>(&f), 4);
 	return *this;
 }
 
 BinaryFormatter &BinaryFormatter::operator<< (float64_t f)
 {
-	write(reinterpret_cast<char*>(&f), 8);
+	write(reinterpret_cast<byte *>(&f), 8);
 	return *this;
 }
 

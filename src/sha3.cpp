@@ -24,17 +24,13 @@ namespace convergence
 {
 
 /*
-Adapted from the implementation by the Keccak Team, namely, Guido Bertoni, 
+Adapted from the implementation by the Keccak Team, namely, Guido Bertoni,
 Joan Daemen, Michaël Peeters, Gilles Van Assche, and Ronny Van Keer.
 */
 
-inline uint8_t *u8(char *data) {
-	return reinterpret_cast<uint8_t*>(data);
-}
+inline uint8_t *u8(byte *data) { return reinterpret_cast<uint8_t *>(data); }
 
-inline const uint8_t *u8(const char *data) {
-	return reinterpret_cast<const uint8_t*>(data);
-}
+inline const uint8_t *u8(const byte *data) { return reinterpret_cast<const uint8_t *>(data); }
 
 typedef uint64_t tKeccakLane;
 
@@ -123,8 +119,7 @@ void KeccakF1600_StatePermute(void *state)
 	unsigned int round, x, y, j, t;
 	uint8_t LFSRstate = 0x01;
 
-	for(round=0; round<24; round++) 
-	{
+	for (round = 0; round < 24; round++) {
 		{   /* === θ step (see [Keccak Reference, Section 2.3.2]) === */
 			tKeccakLane C[5], D;
 
@@ -215,11 +210,8 @@ that use the Keccak-f[1600] permutation.
   * @param  outputByteLen   The number of output bytes desired.
   * @pre    One must have r+c=1600 and the rate a multiple of 8 bits in this implementation.
   */
-void Keccak(unsigned int rate, unsigned int capacity, 
-	const uint8_t *input, size_t inputByteLen, 
-	uint8_t delimitedSuffix, 
-	uint8_t *output, size_t outputByteLen)
-{
+void Keccak(unsigned int rate, unsigned int capacity, const uint8_t *input, size_t inputByteLen,
+            uint8_t delimitedSuffix, uint8_t *output, size_t outputByteLen) {
 	uint8_t state[200];
 	unsigned int rateInBytes = rate/8;
 	unsigned int blockSize = 0;

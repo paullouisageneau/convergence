@@ -41,13 +41,9 @@
 namespace pla
 {
 
-inline uint8_t *u8(char *data) {
-	return reinterpret_cast<uint8_t*>(data);
-}
+inline uint8_t *u8(byte *data) { return reinterpret_cast<uint8_t *>(data); }
 
-inline const uint8_t *u8(const char *data) {
-	return reinterpret_cast<const uint8_t*>(data);
-}
+inline const uint8_t *u8(const byte *data) { return reinterpret_cast<const uint8_t *>(data); }
 
 inline uint8_t *u8(unsigned char *data) {
 	return reinterpret_cast<uint8_t*>(data);
@@ -107,7 +103,7 @@ void Sha1::mac(const binary &message, const binary &key, binary &digest)
 	struct hmac_sha1_ctx ctx;
 	hmac_sha1_set_key(&ctx, key.size(), u8(key.data()));
 	hmac_sha1_update(&ctx, message.size(), u8(message.data()));
-	
+
 	digest.resize(length());
 	hmac_sha1_digest(&ctx, digest.size(), u8(digest.data()));
 }
@@ -160,7 +156,7 @@ void Sha256::mac(const binary &message, const binary &key, binary &digest)
 	struct hmac_sha256_ctx ctx;
 	hmac_sha256_set_key(&ctx, key.size(), u8(key.data()));
 	hmac_sha256_update(&ctx, message.size(), u8(message.data()));
-	
+
 	digest.resize(length());
 	hmac_sha256_digest(&ctx, digest.size(), u8(digest.data()));
 }
@@ -213,7 +209,7 @@ void Sha512::mac(const binary &message, const binary &key, binary &digest)
 	struct hmac_sha512_ctx ctx;
 	hmac_sha512_set_key(&ctx, key.size(), u8(key.data()));
 	hmac_sha512_update(&ctx, message.size(), u8(message.data()));
-	
+
 	digest.resize(length());
 	hmac_sha512_digest(&ctx, digest.size(), u8(digest.data()));
 }
@@ -224,7 +220,7 @@ void Sha512::pbkdf2(const binary &secret, const binary &salt, binary &key, size_
 
 	struct hmac_sha512_ctx ctx;
 	hmac_sha512_set_key(&ctx, secret.size(), u8(secret.data()));
-	
+
 	key.resize(key_len);
 	#define pbkdf2 nettle_pbkdf2	// fix name conflict with nettle
 	PBKDF2(&ctx, hmac_sha512_update, hmac_sha512_digest,
@@ -318,14 +314,13 @@ Cipher::~Cipher(void)
 		delete mStream;
 }
 
-size_t Cipher::readSome(char *buffer, size_t size)
-{
+size_t Cipher::readSome(byte *buffer, size_t size) {
 	if(mReadBlock.empty())
 	{
 		mStream->read(mReadBlock, blockSize());
 		decryptBlock(mReadBlock);
 	}
-	
+
 	auto begin = mReadBlock.begin();
 	size = std::min(size, mReadBlock.size());
 	std::copy(begin, begin + size, buffer);
@@ -333,20 +328,19 @@ size_t Cipher::readSome(char *buffer, size_t size)
 	return size;
 }
 
-size_t Cipher::writeSome(const char *data, size_t size)
-{
+size_t Cipher::writeSome(const byte *data, size_t size) {
 	mWriteBlock.insert(mWriteBlock.end(), data, data + size);
-	
+
 	auto it = mWriteBlock.begin();
 	while(it != mWriteBlock.end())
 	{
 		size_t left = mWriteBlock.end() - it;
 		if(left < blockSize()) break;
-		
+
 		binary block(it, it + blockSize());
 		encryptBlock(block);
 		mStream->write(block);
-		
+
 		it+= blockSize();
 	}
 	mWriteBlock.assign(it, mWriteBlock.end());
@@ -592,10 +586,10 @@ binary Rsa::PublicKey::toBinary() const
 void Rsa::PublicKey::fromBinary(binary b)
 {
 	clear();
-	
+
 	DerSequence sequence(b);
 	sequence >> mPub.n >> mPub.e;
-	
+
 	if(!rsa_public_key_prepare(&mPub))
 		throw std::runtime_error("Invalid parameters");
 }
@@ -682,13 +676,13 @@ binary Rsa::PrivateKey::toBinary() const
 void Rsa::PrivateKey::fromBinary(binary b)
 {
 	clear();
-	
+
 	unsigned long version = 0;
 	DerSequence sequence(b);
 	sequence >> version;
 	sequence >> mPub.n >> mPub.e;
 	sequence >> mPriv.d >> mPriv.p >> mPriv.q >> mPriv.a >> mPriv.b >> mPriv.c;
-	
+
 	if(!rsa_public_key_prepare(&mPub))
 		throw std::runtime_error("Invalid parameters");
 
@@ -749,7 +743,7 @@ void Rsa::CreateCertificate(gnutls_x509_crt_t crt, gnutls_x509_privkey_t key, co
 	gnutls_x509_crt_set_dn_by_oid(crt, GNUTLS_OID_X520_COMMON_NAME, 0, name.data(), name.size());
 
 	const size_t serialSize = 16;
-	char serial[serialSize];
+	byte serial[serialSize];
 	Random(Random::Nonce).read(serial, serialSize);
 	gnutls_x509_crt_set_serial(crt, serial, serialSize);
 }
@@ -798,20 +792,20 @@ void Argon2::compute(const binary &secret, const binary &salt, binary &key, size
 
 DerSequence::DerSequence(void)
 {
-	
+
 }
 
 DerSequence::DerSequence(const binary &b)
 {
 	BinaryFormatter sequence(b);
-	
+
 	uint8_t type = 0;
 	if(!(sequence >> type)) throw std::invalid_argument("Truncated DER sequence");
 	if(type != 0x30) throw std::invalid_argument("Expected DER sequence");
 
 	size_t length = 0;
 	if(!readLength(sequence, length)) throw std::invalid_argument("Truncated DER sequence");
-	
+
 	binary content = sequence.remaining();
 	if(content.size() > length) content.resize(length);
 	mFormatter.data(content);
@@ -820,12 +814,12 @@ DerSequence::DerSequence(const binary &b)
 binary DerSequence::data(void) const
 {
 	const binary content = mFormatter.data();
-	
+
 	BinaryFormatter sequence;
 	sequence << uint8_t(0x30);	// SEQUENCE
 	writeLength(sequence, content.size());
 	sequence << content;
-	
+
 	return sequence.data();
 }
 
@@ -834,11 +828,11 @@ DerSequence &DerSequence::operator>> (mpz_t n)
 	uint8_t type = 0;
 	if(!(mFormatter >> type)) throw std::invalid_argument("Truncated DER sequence");
 	if(type != 0x02) throw std::invalid_argument("Expected DER integer");
-	
+
 	size_t length = 0;
 	if(!readLength(mFormatter, length)) throw std::invalid_argument("Truncated DER sequence");
 	if(length == size_t(-1)) throw std::invalid_argument("Unexpected DER indefinite length");
-	
+
 	binary b(length);
 	if(!(mFormatter >> b)) throw std::invalid_argument("Truncated DER sequence");
 	mpz_import_binary(n, b);
@@ -896,7 +890,7 @@ bool DerSequence::readLength(BinaryFormatter &formatter, size_t &length)
 		length = size_t(b);
 		return true;
 	}
-	
+
 	// long length
 	size_t len(b & 0x7F);
 	switch(len)
@@ -939,7 +933,7 @@ bool DerSequence::readLength(BinaryFormatter &formatter, size_t &length)
 			mpz_clear(m);
 		}
 	}
-	
+
 	return true;
 }
 
