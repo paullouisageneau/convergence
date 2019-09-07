@@ -37,7 +37,7 @@ extern void rtcSetLocalDescriptionCallback(int pc,
 extern void rtcSetLocalCandidateCallback(int pc, void (*candidateCallback)(const char *,
                                                                            const char *, void *));
 extern void rtcSetRemoteDescription(int pc, const char *sdp, const char *type);
-extern void rtcSetRemoteCandidate(int pc, const char *candidate, const char *mid);
+extern void rtcAddRemoteCandidate(int pc, const char *candidate, const char *mid);
 extern int rtcGetDataChannelLabel(int dc, char *buffer, int size);
 extern void rtcSetOpenCallback(int dc, void (*openCallback)(void *));
 extern void rtcSetErrorCallback(int dc, void (*errorCallback)(const char *, void *));
@@ -127,7 +127,7 @@ void PeerConnection::setRemoteDescription(const Description &description) {
 }
 
 void PeerConnection::addRemoteCandidate(const Candidate &candidate) {
-	rtcSetRemoteCandidate(mId, string(candidate).c_str(), candidate.mid().c_str());
+	rtcAddRemoteCandidate(mId, string(candidate).c_str(), candidate.mid().c_str());
 }
 
 void PeerConnection::onDataChannel(function<void(shared_ptr<DataChannel>)> callback) {
@@ -196,4 +196,12 @@ bool DataChannel::isClosed(void) const { return mId == 0; }
 std::string DataChannel::label(void) const { return mLabel; }
 
 } // namespace net
+
+std::ostream &operator<<(std::ostream &out, const net::Candidate &candidate) {
+	return out << std::string(candidate);
+}
+
+std::ostream &operator<<(std::ostream &out, const net::Description &description) {
+	return out << std::string(description);
+}
 

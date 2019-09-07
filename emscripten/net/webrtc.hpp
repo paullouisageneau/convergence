@@ -118,11 +118,7 @@ private:
 
 } // namespace net
 
-std::ostream &operator<<(std::ostream &out, const net::Candidate &candidate) {
-	return out << std::string(candidate);
-}
-std::ostream &operator<<(std::ostream &out, const net::Description &description) {
-	return out << std::string(description);
-}
+std::ostream &operator<<(std::ostream &out, const net::Candidate &candidate);
+std::ostream &operator<<(std::ostream &out, const net::Description &description);
 
 #endif // NET_WEBRTC_H
