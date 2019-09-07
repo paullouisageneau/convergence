@@ -42,7 +42,7 @@ $(OBJDIR)/%.o: %.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CPPFLAGS) $(INCLUDE) -MMD -MP -c -o $@ $<
 
--include $(OBJS:.o=.d)
+-include $(SRCS:.cpp=.d)
 
 $(OUTPUT): $(LIBS) $(OBJS) $(BUNDLEDFILES) | $(BUILDDIR)
 	$(CXX) $(LDFLAGS) -o $(OUTPUT) $(OBJS) $(LDLIBS)
@@ -51,13 +51,14 @@ $(BUILDDIR):
 	mkdir -p $(BUILDDIR)
 
 clean:
+	-rm *.d {pla,src}/*.d $(DIR)/*.d $(DIR)/{pla,src}/*.d
 	-rm -r $(BUILDDIR)/$(DIR) $(BUILDDIR)/pla $(BUILDDIR)/src
 	-cd $(DIR)/libdatachannel && make clean
 
 dist-clean: clean
 	-rm -r build
 
-$(BUILDDIR)/libdatachannel.a: | $(BUILDDIR)
+$(BUILDDIR)/libdatachannel.a $(BUILDDIR)/libusrsctp.a: | $(BUILDDIR)
 	cd $(DIR)/libdatachannel && make
 	cp $(DIR)/libdatachannel/libdatachannel.a $(BUILDDIR)
 	cp $(DIR)/libdatachannel/libusrsctp.a $(BUILDDIR)
