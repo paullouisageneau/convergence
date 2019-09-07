@@ -41,7 +41,7 @@ struct Configuration {
 class Description {
 public:
 	Description(const string &sdp, const string &type) : mSdp(sdp), mType(type) {}
-	string type() const { return mType; }
+	string typeString() const { return mType; }
 	operator string() const { return mSdp; }
 
 private:
@@ -117,5 +117,12 @@ private:
 };
 
 } // namespace net
+
+std::ostream &operator<<(std::ostream &out, const net::Candidate &candidate) {
+	return out << std::string(candidate);
+}
+std::ostream &operator<<(std::ostream &out, const net::Description &description) {
+	return out << std::string(description);
+}
 
 #endif // NET_WEBRTC_H

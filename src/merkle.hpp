@@ -56,7 +56,7 @@ public:
 	public:
 		Node(Merkle *merkle, Node *parent);
 		Node(Merkle *merkle, Node *parent, const binary &digest);
-		~Node(void);
+		virtual ~Node(void);
 
 		void notify(const binary &digest, shared_ptr<binary> data);
 		void updateChild(Index &index, const binary &digest);

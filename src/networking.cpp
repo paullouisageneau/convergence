@@ -60,11 +60,10 @@ void Networking::connectWebSocket(const string &url)
 		std::cout << "WebSocket opened" << std::endl;
 		mMessageBus->addChannel(webSocket, MessageBus::Priority::Default);
 	});
-	
-	webSocket->onError([this](const string &error) {
-		std::cerr << "WebSocket error: " << error << std::endl;
-	});
-	
+
+	webSocket->onError(
+	    [](const string &error) { std::cerr << "WebSocket error: " << error << std::endl; });
+
 	webSocket->onClosed([this, webSocket]() {
 		std::cerr << "WebSocket closed" << std::endl;
 		mMessageBus->removeChannel(webSocket);
@@ -75,7 +74,7 @@ shared_ptr<Peering> Networking::createPeering(const identifier &id)
 {
 	auto it = mPeerings.find(id);
 	if(it != mPeerings.end()) return it->second;
-	
+
 	auto peering = std::make_shared<Peering>(id, mMessageBus);
 	mMessageBus->registerListener(id, peering);
 	mPeerings[id] = peering;
