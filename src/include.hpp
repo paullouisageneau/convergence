@@ -33,15 +33,14 @@
 #include <shared_mutex>
 #include <tuple>
 
-namespace convergence
-{
+namespace convergence {
 
 using std::shared_ptr;
-using std::weak_ptr;
 using std::unique_ptr;
-template<typename T> using sptr = shared_ptr<T>;
-template<typename T> using wptr = weak_ptr<T>;
-template<typename T> using uptr = unique_ptr<T>;
+using std::weak_ptr;
+template <typename T> using sptr = shared_ptr<T>;
+template <typename T> using wptr = weak_ptr<T>;
+template <typename T> using uptr = unique_ptr<T>;
 
 using std::nullopt;
 using std::optional;
@@ -51,12 +50,12 @@ using std::tuple;
 using std::mutex;
 using std::recursive_mutex;
 
-using glm::vec2;
-using glm::vec3;
-using glm::vec4;
 using glm::mat2;
 using glm::mat3;
 using glm::mat4;
+using glm::vec2;
+using glm::vec3;
+using glm::vec4;
 
 using pla::byte;
 using pla::float32_t;
@@ -81,8 +80,7 @@ using pla::Epsilon;
 using pla::Pi;
 using pla::Sqrt2;
 
-class identifier : public binary
-{
+class identifier : public binary {
 public:
 	identifier(void) : binary(8, byte(0)) {}
 
@@ -93,14 +91,11 @@ public:
 	inline void clear(void) { assign(8, byte(0)); }
 };
 
-template <class T>
-inline void hash_combine(std::size_t &seed, const T &v)
-{
-    std::hash<T> hash;
-    seed^= hash(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+template <class T> inline void hash_combine(std::size_t &seed, const T &v) {
+	std::hash<T> hash;
+	seed ^= hash(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
-}
+} // namespace convergence
 
 #endif
-

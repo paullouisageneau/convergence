@@ -22,21 +22,19 @@
 #ifndef PLA_ADDRESS_H
 #define PLA_ADDRESS_H
 
+#include "pla/binary.hpp"
 #include "pla/include.hpp"
 #include "pla/string.hpp"
-#include "pla/binary.hpp"
 
-namespace pla
-{
+namespace pla {
 
-class Address
-{
+class Address {
 public:
 	static bool Resolve(const string &host, const string &service, std::list<Address> &result);
 	static bool Resolve(const string &host, uint16_t port, std::list<Address> &result);
 	static bool Resolve(const string &str, std::list<Address> &result, const string &protocol = "");
 	static bool Reverse(const Address &a, string &result);
-	
+
 	Address(void);
 	Address(const string &host, const string &service);
 	Address(const string &host, uint16_t port);
@@ -74,15 +72,15 @@ public:
 	void fromBinary(binary b);
 
 private:
-	sockaddr_storage	mAddr;
-	socklen_t		mAddrLen;
+	sockaddr_storage mAddr;
+	socklen_t mAddrLen;
 };
 
-bool operator <  (const Address &a1, const Address &a2);
-bool operator >  (const Address &a1, const Address &a2);
-bool operator == (const Address &a1, const Address &a2);
-bool operator != (const Address &a1, const Address &a2);
+bool operator<(const Address &a1, const Address &a2);
+bool operator>(const Address &a1, const Address &a2);
+bool operator==(const Address &a1, const Address &a2);
+bool operator!=(const Address &a1, const Address &a2);
 
-}
+} // namespace pla
 
 #endif

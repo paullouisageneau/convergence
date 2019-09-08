@@ -25,8 +25,7 @@
 #define PLA_ALARM_THREADS 4
 #endif
 
-namespace pla
-{
+namespace pla {
 
 Scheduler Alarm::scheduler(PLA_ALARM_THREADS);
 

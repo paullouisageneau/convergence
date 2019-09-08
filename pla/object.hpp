@@ -21,23 +21,18 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
+#include "pla/context.hpp"
 #include "pla/include.hpp"
 #include "pla/mesh.hpp"
 #include "pla/program.hpp"
-#include "pla/context.hpp"
 
-namespace pla
-{
+namespace pla {
 
-class Object : public Mesh
-{
+class Object : public Mesh {
 public:
 	Object(void);
-	Object(	const index_t *indices,
-		size_t nindices,
-		const float *vertices,
-		size_t nvertices,
-		sptr<Program> program);
+	Object(const index_t *indices, size_t nindices, const float *vertices, size_t nvertices,
+	       sptr<Program> program);
 	virtual ~Object(void);
 
 	void setProgram(sptr<Program> program, size_t firstIndex = 0);
@@ -46,9 +41,9 @@ public:
 	virtual int draw(const Context &context);
 
 protected:
-	std::map<size_t, sptr<Program> > mPrograms;
+	std::map<size_t, sptr<Program>> mPrograms;
 };
 
-}
+} // namespace pla
 
 #endif

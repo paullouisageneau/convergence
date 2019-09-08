@@ -23,11 +23,10 @@
 
 #include "pla/binary.hpp"
 
-#include <vector>
 #include <iostream>
+#include <vector>
 
-namespace convergence
-{
+namespace convergence {
 
 using pla::binary;
 using pla::pack_strings;
@@ -70,34 +69,24 @@ Peering::Peering(const identifier &id, shared_ptr<MessageBus> messageBus)
 
 Peering::~Peering(void) { disconnect(); }
 
-identifier Peering::id(void) const
-{
-	return mId;
-}
+identifier Peering::id(void) const { return mId; }
 
-bool Peering::isConnected(void) const
-{
-	return mDataChannel && mDataChannel->isOpen();
-}
+bool Peering::isConnected(void) const { return mDataChannel && mDataChannel->isOpen(); }
 
-void Peering::connect(void)
-{
+void Peering::connect(void) {
 	disconnect();
 	setDataChannel(mPeerConnection->createDataChannel(DataChannelName));
 }
 
-void Peering::disconnect(void)
-{
-	if(mDataChannel)
-	{
+void Peering::disconnect(void) {
+	if (mDataChannel) {
 		mMessageBus->removeChannel(mDataChannel);
 		mDataChannel->close();
 		mDataChannel.reset();
 	}
 }
 
-void Peering::onMessage(const Message &message)
-{
+void Peering::onMessage(const Message &message) {
 	if (uint32_t(message.type) < 0x20) {
 		processSignaling(message.type, message.payload);
 	}
@@ -118,42 +107,35 @@ void Peering::setDataChannel(shared_ptr<net::DataChannel> dataChannel) {
 	});
 }
 
-void Peering::processSignaling(Message::Type type, const binary &payload)
-{
-	switch(type)
-	{
-		case Message::Join:
-		{
-			// TODO: send list message
-			break;
-		}
+void Peering::processSignaling(Message::Type type, const binary &payload) {
+	switch (type) {
+	case Message::Join: {
+		// TODO: send list message
+		break;
+	}
 
-	    case Message::Description:
-		{
-			vector<string> fields(unpack_strings(payload));
-			std::cout << "Remote description: " << fields[1] << std::endl;
-		    mPeerConnection->setRemoteDescription(net::Description(fields[1], fields[0]));
-		    break;
-		}
+	case Message::Description: {
+		vector<string> fields(unpack_strings(payload));
+		std::cout << "Remote description: " << fields[1] << std::endl;
+		mPeerConnection->setRemoteDescription(net::Description(fields[1], fields[0]));
+		break;
+	}
 
-		case Message::Candidate:
-		{
-			vector<string> fields(unpack_strings(payload));
-			std::cout << "Remote candidate: " << fields[1] << std::endl;
-		    mPeerConnection->addRemoteCandidate(net::Candidate(fields[1], fields[0]));
-		    break;
-		}
+	case Message::Candidate: {
+		vector<string> fields(unpack_strings(payload));
+		std::cout << "Remote candidate: " << fields[1] << std::endl;
+		mPeerConnection->addRemoteCandidate(net::Candidate(fields[1], fields[0]));
+		break;
+	}
 
-		default:
-		{
-			std::cout << "Unknown signaling message type: " << type << std::endl;
-			break;
-		}
+	default: {
+		std::cout << "Unknown signaling message type: " << type << std::endl;
+		break;
+	}
 	}
 }
 
-void Peering::sendSignaling(Message::Type type, const binary &payload)
-{
+void Peering::sendSignaling(Message::Type type, const binary &payload) {
 	Message message;
 	message.destination = mId;
 	message.type = type;
@@ -161,5 +143,4 @@ void Peering::sendSignaling(Message::Type type, const binary &payload)
 	mMessageBus->send(message);
 }
 
-}
-
+} // namespace convergence

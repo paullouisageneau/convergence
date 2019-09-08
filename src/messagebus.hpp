@@ -26,18 +26,16 @@
 
 #include "net/channel.hpp"
 
-#include <memory>
 #include <map>
-#include <set>
+#include <memory>
 #include <queue>
+#include <set>
 
-namespace convergence
-{
+namespace convergence {
 
 using net::Channel;
 
-class MessageBus
-{
+class MessageBus {
 public:
 	enum class Priority : int { Default = 0, Relay = 1, Direct = 2 };
 
@@ -57,15 +55,13 @@ public:
 	void broadcast(Message &message);
 	void dispatch(const Message &message);
 
-	class Listener
-	{
+	class Listener {
 	public:
-		virtual void onPeer(const identifier &id) {};
+		virtual void onPeer(const identifier &id){};
 		virtual void onMessage(const Message &message) = 0;
 	};
 
-	class AsyncListener : public Listener
-	{
+	class AsyncListener : public Listener {
 	public:
 		void onMessage(const Message &message);
 		bool readMessage(Message &message);
@@ -93,7 +89,6 @@ private:
 	std::mutex mListenersMutex;
 };
 
-}
+} // namespace convergence
 
 #endif
-

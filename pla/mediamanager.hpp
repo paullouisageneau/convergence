@@ -25,45 +25,38 @@
 #include "pla/loader.hpp"
 #include "pla/resourcemanager.hpp"
 
-namespace pla
-{
+namespace pla {
 
-template <class T> struct MediaHandler
-{
-    std::map<string, sptr<Loader<T> > > loaders;
-};
+template <class T> struct MediaHandler { std::map<string, sptr<Loader<T>>> loaders; };
 
 class Shader;
 class Program;
 
-class MediaManager :
-	public MediaHandler<Shader>,
-	public MediaHandler<Program>
-{
+class MediaManager : public MediaHandler<Shader>, public MediaHandler<Program> {
 
 public:
 	MediaManager(sptr<ResourceManager> resourceManager);
-        ~MediaManager(void);
+	~MediaManager(void);
 
 	// Ajoute un repertoire de recherche de medias
 	void addPath(string path);
 
-	 // Enregistre un nouveau chargeur
-	template <class T> void registerLoader(Loader<T>* loader, const string &extensions);
+	// Enregistre un nouveau chargeur
+	template <class T> void registerLoader(Loader<T> *loader, const string &extensions);
 
 	// Supprime un chargeur
 	template <class T> void unregisterLoader(const string &extension);
 
- 	// Charge a partir d'un fichier
+	// Charge a partir d'un fichier
 	template <class T> sptr<T> load(const string &filename) const;
 
-	 // Retourne la ressource si deja chargee, sinon charge
+	// Retourne la ressource si deja chargee, sinon charge
 	template <class T> sptr<T> get(const string &filename) const;
 
 	// Trouve un fichier
 	string findMedia(string filename) const;
 
-private :
+private:
 	// Trouve un loader
 	template <class T> Loader<T> &findLoader(const string &filename) const;
 
@@ -72,10 +65,9 @@ private :
 };
 
 // Enregistre un nouveau chargeur de media
-template <class T>
-void MediaManager::registerLoader(Loader<T>* loader, const string &extensions)
-{
-	if(!loader) return;
+template <class T> void MediaManager::registerLoader(Loader<T> *loader, const string &extensions) {
+	if (!loader)
+		return;
 
 	// TODO
 	// Récupération des extensions
@@ -83,25 +75,20 @@ void MediaManager::registerLoader(Loader<T>* loader, const string &extensions)
 	extensions.explode(lst,',');
 	while(!lst.empty())
 	{
-		string ext = lst.front();
-		ext.trim();
-		lst.pop_front();
-		MediaHandler<T>::loaders.insert(make_pair(ext,loader));
+	    string ext = lst.front();
+	    ext.trim();
+	    lst.pop_front();
+	    MediaHandler<T>::loaders.insert(make_pair(ext,loader));
 	}*/
 }
 
 // Supprime un chargeur
-template <class T>
-void MediaManager::unregisterLoader(const string &extensions)
-{
+template <class T> void MediaManager::unregisterLoader(const string &extensions) {
 	MediaHandler<T>::loaders.erase(extensions);
 }
 
-
 // Charge un media
-template <class T>
-sptr<T> MediaManager::load(const string &filename) const
-{
+template <class T> sptr<T> MediaManager::load(const string &filename) const {
 	// Recherche du fichier dans les répertoires enregistrés
 	string fullpath = findMedia(filename);
 
@@ -109,55 +96,52 @@ sptr<T> MediaManager::load(const string &filename) const
 	sptr<T> media = findLoader<T>(filename).load(fullpath);
 
 	// On enregistre la ressource
-	mResourceManager->add(fullpath,media);
+	mResourceManager->add(fullpath, media);
 
 	return media;
 }
 
- // Retourne la ressource si déjà chargée, sinon charge
-template <class T>
-sptr<T> MediaManager::get(const string &filename) const
-{
+// Retourne la ressource si déjà chargée, sinon charge
+template <class T> sptr<T> MediaManager::get(const string &filename) const {
 	// Recherche directement la ressource
 	sptr<T> media = mResourceManager->get<T>(filename);
-	if(media) return media;
+	if (media)
+		return media;
 
 	// Recherche du fichier dans les répertoires enregistrés
 	string fullpath = findMedia(filename);
 
 	// Recherche la ressource
 	media = mResourceManager->get<T>(fullpath);
-	if(media) return media;
+	if (media)
+		return media;
 
 	// Sinon on appelle le loader approprié
 	media = findLoader<T>(filename).load(fullpath);
 
 	// On enregistre la ressource
-	mResourceManager->add(fullpath,media);
+	mResourceManager->add(fullpath, media);
 
 	return media;
 }
 
 // Cherche le loader correspondant à un fichier donné
-template <class T>
-Loader<T> &MediaManager::findLoader(const string &filename) const
-{
+template <class T> Loader<T> &MediaManager::findLoader(const string &filename) const {
 	size_t p = filename.find_last_of('.');
-	if(p != string::npos)
-	{
-		string extension(filename,++p);
+	if (p != string::npos) {
+		string extension(filename, ++p);
 
 		// Recherche de l'extension dans la map de loaders
 		auto it = MediaHandler<T>::loaders.find(extension);
 
 		// On renvoie le loader approprié
-		if(it != MediaHandler<T>::loaders.end())
+		if (it != MediaHandler<T>::loaders.end())
 			return *it->second;
 	}
 
 	throw std::runtime_error("No loader for file: " + filename);
 }
 
-}
+} // namespace pla
 
 #endif

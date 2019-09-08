@@ -20,51 +20,44 @@
 
 #include "pla/mediamanager.hpp"
 
-namespace pla
-{
+namespace pla {
 
-MediaManager::MediaManager(sptr<ResourceManager> resourceManager) :
-	mResourceManager(resourceManager)
-{
-	mPaths.insert("");	// current directory
+MediaManager::MediaManager(sptr<ResourceManager> resourceManager)
+    : mResourceManager(resourceManager) {
+	mPaths.insert(""); // current directory
 }
 
-MediaManager::~MediaManager(void)
-{
-
-}
+MediaManager::~MediaManager(void) {}
 
 // Ajoute un repertoire de recherche pour les medias
-void MediaManager::addPath(string path)
-{
-	if(path.empty()) return;
+void MediaManager::addPath(string path) {
+	if (path.empty())
+		return;
 	std::replace(path.begin(), path.end(), '\\', '/');
-	
-	if(*path.rbegin() == '/') 
+
+	if (*path.rbegin() == '/')
 		mPaths.insert(path);
-	else 
+	else
 		mPaths.insert(path + "/");
 }
 
 // Cherche un fichier dans les repertoires de recherche
-string MediaManager::findMedia(string filename) const
-{
-    std::replace(filename.begin(), filename.end(), '\\', '/');
-	
-	// Parcours de la liste des chemins de recherche
-    for (std::set<string>::const_iterator it = mPaths.begin(); it != mPaths.end(); ++it)
-    {
-		string fullname = *it + filename;
-		std::ifstream test(fullname.c_str());	// teste l'ouverture
+string MediaManager::findMedia(string filename) const {
+	std::replace(filename.begin(), filename.end(), '\\', '/');
 
-		if(test.is_open()) {
+	// Parcours de la liste des chemins de recherche
+	for (std::set<string>::const_iterator it = mPaths.begin(); it != mPaths.end(); ++it) {
+		string fullname = *it + filename;
+		std::ifstream test(fullname.c_str()); // teste l'ouverture
+
+		if (test.is_open()) {
 			test.close();
 			return fullname;
 		}
-    }
+	}
 
-    // Si le fichier est introuvable, on lance une exception
-    throw std::runtime_error(string("File not found: ") + filename);
+	// Si le fichier est introuvable, on lance une exception
+	throw std::runtime_error(string("File not found: ") + filename);
 }
 
-}
+} // namespace pla

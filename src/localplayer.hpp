@@ -24,31 +24,28 @@
 #include "src/include.hpp"
 #include "src/player.hpp"
 
-namespace convergence
-{
+namespace convergence {
 
-class LocalPlayer : public Player
-{
+class LocalPlayer : public Player {
 public:
 	LocalPlayer(sptr<MessageBus> messageBus);
 	~LocalPlayer(void);
-	
+
 	void update(sptr<Collidable> terrain, double time);
-	
+
 protected:
 	void sendPosition(void);
 	void sendControl(void);
 	void onMessage(const Message &message);
-	
+
 private:
 	float mOldYaw, mOldPitch;
 	float mOldSpeed;
 	bool mOldIsJumping;
-	
+
 	double mPositionUpdateCooldown;
 };
 
-}
+} // namespace convergence
 
 #endif
-

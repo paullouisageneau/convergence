@@ -25,43 +25,43 @@
 #include "pla/opengl.hpp"
 #include "pla/resource.hpp"
 
-namespace pla
-{
+namespace pla {
 
-class Shader : public Resource
-{  
+class Shader : public Resource {
 public:
 	// type = GL_VERTEX_SHADER or GL_FRAGMENT_SHADER
 	Shader(GLenum type = GL_VERTEX_SHADER);
 	virtual ~Shader(void);
-	
+
 	void setSource(const std::string &source);
 	void loadFile(const std::string &filename);
 	void compile(void);
-	
+
 private:
 	GLuint mShader;
 	GLenum mType;
-	
+
 	friend class Program;
 };
 
-class VertexShader : public Shader
-{  
+class VertexShader : public Shader {
 public:
-	VertexShader(const std::string &filename = "") : Shader(GL_VERTEX_SHADER)
-		{ if(!filename.empty()) loadFile(filename); }
+	VertexShader(const std::string &filename = "") : Shader(GL_VERTEX_SHADER) {
+		if (!filename.empty())
+			loadFile(filename);
+	}
 	~VertexShader(void) {}
 };
 
-class FragmentShader : public Shader
-{  
+class FragmentShader : public Shader {
 public:
-	FragmentShader(const std::string &filename = "") : Shader(GL_FRAGMENT_SHADER)
-		{ if(!filename.empty()) loadFile(filename); }
+	FragmentShader(const std::string &filename = "") : Shader(GL_FRAGMENT_SHADER) {
+		if (!filename.empty())
+			loadFile(filename);
+	}
 	~FragmentShader(void) {}
 };
 
-}
+} // namespace pla
 
 #endif

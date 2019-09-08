@@ -83,8 +83,7 @@ private:
 	static void MessageCallback(const char *data, int size, void *ptr);
 };
 
-class PeerConnection
-{
+class PeerConnection {
 public:
 	PeerConnection();
 	PeerConnection(const Configuration &config);

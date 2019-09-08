@@ -35,7 +35,7 @@ extern void httpSetRequestHeader(int rq, const char *name, const char *value);
 extern void httpSetRequestBody(int rq, const char *data, int size);
 extern void httpSetUserPointer(int rq, void *ptr);
 extern void httpFetch(int rq, void (*responseCallback)(int, const char *, int, void *),
-					  void (*errorCallback)(const char *, void *));
+                      void (*errorCallback)(const char *, void *));
 extern void httpAbort(int rq);
 }
 
@@ -81,7 +81,7 @@ Http::Request &Http::Request::body(const char *data, size_t size) {
 }
 
 void Http::Request::fetch(function<void(Response &&)> responseCallback,
-						  function<void(const string &)> errorCallback) {
+                          function<void(const string &)> errorCallback) {
 	if (mResponseCallback)
 		abort();
 	mResponseCallback = responseCallback;
@@ -106,7 +106,7 @@ void Http::Request::triggerError(const string &error) {
 }
 
 Http::Response::Response(int status, const char *data, size_t size)
-	: mStatus(status), mData(data), mSize(size) {}
+    : mStatus(status), mData(data), mSize(size) {}
 
 Http::Response::~Response(void) {
 	std::free(const_cast<char *>(mData)); // data must be freed
@@ -119,4 +119,3 @@ const char *Http::Response::data(void) const { return mData; }
 size_t Http::Response::size(void) const { return mSize; }
 
 } // namespace net
-

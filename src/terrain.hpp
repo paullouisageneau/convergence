@@ -29,8 +29,7 @@
 
 #include "pla/context.hpp"
 
-namespace convergence
-{
+namespace convergence {
 
 class Terrain : public Merkle, public MessageBus::AsyncListener, public Collidable {
 public:
@@ -62,8 +61,8 @@ protected:
 private:
 	class Block : public Surface::Block {
 	public:
-        Block(Terrain *terrain, const int3 &b);
-        ~Block(void);
+		Block(Terrain *terrain, const int3 &b);
+		~Block(void);
 
 		bool update(const binary &data);
 		void commit(void);
@@ -78,15 +77,15 @@ private:
 
 	private:
 		Terrain *mTerrain;
-		Surface::value mCells[Size*Size*Size];
+		Surface::value mCells[Size * Size * Size];
 
 		mutable bool mChanged;
 	};
 
 	shared_ptr<Block> getBlock(const int3 &b);
 	Surface::value getValue(const int3 &p);
-    void setValue(const int3 &p, Surface::value v);
-    void setType(const int3 &p, uint8_t t);
+	void setValue(const int3 &p, Surface::value v);
+	void setType(const int3 &p, uint8_t t);
 
 	void populateBlock(shared_ptr<Block> block);
 	void markChangedBlock(const int3 &b);
@@ -97,6 +96,6 @@ private:
 	PerlinNoise mPerlin;
 	Surface mSurface;
 };
-}
+} // namespace convergence
 
 #endif

@@ -22,15 +22,13 @@
 #ifndef PLA_STREAM_H
 #define PLA_STREAM_H
 
+#include "pla/binary.hpp"
 #include "pla/include.hpp"
 #include "pla/string.hpp"
-#include "pla/binary.hpp"
 
-namespace pla
-{
+namespace pla {
 
-class Stream
-{
+class Stream {
 public:
 	Stream(void) {}
 	virtual ~Stream(void) {}
@@ -63,6 +61,6 @@ private:
 	bool readUntil(string &output, const string &delimiters, const string &ignored);
 };
 
-}
+} // namespace pla
 
 #endif // STREAM_H

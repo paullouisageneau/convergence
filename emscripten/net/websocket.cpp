@@ -22,44 +22,39 @@
 #include "net/websocket.hpp"
 
 #include <emscripten/emscripten.h>
-#include <iostream>
 #include <exception>
+#include <iostream>
 #include <memory>
 
 extern "C" {
-	extern int  wsCreateWebSocket(const char *url);
-	extern void wsDeleteWebSocket(int ws);
-	extern void wsSetOpenCallback(int ws, void (*openCallback)(void*));
-    extern void wsSetErrorCallback(int ws, void (*errorCallback)(const char *, void *));
-    extern void wsSetMessageCallback(int ws, void (*messageCallback)(const char *, int, void*));
-	extern int  wsSendMessage(int ws, const char *buffer, int size);
-	extern void wsSetUserPointer(int ws, void *ptr);
+extern int wsCreateWebSocket(const char *url);
+extern void wsDeleteWebSocket(int ws);
+extern void wsSetOpenCallback(int ws, void (*openCallback)(void *));
+extern void wsSetErrorCallback(int ws, void (*errorCallback)(const char *, void *));
+extern void wsSetMessageCallback(int ws, void (*messageCallback)(const char *, int, void *));
+extern int wsSendMessage(int ws, const char *buffer, int size);
+extern void wsSetUserPointer(int ws, void *ptr);
 }
 
-namespace net
-{
+namespace net {
 
-void WebSocket::OpenCallback(void *ptr)
-{
-	WebSocket *w = static_cast<WebSocket*>(ptr);
-	if(w)
-	{
+void WebSocket::OpenCallback(void *ptr) {
+	WebSocket *w = static_cast<WebSocket *>(ptr);
+	if (w) {
 		w->mConnected = true;
 		w->triggerOpen();
 	}
 }
 
-void WebSocket::ErrorCallback(const char *error, void *ptr)
-{
-	WebSocket *w = static_cast<WebSocket*>(ptr);
-	if(w) w->triggerError(string(error ? error : "unknown"));
+void WebSocket::ErrorCallback(const char *error, void *ptr) {
+	WebSocket *w = static_cast<WebSocket *>(ptr);
+	if (w)
+		w->triggerError(string(error ? error : "unknown"));
 }
 
-void WebSocket::MessageCallback(const char *data, int size, void *ptr)
-{
-	WebSocket *w = static_cast<WebSocket*>(ptr);
-	if(w)
-	{
+void WebSocket::MessageCallback(const char *data, int size, void *ptr) {
+	WebSocket *w = static_cast<WebSocket *>(ptr);
+	if (w) {
 		if (data) {
 			auto b = reinterpret_cast<const byte *>(data);
 			w->triggerMessage(binary(b, b + size));
@@ -67,30 +62,21 @@ void WebSocket::MessageCallback(const char *data, int size, void *ptr)
 			w->close();
 			w->triggerClosed();
 		}
-	    }
+	}
 }
 
-WebSocket::WebSocket(void) : mId(0), mConnected(false)
-{
+WebSocket::WebSocket(void) : mId(0), mConnected(false) {}
 
-}
+WebSocket::WebSocket(const string &url) : mId(0) { open(url); }
 
-WebSocket::WebSocket(const string &url) : mId(0)
-{
-	open(url);
-}
+WebSocket::~WebSocket(void) { close(); }
 
-WebSocket::~WebSocket(void)
-{
-	close();
-}
-
-void WebSocket::open(const string &url)
-{
+void WebSocket::open(const string &url) {
 	close();
 
 	mId = wsCreateWebSocket(url.c_str());
-	if(!mId) throw std::runtime_error("WebSocket not supported");
+	if (!mId)
+		throw std::runtime_error("WebSocket not supported");
 
 	wsSetUserPointer(mId, this);
 	wsSetOpenCallback(mId, OpenCallback);
@@ -98,43 +84,35 @@ void WebSocket::open(const string &url)
 	wsSetMessageCallback(mId, MessageCallback);
 }
 
-void WebSocket::close(void)
-{
+void WebSocket::close(void) {
 	mConnected = false;
-	if(mId)
-	{
+	if (mId) {
 		wsDeleteWebSocket(mId);
 		mId = 0;
 	}
 }
 
-bool WebSocket::isOpen(void) const
-{
-	return mConnected;
-}
+bool WebSocket::isOpen(void) const { return mConnected; }
 
-bool WebSocket::isClosed(void) const
-{
-	return mId == 0;
-}
+bool WebSocket::isClosed(void) const { return mId == 0; }
 
 void WebSocket::send(const std::variant<binary, string> &data) {
-	if(!mId) return;
+	if (!mId)
+		return;
 	std::visit(
 	    [this](const auto &v) {
 		    using T = std::decay_t<decltype(v)>;
 		    if constexpr (std::is_same_v<T, binary>)
-				wsSendMessage(mId, reinterpret_cast<const char *>(v.data()), v.size());
-			else
+			    wsSendMessage(mId, reinterpret_cast<const char *>(v.data()), v.size());
+		    else
 			    throw std::runtime_error("WebSocket string messages are not supported");
 	    },
 	    data);
 }
 
-void WebSocket::triggerOpen(void)
-{
+void WebSocket::triggerOpen(void) {
 	mConnected = true;
 	Channel::triggerOpen();
 }
 
-}
+} // namespace net

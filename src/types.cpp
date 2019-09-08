@@ -117,4 +117,3 @@ int84 int84::operator/(int i) const { return int84(x / i, y / i, z / i); }
 int84::operator vec4(void) const { return vec4(x, y, z, w); }
 
 } // namespace convergence
-

@@ -21,61 +21,59 @@
 #include "pla/collidable.hpp"
 #include "pla/intersection.hpp"
 
-namespace pla
-{
+namespace pla {
 
-bool Collidable::collide(const vec3 &pos, const vec3 &move, float radius, vec3 *result, vec3 *intersection, vec3 *normal, int reclevel)
-{
-	if(reclevel <= 0) return false;
+bool Collidable::collide(const vec3 &pos, const vec3 &move, float radius, vec3 *result,
+                         vec3 *intersection, vec3 *normal, int reclevel) {
+	if (reclevel <= 0)
+		return false;
 
 	vec3 tmpIntersection;
 	float t1 = intersect(pos, move, radius, &tmpIntersection);
 
 	// If collision
-	if(t1 <= 1.f)
-	{
-		if(intersection) *intersection = tmpIntersection;
-		if(normal) *normal = glm::normalize(pos + move*t1 - tmpIntersection);
-		if(!result) return true;	// no further computation expected
+	if (t1 <= 1.f) {
+		if (intersection)
+			*intersection = tmpIntersection;
+		if (normal)
+			*normal = glm::normalize(pos + move * t1 - tmpIntersection);
+		if (!result)
+			return true; // no further computation expected
 
-		vec3 v = move*(t1 - Epsilon);
+		vec3 v = move * (t1 - Epsilon);
 
 		// If we already are going through
 		float d = glm::distance(pos, tmpIntersection);
-		if(d < radius)
-		{
-			vec3 n = glm::normalize(pos-tmpIntersection);
-			v+= n*(radius - d)*(1.f + Epsilon);	// fix position
+		if (d < radius) {
+			vec3 n = glm::normalize(pos - tmpIntersection);
+			v += n * (radius - d) * (1.f + Epsilon); // fix position
 		}
 
 		// Sliding plane
 		vec3 slideOrigin = tmpIntersection;
-		vec3 slideNormal = tmpIntersection-pos;
+		vec3 slideNormal = tmpIntersection - pos;
 
 		// Project destination on sliding plane
-		vec3 destination = pos+move;
+		vec3 destination = pos + move;
 		float t2 = intersectPlane(destination, slideNormal, slideOrigin, slideNormal);
-		vec3 newdestination = destination+slideNormal*t2;
+		vec3 newdestination = destination + slideNormal * t2;
 
-		vec3 newmove = newdestination-tmpIntersection;
-		vec3 newpos = pos+v;
+		vec3 newmove = newdestination - tmpIntersection;
+		vec3 newpos = pos + v;
 
 		vec3 r;
-		if(reclevel > 0)
-		{
+		if (reclevel > 0) {
 			r = newmove;
-			collide(newpos, newmove, radius, &r, NULL, NULL, reclevel-1);	// next collisions
+			collide(newpos, newmove, radius, &r, NULL, NULL, reclevel - 1); // next collisions
 		}
 
-		*result = v+r;
+		*result = v + r;
 		return true;
-	}
-	else 
-	{
-		if(result) *result=move;
+	} else {
+		if (result)
+			*result = move;
 		return false;
 	}
 }
 
-}
-
+} // namespace pla

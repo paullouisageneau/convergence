@@ -30,6 +30,6 @@ using rtc::Channel;
 
 using rtc::binary;
 using rtc::string;
-}
+} // namespace net
 
 #endif // NET_CHANNEL_H

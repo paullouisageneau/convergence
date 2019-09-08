@@ -20,69 +20,52 @@
 
 #include "pla/bufferobject.hpp"
 
-namespace pla
-{
+namespace pla {
 
-BufferObject::BufferObject(GLenum type, GLenum usage, bool readable) :
-	mType(type),
-	mUsage(usage),
-	mReadable(readable)
-{
+BufferObject::BufferObject(GLenum type, GLenum usage, bool readable)
+    : mType(type), mUsage(usage), mReadable(readable) {
 	glGenBuffers(1, &mBuffer);
 }
 
-BufferObject::~BufferObject(void)
-{
+BufferObject::~BufferObject(void) {
 	glDeleteBuffers(1, &mBuffer);
 	delete mCache;
 }
 
-size_t BufferObject::size(void) const
-{
-	return mSize;
-}
+size_t BufferObject::size(void) const { return mSize; }
 
-void BufferObject::bind(void)
-{
-	glBindBuffer(mType, mBuffer);
-}
+void BufferObject::bind(void) { glBindBuffer(mType, mBuffer); }
 
-void *BufferObject::offset(size_t offset)
-{
-	return reinterpret_cast<void*>(offset);
-}
+void *BufferObject::offset(size_t offset) { return reinterpret_cast<void *>(offset); }
 
-void BufferObject::fill(const void *ptr, size_t size)
-{
-	if(size == mSize) {
+void BufferObject::fill(const void *ptr, size_t size) {
+	if (size == mSize) {
 		replace(0, ptr, size);
 		return;
 	}
-	
-	mSize=size;
+
+	mSize = size;
 	glBindBuffer(mType, mBuffer);
 	glBufferData(mType, size, ptr, mUsage);
-	
-	if(mReadable) {
+
+	if (mReadable) {
 		delete mCache;
 		mCache = new char[size];
 		std::memcpy(mCache, ptr, size);
 	}
 }
 
-void BufferObject::replace(size_t offset, const void *ptr, size_t size)
-{
-	if(size == 0) return;
-	
+void BufferObject::replace(size_t offset, const void *ptr, size_t size) {
+	if (size == 0)
+		return;
+
 	glBindBuffer(mType, mBuffer);
 	glBufferSubData(mType, offset, size, ptr);
-	
-	if(mCache) std::memcpy(mCache + offset, ptr, size);
+
+	if (mCache)
+		std::memcpy(mCache + offset, ptr, size);
 }
 
-void *BufferObject::data(size_t offset, size_t size)
-{
-	return mCache;
-}
+void *BufferObject::data(size_t offset, size_t size) { return mCache; }
 
-}
+} // namespace pla

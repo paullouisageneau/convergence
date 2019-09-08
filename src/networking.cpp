@@ -22,39 +22,31 @@
 
 #include "net/websocket.hpp"
 
-namespace convergence
-{
+namespace convergence {
 
 using net::WebSocket;
 using pla::to_hex;
 
-Networking::Networking(shared_ptr<MessageBus> messageBus, const string &url) :
-	mMessageBus(messageBus)
-{
+Networking::Networking(shared_ptr<MessageBus> messageBus, const string &url)
+    : mMessageBus(messageBus) {
 	connectWebSocket(url);
 }
 
-Networking::~Networking(void)
-{
+Networking::~Networking(void) {}
 
-}
-
-void Networking::onPeer(const identifier &id)
-{
+void Networking::onPeer(const identifier &id) {
 	std::cout << "Discovered peer: " << to_hex(id) << std::endl;
 	auto peering = createPeering(id);
 	peering->connect();
 }
 
-void Networking::onMessage(const Message &message)
-{
+void Networking::onMessage(const Message &message) {
 	const identifier &id = message.source;
 	std::cout << "Incoming peer: " << to_hex(id) << std::endl;
 	createPeering(id);
 }
 
-void Networking::connectWebSocket(const string &url)
-{
+void Networking::connectWebSocket(const string &url) {
 	auto webSocket = std::make_shared<WebSocket>(url);
 	webSocket->onOpen([this, webSocket]() {
 		std::cout << "WebSocket opened" << std::endl;
@@ -70,10 +62,10 @@ void Networking::connectWebSocket(const string &url)
 	});
 }
 
-shared_ptr<Peering> Networking::createPeering(const identifier &id)
-{
+shared_ptr<Peering> Networking::createPeering(const identifier &id) {
 	auto it = mPeerings.find(id);
-	if(it != mPeerings.end()) return it->second;
+	if (it != mPeerings.end())
+		return it->second;
 
 	auto peering = std::make_shared<Peering>(id, mMessageBus);
 	mMessageBus->registerListener(id, peering);
@@ -81,5 +73,4 @@ shared_ptr<Peering> Networking::createPeering(const identifier &id)
 	return peering;
 }
 
-}
-
+} // namespace convergence

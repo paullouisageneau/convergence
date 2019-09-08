@@ -22,68 +22,58 @@
 #ifndef PLA_THREADPOOL_H
 #define PLA_THREADPOOL_H
 
-#include <vector>
-#include <queue>
-#include <memory>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <future>
-#include <functional>
-#include <stdexcept>
 #include <chrono>
+#include <condition_variable>
+#include <functional>
+#include <future>
+#include <memory>
+#include <mutex>
+#include <queue>
+#include <stdexcept>
+#include <thread>
+#include <vector>
 
 #include "pla/include.hpp"
 
-namespace pla
-{
+namespace pla {
 
-class ThreadPool
-{
+class ThreadPool {
 public:
-	ThreadPool(size_t threads);	// TODO: max tasks in queue
+	ThreadPool(size_t threads); // TODO: max tasks in queue
 	virtual ~ThreadPool(void);
 
-	template<class F, class... Args>
-	auto enqueue(F&& f, Args&&... args)
-		-> std::future<typename std::result_of<F(Args...)>::type>;
+	template <class F, class... Args>
+	auto enqueue(F &&f, Args &&... args) -> std::future<typename std::result_of<F(Args...)>::type>;
 
 	virtual void clear(void);
 	virtual void join(void);
 
 protected:
-	std::vector<std::thread > workers;
-	std::queue<std::function<void()> > tasks;
+	std::vector<std::thread> workers;
+	std::queue<std::function<void()>> tasks;
 
 	std::mutex mutex;
 	std::condition_variable condition;
 	bool joining;
 };
 
-inline ThreadPool::ThreadPool(size_t threads) : joining(false)
-{
-	for(size_t i=0; i<threads; ++i)
-	{
-		workers.emplace_back([this]
-		{
-			while(true)
-			{
+inline ThreadPool::ThreadPool(size_t threads) : joining(false) {
+	for (size_t i = 0; i < threads; ++i) {
+		workers.emplace_back([this] {
+			while (true) {
 				try {
 					std::function<void()> task;
 					{
 						std::unique_lock<std::mutex> lock(mutex);
-						condition.wait(lock, [this]() {
-							return !tasks.empty() || joining;
-						});
-						if(tasks.empty()) break;
+						condition.wait(lock, [this]() { return !tasks.empty() || joining; });
+						if (tasks.empty())
+							break;
 						task = std::move(tasks.front());
 						tasks.pop();
 					}
 
 					task();
-				}
-				catch(const std::exception &e)
-				{
+				} catch (const std::exception &e) {
 					LogWarn("ThreadPool", std::string("Unhandled exception: ") + e.what());
 				}
 			}
@@ -91,30 +81,28 @@ inline ThreadPool::ThreadPool(size_t threads) : joining(false)
 	}
 }
 
-inline ThreadPool::~ThreadPool(void)
-{
+inline ThreadPool::~ThreadPool(void) {
 	joining = true;
 	clear();
 	join();
 }
 
-template<class F, class... Args>
-auto ThreadPool::enqueue(F&& f, Args&&... args)
-	-> std::future<typename std::result_of<F(Args...)>::type>
-{
+template <class F, class... Args>
+auto ThreadPool::enqueue(F &&f, Args &&... args)
+    -> std::future<typename std::result_of<F(Args...)>::type> {
 	using type = typename std::result_of<F(Args...)>::type;
 
-	auto task = std::make_shared< std::packaged_task<type()> >(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+	auto task = std::make_shared<std::packaged_task<type()>>(
+	    std::bind(std::forward<F>(f), std::forward<Args>(args)...));
 	std::future<type> result = task->get_future();
 
 	{
 		std::unique_lock<std::mutex> lock(mutex);
-		if(joining) throw std::runtime_error("enqueue on closing ThreadPool");
+		if (joining)
+			throw std::runtime_error("enqueue on closing ThreadPool");
 
 		// Add task
-		tasks.emplace([task]() {
-			(*task)();
-		});
+		tasks.emplace([task]() { (*task)(); });
 
 		condition.notify_one();
 	}
@@ -122,31 +110,29 @@ auto ThreadPool::enqueue(F&& f, Args&&... args)
 	return result;
 }
 
-inline void ThreadPool::clear(void)
-{
+inline void ThreadPool::clear(void) {
 	{
 		std::unique_lock<std::mutex> lock(mutex);
 
-		while(!tasks.empty())
+		while (!tasks.empty())
 			tasks.pop();
 
-		//condition.notify_all();	// useless
+		// condition.notify_all();	// useless
 	}
 }
 
-inline void ThreadPool::join(void)
-{
+inline void ThreadPool::join(void) {
 	{
 		std::unique_lock<std::mutex> lock(mutex);
 		joining = true;
 		condition.notify_all();
 	}
 
-	for(std::thread &w: workers)
-		if(w.joinable())
+	for (std::thread &w : workers)
+		if (w.joinable())
 			w.join();
 }
 
-}
+} // namespace pla
 
 #endif

@@ -204,4 +204,3 @@ std::ostream &operator<<(std::ostream &out, const net::Candidate &candidate) {
 std::ostream &operator<<(std::ostream &out, const net::Description &description) {
 	return out << std::string(description);
 }
-

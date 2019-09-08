@@ -27,8 +27,7 @@ namespace convergence {
 using pla::BinaryFormatter;
 using pla::to_hex;
 
-Merkle::Merkle(shared_ptr<Store> store) : mStore(store) {
-}
+Merkle::Merkle(shared_ptr<Store> store) : mStore(store) {}
 
 Merkle::~Merkle(void) {}
 
@@ -225,4 +224,3 @@ void Merkle::Node::checkResolved(void) {
 }
 
 } // namespace convergence
-

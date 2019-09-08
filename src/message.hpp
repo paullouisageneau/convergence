@@ -23,13 +23,11 @@
 
 #include "src/include.hpp"
 
-namespace convergence
-{
+namespace convergence {
 
 using pla::binary;
 
-class Message
-{
+class Message {
 public:
 	enum Type : uint32_t {
 		Dummy = 0x00,
@@ -66,7 +64,6 @@ public:
 	binary payload;
 };
 
-}
+} // namespace convergence
 
 #endif
-

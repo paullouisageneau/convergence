@@ -21,17 +21,15 @@
 #ifndef PLA_CONTEXT_H
 #define PLA_CONTEXT_H
 
-#include "pla/include.hpp"
-#include "pla/program.hpp"
 #include "pla/frustum.hpp"
+#include "pla/include.hpp"
 #include "pla/linalg.hpp"
+#include "pla/program.hpp"
 
-namespace pla
-{
+namespace pla {
 
 // Rendering context
-class Context
-{
+class Context {
 public:
 	Context(const mat4 &projection, const mat4 &camera);
 	~Context(void);
@@ -41,17 +39,16 @@ public:
 	const mat4 &transform(void) const;
 	const vec3 &cameraPosition(void) const;
 	const Frustum &frustum(void) const;
-	void prepare(sptr<Program> program) const;	// set uniforms in program
+	void prepare(sptr<Program> program) const; // set uniforms in program
 
-	template<typename T> void setUniform(const string &name, const T &value);
+	template <typename T> void setUniform(const string &name, const T &value);
 
 private:
 	mat4 mProjection, mModelview, mTransform;
 	vec3 mCameraPosition;
 	Frustum mFrustum;
 
-	class UniformContainer
-	{
+	class UniformContainer {
 	public:
 		virtual void apply(const string &name, sptr<Program> program) const = 0;
 	};
@@ -59,20 +56,21 @@ private:
 	template <typename T> class UniformContainerImpl final : public UniformContainer {
 	public:
 		UniformContainerImpl(const T &v) { value = v; }
-		void apply(const string &name, sptr<Program> program) const { program->setUniform(name, value); }
+		void apply(const string &name, sptr<Program> program) const {
+			program->setUniform(name, value);
+		}
 
 	private:
 		T value;
 	};
 
-	std::map<string, sptr<UniformContainer> > mUniforms;
+	std::map<string, sptr<UniformContainer>> mUniforms;
 };
 
 template <typename T> void Context::setUniform(const string &name, const T &value) {
-	auto p = std::make_shared<UniformContainerImpl<T> >(value);
+	auto p = std::make_shared<UniformContainerImpl<T>>(value);
 	mUniforms[name] = p;
 }
-}
+} // namespace pla
 
 #endif
-

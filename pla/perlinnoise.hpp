@@ -23,23 +23,21 @@
 
 #include <vector>
 
-namespace pla
-{
+namespace pla {
 
-class PerlinNoise 
-{
+class PerlinNoise {
 public:
 	PerlinNoise(unsigned int seed);
 	double noise(double x, double y, double z) const;
-	
+
 private:
 	double fade(double t) const;
 	double lerp(double t, double a, double b) const;
 	double grad(int hash, double x, double y, double z) const;
-	
-	std::vector<int> p;	// permutation
+
+	std::vector<int> p; // permutation
 };
 
-}
+} // namespace pla
 
 #endif

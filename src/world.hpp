@@ -32,11 +32,10 @@
 
 #include <map>
 
-namespace convergence
-{
+namespace convergence {
 
-using pla::string;
 using pla::Context;
+using pla::string;
 
 class World final : public MessageBus::AsyncListener {
 public:
@@ -59,7 +58,6 @@ private:
 	sptr<LocalPlayer> mLocalPlayer;
 	std::map<identifier, sptr<Player>> mPlayers;
 };
-}
+} // namespace convergence
 
 #endif
-

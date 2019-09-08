@@ -21,24 +21,21 @@
 #ifndef PLA_BUFFER_H
 #define PLA_BUFFER_H
 
-#include "pla/include.hpp"
 #include "pla/bufferobject.hpp"
+#include "pla/include.hpp"
 
-namespace pla
-{
+namespace pla {
 
-template<typename T>
-class Buffer
-{
+template <typename T> class Buffer {
 public:
 	Buffer(BufferObject *bufferObject);
 	~Buffer(void);
-	
+
 	size_t count(void) const;
-	
-	void bind(void) const;	
+
+	void bind(void) const;
 	void *offset(size_t offset = 0) const;
-	
+
 	void fill(const T *ptr, size_t nbr);
 	void replace(size_t offset, const T *ptr, size_t nbr);
 	void append(const T *ptr, size_t nbr);
@@ -50,57 +47,33 @@ protected:
 	size_t mCount = 0;
 };
 
-
 template <class T>
-Buffer<T>::Buffer(BufferObject *bufferObject) :
-	mBufferObject(bufferObject),
-	mCount(mBufferObject->size()/sizeof(T))
-{
+Buffer<T>::Buffer(BufferObject *bufferObject)
+    : mBufferObject(bufferObject), mCount(mBufferObject->size() / sizeof(T)) {}
 
+template <class T> Buffer<T>::~Buffer(void) {}
+
+template <class T> size_t Buffer<T>::count(void) const { return mCount; }
+
+template <class T> void Buffer<T>::bind(void) const { return mBufferObject->bind(); }
+
+template <class T> void *Buffer<T>::offset(size_t offset) const {
+	return mBufferObject->offset(offset * sizeof(T));
 }
 
-template <class T>
-Buffer<T>::~Buffer(void)
-{
-
+template <class T> void Buffer<T>::fill(const T *ptr, size_t nbr) {
+	mBufferObject->fill(ptr, nbr * sizeof(T));
+	mCount = nbr;
 }
 
-template <class T>
-size_t Buffer<T>::count(void) const
-{
-	return mCount;
+template <class T> void Buffer<T>::replace(size_t offset, const T *ptr, size_t nbr) {
+	mBufferObject->replace(offset * sizeof(T), ptr, nbr * sizeof(T));
 }
 
-template <class T>
-void Buffer<T>::bind(void) const
-{
-	return mBufferObject->bind();
-}
-
-template <class T>
-void *Buffer<T>::offset(size_t offset) const
-{
-	return mBufferObject->offset(offset*sizeof(T));
-}
-
-template <class T>
-void Buffer<T>::fill(const T *ptr, size_t nbr)
-{
-	mBufferObject->fill(ptr, nbr*sizeof(T));
-	mCount=nbr;
-}
-
-template <class T>
-void Buffer<T>::replace(size_t offset, const T *ptr, size_t nbr)
-{
-	mBufferObject->replace(offset*sizeof(T), ptr, nbr*sizeof(T));
-}
-
-template <class T>
-void Buffer<T>::append(const T *ptr, size_t nbr)
-{
-	if(!nbr) return;
-	if(!mCount) {
+template <class T> void Buffer<T>::append(const T *ptr, size_t nbr) {
+	if (!nbr)
+		return;
+	if (!mCount) {
 		fill(ptr, nbr);
 		return;
 	}
@@ -110,30 +83,26 @@ void Buffer<T>::append(const T *ptr, size_t nbr)
 
 	// Copy old
 	const T *p = data(0, mCount);
-	if(!p) throw std::runtime_error("Unable to append to unreadable buffer object");
+	if (!p)
+		throw std::runtime_error("Unable to append to unreadable buffer object");
 	std::copy(p, p + mCount, temp);
 
 	// Copy new
-	if(ptr) std::copy(ptr, ptr + nbr, temp + mCount);
-	else std::fill(temp + mCount, temp + mCount + nbr, T(0));
+	if (ptr)
+		std::copy(ptr, ptr + nbr, temp + mCount);
+	else
+		std::fill(temp + mCount, temp + mCount + nbr, T(0));
 
 	// Refill
 	fill(temp, mCount + nbr);
 }
 
-template <class T>
-T *Buffer<T>::data(size_t offset, size_t nbr) const
-{
-	return reinterpret_cast<T*>(mBufferObject->data(offset*sizeof(T), nbr*sizeof(T)));
+template <class T> T *Buffer<T>::data(size_t offset, size_t nbr) const {
+	return reinterpret_cast<T *>(mBufferObject->data(offset * sizeof(T), nbr * sizeof(T)));
 }
 
-template <class T>
-T *Buffer<T>::data(void) const
-{
-	return data(0, mCount);
-}
+template <class T> T *Buffer<T>::data(void) const { return data(0, mCount); }
 
-}
+} // namespace pla
 
 #endif
-

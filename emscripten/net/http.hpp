@@ -66,8 +66,9 @@ public:
 		Request &target(const string &method, const string &url);
 		Request &header(const string &name, const string &value);
 		Request &body(const char *data, size_t size);
-		void fetch(function<void(Response &&)> responseCallback = [](Response &&) {},
-				   function<void(const string &)> errorCallback = [](const string &) {});
+		void fetch(
+		    function<void(Response &&)> responseCallback = [](Response &&) {},
+		    function<void(const string &)> errorCallback = [](const string &) {});
 		void abort(void);
 
 	private:

@@ -22,18 +22,16 @@
 #ifndef PLA_DATAGRAMSOCKET_H
 #define PLA_DATAGRAMSOCKET_H
 
-#include "pla/include.hpp"
-#include "pla/stream.hpp"
 #include "pla/address.hpp"
 #include "pla/binary.hpp"
+#include "pla/include.hpp"
+#include "pla/stream.hpp"
 
-namespace pla
-{
+namespace pla {
 
 class DatagramStream;
 
-class DatagramSocket
-{
+class DatagramSocket {
 public:
 	static const size_t MaxDatagramSize;
 
@@ -71,12 +69,11 @@ private:
 	int mPort;
 
 	// Mapped streams
-	std::multimap<Address, DatagramStream*> mStreams;
+	std::multimap<Address, DatagramStream *> mStreams;
 	std::mutex mStreamsMutex;
 };
 
-class DatagramStream : public Stream
-{
+class DatagramStream : public Stream {
 public:
 	static duration DefaultTimeout;
 	static int MaxQueueSize;
@@ -109,6 +106,6 @@ private:
 	friend class DatagramSocket;
 };
 
-}
+} // namespace pla
 
 #endif

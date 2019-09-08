@@ -25,11 +25,9 @@
 #include "pla/include.hpp"
 #include "pla/socket.hpp"
 
-namespace pla
-{
+namespace pla {
 
-class ServerSocket
-{
+class ServerSocket {
 public:
 	ServerSocket(void);
 	ServerSocket(int port);
@@ -39,18 +37,18 @@ public:
 	void close(void);
 
 	bool isClosed(void) const;
-	
+
 	bool accept(Socket &sock);
-	
+
 	int getPort(void) const;
 	Address getBindAddress(void) const;
 	void getLocalAddresses(std::set<Address> &set) const;
 
 private:
-	socket_t	mSock;
-	int			mPort;
+	socket_t mSock;
+	int mPort;
 };
 
-}
+} // namespace pla
 
 #endif

@@ -24,74 +24,54 @@
 
 #include "pla/include.hpp"
 
-namespace pla
-{
+namespace pla {
 
 using std::string;
-using std::to_string;
 using std::strlen;
+using std::to_string;
 
 inline string tolower(string s) {
-	std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { 
-		return std::tolower(c);
-	});
+	std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return std::tolower(c); });
 	return s;
 }
 
 inline string toupper(string s) {
-	std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { 
-		return std::toupper(c);
-	});
+	std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return std::toupper(c); });
 	return s;
 }
 
 inline bool isalpha(const string &s) {
-	return std::all_of(s.begin(), s.end(), [](unsigned char c) { 
-		return std::isalpha(c);
-	});
+	return std::all_of(s.begin(), s.end(), [](unsigned char c) { return std::isalpha(c); });
 }
 
 inline bool isdigit(const string &s) {
-	return std::all_of(s.begin(), s.end(), [](unsigned char c) { 
-		return std::isdigit(c);
-	});
+	return std::all_of(s.begin(), s.end(), [](unsigned char c) { return std::isdigit(c); });
 }
 
 inline bool isalnum(const string &s) {
-	return std::all_of(s.begin(), s.end(), [](unsigned char c) { 
-		return std::isalnum(c);
-	});
+	return std::all_of(s.begin(), s.end(), [](unsigned char c) { return std::isalnum(c); });
 }
 
 inline bool hasalpha(const string &s) {
-	return std::any_of(s.begin(), s.end(), [](unsigned char c) { 
-		return std::isalpha(c);
-	});
+	return std::any_of(s.begin(), s.end(), [](unsigned char c) { return std::isalpha(c); });
 }
 
 inline bool hasdigit(const string &s) {
-	return std::any_of(s.begin(), s.end(), [](unsigned char c) { 
-		return std::isdigit(c);
-	});
+	return std::any_of(s.begin(), s.end(), [](unsigned char c) { return std::isdigit(c); });
 }
 
 inline bool hasalnum(const string &s) {
-	return std::any_of(s.begin(), s.end(), [](unsigned char c) { 
-		return std::isalnum(c);
-	});
+	return std::any_of(s.begin(), s.end(), [](unsigned char c) { return std::isalnum(c); });
 }
 
 inline string trim(const string &s) {
-	auto isspace = [](unsigned char c) {
-	   return std::isspace(c);
-	};
+	auto isspace = [](unsigned char c) { return std::isspace(c); };
 	auto front = std::find_if_not(s.begin(), s.end(), isspace);
-	auto back  = std::find_if_not(s.rbegin(), s.rend(), isspace).base();
+	auto back = std::find_if_not(s.rbegin(), s.rend(), isspace).base();
 	return back > front ? string(front, back) : string();
 }
 
-template<typename OutIterator>
-void split(const string &str, char delimiter, OutIterator result) {
+template <typename OutIterator> void split(const string &str, char delimiter, OutIterator result) {
 	std::istringstream ss(str);
 	string item;
 	while (std::getline(ss, item, delimiter)) {
@@ -105,6 +85,6 @@ inline std::vector<string> split(const string &str, char delimiter) {
 	return elements;
 }
 
-}
+} // namespace pla
 
 #endif
