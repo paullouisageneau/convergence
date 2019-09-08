@@ -62,7 +62,7 @@ Peering::Peering(const identifier &id, shared_ptr<MessageBus> messageBus)
 		std::cout << "Local candidate: " << *candidate << std::endl;
 		vector<string> fields;
 		fields.push_back(candidate->mid());
-		fields.push_back(string(*candidate));
+		fields.push_back(candidate->candidate());
 		sendSignaling(Message::Candidate, pack_strings(fields));
 	});
 }
@@ -116,15 +116,17 @@ void Peering::processSignaling(Message::Type type, const binary &payload) {
 
 	case Message::Description: {
 		vector<string> fields(unpack_strings(payload));
-		std::cout << "Remote description: " << fields[1] << std::endl;
-		mPeerConnection->setRemoteDescription(net::Description(fields[1], fields[0]));
+		net::Description description(fields[1], fields[0]);
+		std::cout << "Remote description: " << description << std::endl;
+		mPeerConnection->setRemoteDescription(description);
 		break;
 	}
 
 	case Message::Candidate: {
 		vector<string> fields(unpack_strings(payload));
-		std::cout << "Remote candidate: " << fields[1] << std::endl;
-		mPeerConnection->addRemoteCandidate(net::Candidate(fields[1], fields[0]));
+		net::Candidate candidate(fields[1], fields[0]);
+		std::cout << "Remote candidate: " << candidate << std::endl;
+		mPeerConnection->addRemoteCandidate(candidate);
 		break;
 	}
 

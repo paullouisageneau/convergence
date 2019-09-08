@@ -22,6 +22,7 @@
 #include "net/webrtc.hpp"
 
 #include <emscripten/emscripten.h>
+
 #include <exception>
 #include <iostream>
 
@@ -48,6 +49,8 @@ extern void rtcSetUserPointer(int i, void *ptr);
 
 namespace net {
 
+using std::nullopt;
+
 template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
 template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
 
@@ -66,7 +69,8 @@ void PeerConnection::DescriptionCallback(const char *sdp, const char *type, void
 void PeerConnection::CandidateCallback(const char *candidate, const char *mid, void *ptr) {
 	PeerConnection *p = static_cast<PeerConnection *>(ptr);
 	if (p)
-		p->triggerLocalCandidate(Candidate(candidate, mid));
+		p->triggerLocalCandidate(candidate ? std::make_optional(Candidate(candidate, mid))
+		                                   : nullopt);
 }
 
 void DataChannel::OpenCallback(void *ptr) {
@@ -127,7 +131,7 @@ void PeerConnection::setRemoteDescription(const Description &description) {
 }
 
 void PeerConnection::addRemoteCandidate(const Candidate &candidate) {
-	rtcAddRemoteCandidate(mId, string(candidate).c_str(), candidate.mid().c_str());
+	rtcAddRemoteCandidate(mId, candidate.candidate().c_str(), candidate.mid().c_str());
 }
 
 void PeerConnection::onDataChannel(function<void(shared_ptr<DataChannel>)> callback) {
@@ -138,7 +142,7 @@ void PeerConnection::onLocalDescription(function<void(const Description &)> call
 	mLocalDescriptionCallback = callback;
 }
 
-void PeerConnection::onLocalCandidate(function<void(const Candidate &)> callback) {
+void PeerConnection::onLocalCandidate(function<void(const std::optional<Candidate> &)> callback) {
 	mLocalCandidateCallback = callback;
 }
 
@@ -152,7 +156,7 @@ void PeerConnection::triggerLocalDescription(const Description &description) {
 		mLocalDescriptionCallback(description);
 }
 
-void PeerConnection::triggerLocalCandidate(const Candidate &candidate) {
+void PeerConnection::triggerLocalCandidate(const std::optional<Candidate> &candidate) {
 	if (mLocalCandidateCallback)
 		mLocalCandidateCallback(candidate);
 }
@@ -189,11 +193,14 @@ void DataChannel::send(const std::variant<binary, string> &message) {
 	           message);
 }
 
-bool DataChannel::isOpen(void) const { return mConnected; }
+bool DataChannel::isOpen(void) const {
+		return mConnected; }
 
-bool DataChannel::isClosed(void) const { return mId == 0; }
+bool DataChannel::isClosed(void) const {
+		return mId == 0; }
 
-std::string DataChannel::label(void) const { return mLabel; }
+std::string DataChannel::label(void) const {
+		return mLabel; }
 
 } // namespace net
 
