@@ -28,11 +28,9 @@
 
 #include <functional>
 
-namespace convergence
-{
+namespace convergence {
 
-class Peering : public MessageBus::Listener
-{
+class Peering : public MessageBus::Listener {
 public:
 	Peering(const identifier &id, shared_ptr<MessageBus> signaling);
 	~Peering(void);
@@ -57,7 +55,6 @@ private:
 	shared_ptr<net::DataChannel> mDataChannel;
 };
 
-}
+} // namespace convergence
 
 #endif
-

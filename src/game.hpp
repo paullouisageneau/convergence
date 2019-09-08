@@ -26,17 +26,16 @@
 #include "src/networking.hpp"
 #include "src/world.hpp"
 
-#include "pla/engine.hpp"
 #include "pla/context.hpp"
+#include "pla/engine.hpp"
 
 #include <map>
 
-namespace convergence
-{
+namespace convergence {
 
-using pla::string;
-using pla::Engine;
 using pla::Context;
+using pla::Engine;
+using pla::string;
 
 class Game final : public Engine::State {
 public:
@@ -47,7 +46,7 @@ public:
 	void onCleanup(Engine *engine);
 
 	bool onUpdate(Engine *engine, double time);
-	int  onDraw(Engine *engine);
+	int onDraw(Engine *engine);
 
 	void onKey(Engine *engine, int key, bool down);
 	void onMouse(Engine *engine, int button, bool down);
@@ -63,7 +62,6 @@ private:
 
 	unsigned mUpdateCount;
 };
-}
+} // namespace convergence
 
 #endif
-

@@ -26,8 +26,7 @@
 
 #include <unordered_map>
 
-namespace convergence
-{
+namespace convergence {
 
 class Merkle {
 public:
@@ -91,6 +90,7 @@ protected:
 
 	void updateData(const Index &index, const binary &data);
 	virtual bool processData(const Index &index, const binary &data) = 0;
+
 private:
 	shared_ptr<Node> createNode(Node *parent);
 	shared_ptr<Node> createNode(Node *parent, const binary &digest);
@@ -100,7 +100,6 @@ private:
 	std::unordered_map<binary, shared_ptr<Node>, binary_hash> mCandidates;
 	std::unordered_map<binary, shared_ptr<Node>, binary_hash> mNodes;
 };
-}
+} // namespace convergence
 
 #endif
-

@@ -42,9 +42,7 @@ void Terrain::update(double time) {
 	mSurface.update(time);
 }
 
-int Terrain::draw(const Context &context) {
-	return mSurface.draw(context);
-}
+int Terrain::draw(const Context &context) { return mSurface.draw(context); }
 
 float Terrain::intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *intersection) {
 	return mSurface.intersect(pos, move, radius, intersection);
@@ -338,4 +336,3 @@ int3 Terrain::TerrainIndex::position(void) const {
 }
 
 } // namespace convergence
-

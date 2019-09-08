@@ -21,17 +21,16 @@
 
 #include "pla/include.hpp"
 
-namespace pla
-{
+namespace pla {
 
 std::mutex LogMutex;
 bool ForceLogToFile = false;
 std::map<std::thread::id, unsigned> ThreadMap;
 
 #ifdef DEBUG
-int	LogLevel = LEVEL_DEBUG;
+int LogLevel = LEVEL_DEBUG;
 #else
-int	LogLevel = LEVEL_INFO;
+int LogLevel = LEVEL_INFO;
 #endif
 
-}
+} // namespace pla

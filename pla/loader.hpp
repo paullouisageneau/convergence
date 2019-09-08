@@ -24,17 +24,13 @@
 #include "pla/include.hpp"
 #include "pla/string.hpp"
 
-namespace pla
-{
+namespace pla {
 
-template<class T> 
-class Loader
-{
-public :
-    virtual T* load(const string &filename) = 0;
+template <class T> class Loader {
+public:
+	virtual T *load(const string &filename) = 0;
 };
 
-}
+} // namespace pla
 
 #endif // LOADER_H
-

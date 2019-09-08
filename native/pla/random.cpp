@@ -22,34 +22,32 @@
 #include "pla/random.hpp"
 #include "pla/string.hpp"
 
-#include <gnutls/gnutls.h>
 #include <gnutls/crypto.h>
+#include <gnutls/gnutls.h>
 
-namespace pla
-{
+namespace pla {
 
-Random::Random(QualityLevel level) :
-	mLevel(level)
-{
+Random::Random(QualityLevel level) : mLevel(level) {}
 
-}
-
-Random::~Random(void)
-{
-
-}
+Random::~Random(void) {}
 
 void Random::generate(byte *buffer, size_t size) const {
 	gnutls_rnd_level_t level;
-	switch(mLevel)
-	{
-		case Crypto:	level = GNUTLS_RND_RANDOM;	break;
-		case Key:		level = GNUTLS_RND_KEY;		break;
-		default:		level = GNUTLS_RND_NONCE;	break;
+	switch (mLevel) {
+	case Crypto:
+		level = GNUTLS_RND_RANDOM;
+		break;
+	case Key:
+		level = GNUTLS_RND_KEY;
+		break;
+	default:
+		level = GNUTLS_RND_NONCE;
+		break;
 	}
 
 	int ret = gnutls_rnd(level, buffer, size);
-	if(ret < 0) throw std::runtime_error("Random generator error: " + string(gnutls_strerror(ret)));
+	if (ret < 0)
+		throw std::runtime_error("Random generator error: " + string(gnutls_strerror(ret)));
 }
 
 size_t Random::readSome(byte *buffer, size_t size) {
@@ -60,4 +58,4 @@ size_t Random::readSome(byte *buffer, size_t size) {
 size_t Random::writeSome(const byte *data, size_t size) {
 	throw std::logic_error("Writing to random generator");
 }
-}
+} // namespace pla

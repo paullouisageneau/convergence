@@ -24,22 +24,19 @@
 #include "pla/include.hpp"
 #include "pla/opengl.hpp"
 
-namespace pla
-{
+namespace pla {
 
-class BufferObject
-{
+class BufferObject {
 public:
-	BufferObject(	GLenum type = GL_ELEMENT_ARRAY_BUFFER,
-					GLenum usage = GL_DYNAMIC_DRAW,
-					bool readable = true);
+	BufferObject(GLenum type = GL_ELEMENT_ARRAY_BUFFER, GLenum usage = GL_DYNAMIC_DRAW,
+	             bool readable = true);
 	virtual ~BufferObject(void);
-	
+
 	size_t size(void) const;
-	
+
 	void bind(void);
 	void *offset(size_t offset);
-	
+
 	void fill(const void *ptr, size_t size);
 	void replace(size_t offset, const void *ptr, size_t size);
 	void *data(size_t offset, size_t size);
@@ -49,25 +46,23 @@ private:
 	GLenum mUsage;
 	GLuint mBuffer;
 	bool mReadable;
-	
+
 	size_t mSize = 0;
 	char *mCache = NULL;
 };
 
-class IndexBufferObject : public BufferObject
-{
+class IndexBufferObject : public BufferObject {
 public:
-	IndexBufferObject(bool readable = true) : 
-		BufferObject(GL_ELEMENT_ARRAY_BUFFER, GL_DYNAMIC_DRAW, readable) {}
+	IndexBufferObject(bool readable = true)
+	    : BufferObject(GL_ELEMENT_ARRAY_BUFFER, GL_DYNAMIC_DRAW, readable) {}
 };
 
-class AttribBufferObject : public BufferObject
-{
+class AttribBufferObject : public BufferObject {
 public:
-	AttribBufferObject(bool readable = true) : BufferObject(GL_ARRAY_BUFFER, GL_DYNAMIC_DRAW, readable) {}
+	AttribBufferObject(bool readable = true)
+	    : BufferObject(GL_ARRAY_BUFFER, GL_DYNAMIC_DRAW, readable) {}
 };
 
-}
+} // namespace pla
 
 #endif
-

@@ -21,57 +21,38 @@
 
 #include "net/websocket.hpp"
 
-#include <iostream>
 #include <exception>
+#include <iostream>
 
-const size_t DEFAULT_MAX_PAYLOAD_SIZE = 16384;	// 16 KB
+const size_t DEFAULT_MAX_PAYLOAD_SIZE = 16384; // 16 KB
 
-namespace net
-{
+namespace net {
 
-WebSocket::WebSocket(void) : mMaxPayloadSize(DEFAULT_MAX_PAYLOAD_SIZE)
-{
+WebSocket::WebSocket(void) : mMaxPayloadSize(DEFAULT_MAX_PAYLOAD_SIZE) {}
 
-}
+WebSocket::WebSocket(const string &url) : WebSocket() { open(url); }
 
-WebSocket::WebSocket(const string &url) : WebSocket()
-{
-	open(url);
-}
+WebSocket::~WebSocket(void) {}
 
-WebSocket::~WebSocket(void)
-{
-
-}
-
-void WebSocket::open(const string &url)
-{
+void WebSocket::open(const string &url) {
 	close();
 
 	mUrl = url;
 	mThread = std::thread(&WebSocket::run, this);
 }
 
-void WebSocket::close(void)
-{
+void WebSocket::close(void) {
 	mWebSocket.close();
-	if(mThread.joinable()) mThread.join();
+	if (mThread.joinable())
+		mThread.join();
 	mConnected = false;
 }
 
-bool WebSocket::isOpen(void) const
-{
-	return mConnected;
-}
+bool WebSocket::isOpen(void) const { return mConnected; }
 
-bool WebSocket::isClosed(void) const
-{
-	return !mThread.joinable();
-}
+bool WebSocket::isClosed(void) const { return !mThread.joinable(); }
 
-void WebSocket::setMaxPayloadSize(size_t size) {
-	mMaxPayloadSize = size;
-}
+void WebSocket::setMaxPayloadSize(size_t size) { mMaxPayloadSize = size; }
 
 void WebSocket::send(const std::variant<binary, string> &data) {
 	std::visit(
@@ -85,9 +66,9 @@ void WebSocket::send(const std::variant<binary, string> &data) {
 	    data);
 }
 
-void WebSocket::run(void)
-{
-	if(mUrl.empty()) return;
+void WebSocket::run(void) {
+	if (mUrl.empty())
+		return;
 
 	try {
 		mWebSocket.connect(mUrl);
@@ -96,18 +77,17 @@ void WebSocket::run(void)
 		triggerOpen();
 
 		binary buffer;
-		while(mWebSocket.read(buffer, mMaxPayloadSize))
+		while (mWebSocket.read(buffer, mMaxPayloadSize))
 			triggerMessage(buffer);
-	}
-	catch(const std::exception &e)
-	{
+	} catch (const std::exception &e) {
 		triggerError(e.what());
 	}
 
 	mWebSocket.close();
 
-	if(mConnected) triggerClosed();
+	if (mConnected)
+		triggerClosed();
 	mConnected = false;
 }
 
-}
+} // namespace net

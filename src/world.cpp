@@ -20,8 +20,7 @@
 
 #include "src/world.hpp"
 
-namespace convergence
-{
+namespace convergence {
 
 using pla::to_hex;
 
@@ -41,55 +40,45 @@ World::World(sptr<MessageBus> messageBus) : mMessageBus(messageBus) {
 
 World::~World(void) {}
 
-sptr<Player> World::localPlayer(void) const
-{
-	return mLocalPlayer;
-}
+sptr<Player> World::localPlayer(void) const { return mLocalPlayer; }
 
-sptr<Terrain> World::terrain(void) const
-{
-	return mTerrain;
-}
+sptr<Terrain> World::terrain(void) const { return mTerrain; }
 
-void World::update(double time)
-{
+void World::update(double time) {
 	Message message;
-	while(readMessage(message)) processMessage(message);
+	while (readMessage(message))
+		processMessage(message);
 
 	mTerrain->update(time);
 
-	for(auto &p : mPlayers) p.second->update(mTerrain, time);
+	for (auto &p : mPlayers)
+		p.second->update(mTerrain, time);
 }
 
-int World::draw(Context &context)
-{
+int World::draw(Context &context) {
 	int count = 0;
-	count+= mTerrain->draw(context);
+	count += mTerrain->draw(context);
 
-	for(const auto &p : mPlayers) count+= p.second->draw(context);
+	for (const auto &p : mPlayers)
+		count += p.second->draw(context);
 
 	return count;
 }
 
-void World::processMessage(const Message &message)
-{
-	if(!message.source.isNull())
-	{
+void World::processMessage(const Message &message) {
+	if (!message.source.isNull()) {
 		const identifier &id = message.source;
-		if(mPlayers.find(id) == mPlayers.end())
-		{
+		if (mPlayers.find(id) == mPlayers.end()) {
 			std::cout << "New player: " << to_hex(id) << std::endl;
 			mPlayers[id] = createPlayer(id);
 		}
 	}
 }
 
-shared_ptr<Player> World::createPlayer(const identifier &id)
-{
+shared_ptr<Player> World::createPlayer(const identifier &id) {
 	auto player = std::make_shared<Player>(mMessageBus, id);
 	mMessageBus->registerListener(id, player);
 	return player;
 }
 
-}
-
+} // namespace convergence

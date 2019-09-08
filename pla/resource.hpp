@@ -24,11 +24,9 @@
 #include "pla/include.hpp"
 #include "pla/string.hpp"
 
-namespace pla
-{
+namespace pla {
 
-class Resource
-{
+class Resource {
 public:
 	void setName(const string &name);
 	const string &name(void) const;
@@ -36,12 +34,11 @@ public:
 	virtual bool isTexture(void) const { return false; }
 
 private:
-    friend class ResourceManager;
+	friend class ResourceManager;
 
-    string mName;
+	string mName;
 };
 
-}
+} // namespace pla
 
 #endif // RESOURCE_H
-

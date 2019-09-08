@@ -21,25 +21,19 @@
 #include "src/game.hpp"
 #include "src/player.hpp"
 
-namespace convergence
-{
+namespace convergence {
 
-Game::Game(void)
-{
+Game::Game(void) {
 	mYaw = 0.f;
-	mPitch = -Pi/2;
+	mPitch = -Pi / 2;
 	mAccumulator = 0.f;
 
 	mUpdateCount = 0;
 }
 
-Game::~Game(void)
-{
+Game::~Game(void) {}
 
-}
-
-void Game::onInit(Engine *engine)
-{
+void Game::onInit(Engine *engine) {
 	const string url = "ws://127.0.0.1:8080/test";
 
 	mMessageBus = std::make_shared<MessageBus>();
@@ -59,55 +53,59 @@ void Game::onInit(Engine *engine)
 	mMessageBus->registerTypeListener(Message::PlayerPosition, mWorld);
 }
 
-void Game::onCleanup(Engine *engine)
-{
+void Game::onCleanup(Engine *engine) {
 	mNetworking.reset();
 	mWorld.reset();
 }
 
-bool Game::onUpdate(Engine *engine, double time)
-{
-	if(engine->isKeyDown(KEY_ESCAPE)) return false;
+bool Game::onUpdate(Engine *engine, double time) {
+	if (engine->isKeyDown(KEY_ESCAPE))
+		return false;
 
 	const float mouseSensitivity = 0.025f;
 	double mx, my;
 	engine->getMouseMove(&mx, &my);
-	mYaw-= mouseSensitivity*mx;
-	mPitch-= mouseSensitivity*my;
-	mPitch = pla::bounds(mPitch, -Pi/2, Pi/2);
+	mYaw -= mouseSensitivity * mx;
+	mPitch -= mouseSensitivity * my;
+	mPitch = pla::bounds(mPitch, -Pi / 2, Pi / 2);
 
 	const float walkSpeed = 5.f;
 	float speed = 0.f;
-	if(engine->isKeyDown(KEY_UP)) speed+= walkSpeed;
-	if(engine->isKeyDown(KEY_DOWN)) speed-= walkSpeed;
+	if (engine->isKeyDown(KEY_UP))
+		speed += walkSpeed;
+	if (engine->isKeyDown(KEY_DOWN))
+		speed -= walkSpeed;
 
 	sptr<Player> localPlayer = mWorld->localPlayer();
 	localPlayer->rotate(mYaw, mPitch);
 	localPlayer->move(speed);
 
-	if(engine->isKeyDown(KEY_SPACE)) localPlayer->jump();
+	if (engine->isKeyDown(KEY_SPACE))
+		localPlayer->jump();
 
 	mWorld->update(time);
 
-	if(engine->isMouseButtonDown(MOUSE_BUTTON_LEFT) || engine->isMouseButtonDown(MOUSE_BUTTON_RIGHT))
-	{
+	if (engine->isMouseButtonDown(MOUSE_BUTTON_LEFT) ||
+	    engine->isMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
 		sptr<Terrain> terrain = mWorld->terrain();
 
 		vec3 position = localPlayer->getPosition();
 		vec3 front = localPlayer->getDirection();
 		vec3 intersection;
-		if(terrain->intersect(position, front*10.f, 0.25f, &intersection) <= 1.f)
-		{
+		if (terrain->intersect(position, front * 10.f, 0.25f, &intersection) <= 1.f) {
 			bool diggingMode = engine->isMouseButtonDown(MOUSE_BUTTON_RIGHT);
-			if(diggingMode) mAccumulator-= 200.f*time;
-			else mAccumulator+= 200.f*time;
+			if (diggingMode)
+				mAccumulator -= 200.f * time;
+			else
+				mAccumulator += 200.f * time;
 
 			int delta = int(mAccumulator);
-			if(delta)
-			{
-				mAccumulator-= float(delta);
-				if(diggingMode) terrain->dig(intersection, delta, 2.5f);
-				else terrain->build(intersection, delta);
+			if (delta) {
+				mAccumulator -= float(delta);
+				if (diggingMode)
+					terrain->dig(intersection, delta, 2.5f);
+				else
+					terrain->build(intersection, delta);
 			}
 		}
 	}
@@ -116,8 +114,7 @@ bool Game::onUpdate(Engine *engine, double time)
 	return true;
 }
 
-int Game::onDraw(Engine *engine)
-{
+int Game::onDraw(Engine *engine) {
 	int count = 0;
 
 	engine->clear(vec4(0.f, 0.f, 0.f, 1.f));
@@ -125,33 +122,21 @@ int Game::onDraw(Engine *engine)
 	int width, height;
 	engine->getWindowSize(&width, &height);
 
-	mat4 projection = glm::perspective(
-		glm::radians(45.0f),
-		float(width)/float(height),
-		0.1f, 30.0f
-	);
+	mat4 projection =
+	    glm::perspective(glm::radians(45.0f), float(width) / float(height), 0.1f, 30.0f);
 
 	Context context(projection, mWorld->localPlayer()->getTransform());
 	context.setUniform("lightPosition", mWorld->localPlayer()->getPosition());
 
-	count+= mWorld->draw(context);
+	count += mWorld->draw(context);
 
 	return count;
 }
 
-void Game::onKey(Engine *engine, int key, bool down)
-{
+void Game::onKey(Engine *engine, int key, bool down) {}
 
-}
+void Game::onMouse(Engine *engine, int button, bool down) {}
 
-void Game::onMouse(Engine *engine, int button, bool down)
-{
+void Game::onInput(Engine *engine, string text) {}
 
-}
-
-void Game::onInput(Engine *engine, string text)
-{
-
-}
-
-}
+} // namespace convergence

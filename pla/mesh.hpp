@@ -21,33 +21,32 @@
 #ifndef MESH_H
 #define MESH_H
 
-#include "pla/include.hpp"
-#include "pla/linalg.hpp"
-#include "pla/resource.hpp"
 #include "pla/buffer.hpp"
 #include "pla/bufferobject.hpp"
 #include "pla/collidable.hpp"
+#include "pla/include.hpp"
+#include "pla/linalg.hpp"
+#include "pla/resource.hpp"
 
-namespace pla
-{
+namespace pla {
 
 class Mesh : public Resource, public Collidable {
 public:
 	typedef unsigned int index_t;
-	#define INVALID_INDEX (index_t(-1))
+#define INVALID_INDEX (index_t(-1))
 
 	Mesh(void);
-	Mesh(	const index_t *indices,
-			size_t nindices,
-			const float *vertices,
-			size_t nvertices);
+	Mesh(const index_t *indices, size_t nindices, const float *vertices, size_t nvertices);
 
 	virtual ~Mesh(void);
 
 	void setIndices(const index_t *indices, size_t count = 0);
-	void setVertexAttrib(unsigned layout, const float *attribs, size_t count = 0, int size = 3, bool normalize = false);
-	void setVertexAttrib(unsigned layout, const int *attribs, size_t count = 0, int size = 1, bool normalize = false);
-	void setVertexAttrib(unsigned layout, const char *attribs, size_t count = 0, int size = 1, bool normalize = false);
+	void setVertexAttrib(unsigned layout, const float *attribs, size_t count = 0, int size = 3,
+	                     bool normalize = false);
+	void setVertexAttrib(unsigned layout, const int *attribs, size_t count = 0, int size = 1,
+	                     bool normalize = false);
+	void setVertexAttrib(unsigned layout, const char *attribs, size_t count = 0, int size = 1,
+	                     bool normalize = false);
 	void unsetVertexAttrib(unsigned layout);
 
 	size_t indicesCount(void) const;
@@ -71,8 +70,7 @@ protected:
 
 	typedef Buffer<index_t> IndexBuffer;
 
-	class Attrib
-	{
+	class Attrib {
 	public:
 		unsigned layout = 0;
 		int size = 3;
@@ -91,54 +89,38 @@ protected:
 		typedef Buffer<T> AttribBuffer;
 		sptr<AttribBuffer> buffer;
 
-		TypedAttrib(unsigned layout) {
-			this->layout = layout;
+		TypedAttrib(unsigned layout) { this->layout = layout; }
+
+		size_t count(void) const { return buffer->count(); }
+
+		void fill(const void *attribs, size_t count) {
+			if (!buffer)
+				buffer = std::make_shared<AttribBuffer>(new AttribBufferObject(layout == 0));
+			buffer->fill(reinterpret_cast<const T *>(attribs), count);
 		}
 
-		size_t count(void) const
-		{
-			return buffer->count();
-		}
+		void bind(void) { buffer->bind(); }
 
-		void fill(const void *attribs, size_t count)
-		{
-			if(!buffer) buffer = std::make_shared<AttribBuffer>(new AttribBufferObject(layout == 0));
-			buffer->fill(reinterpret_cast<const T*>(attribs), count);
-		}
+		void *data(void) { return buffer->data(); }
 
-		void bind(void)
-		{
-			buffer->bind();
-		}
-
-		void *data(void)
-		{
-			return buffer->data();
-		}
-
-		void *data(size_t offset, size_t nbr)
-		{
-			return buffer->data(offset, nbr);
-		}
+		void *data(size_t offset, size_t nbr) { return buffer->data(offset, nbr); }
 	};
 
-	template<typename T>
-	sptr<Attrib> getAttribBuffer(unsigned layout)
-	{
+	template <typename T> sptr<Attrib> getAttribBuffer(unsigned layout) {
 		auto it = mAttribBuffers.find(layout);
 		if (it != mAttribBuffers.end())
 			return it->second;
-		sptr<Attrib> attrib = std::make_shared<TypedAttrib<T> >(layout);
+		sptr<Attrib> attrib = std::make_shared<TypedAttrib<T>>(layout);
 		mAttribBuffers[layout] = attrib;
 		return attrib;
 	}
 
 	// Buffers
 	sptr<IndexBuffer> mIndexBuffer;
-	std::map<unsigned, sptr<Attrib> > mAttribBuffers;
+	std::map<unsigned, sptr<Attrib>> mAttribBuffers;
 
 	float mRadius = -1.f;
 };
-}
+} // namespace pla
 
 #endif

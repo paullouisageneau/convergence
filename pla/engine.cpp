@@ -279,4 +279,3 @@ void Engine::WindowFocusCallback(GLFWwindow *window, int focus) {
 }
 
 } // namespace pla
-

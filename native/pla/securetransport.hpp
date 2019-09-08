@@ -22,30 +22,27 @@
 #ifndef PLA_SECURETRANSPORT_H
 #define PLA_SECURETRANSPORT_H
 
-#include "pla/include.hpp"
-#include "pla/stream.hpp"
-#include "pla/string.hpp"
 #include "pla/binary.hpp"
 #include "pla/crypto.hpp"
+#include "pla/include.hpp"
 #include "pla/serversocket.hpp"
+#include "pla/stream.hpp"
+#include "pla/string.hpp"
 
-#include <gnutls/gnutls.h>
 #include <gnutls/abstract.h>
+#include <gnutls/gnutls.h>
 #include <gnutls/x509.h>
 
-namespace pla
-{
+namespace pla {
 
-class SecureTransport : public Stream
-{
+class SecureTransport : public Stream {
 public:
 	static string DefaultPriorities;
 
 	static void Init(void);
 	static void Cleanup(void);
 
-	class Credentials
-	{
+	class Credentials {
 	public:
 		Credentials(void) {}
 		virtual ~Credentials(void) {}
@@ -55,11 +52,10 @@ public:
 		virtual void install(gnutls_session_t session, string &priorities) = 0;
 	};
 
-	class Certificate : public Credentials
-	{
+	class Certificate : public Credentials {
 	public:
 		Certificate(void);
-		Certificate(const string &certFilename, const string &keyFilename);	// PEM encoded
+		Certificate(const string &certFilename, const string &keyFilename); // PEM encoded
 		~Certificate(void);
 
 	protected:
@@ -68,17 +64,16 @@ public:
 	};
 
 	class RsaCertificate;
-	class RsaCertificateChain : public Certificate
-	{
+	class RsaCertificateChain : public Certificate {
 	public:
-		RsaCertificateChain(const std::vector<SecureTransport::RsaCertificate*> &chain);
+		RsaCertificateChain(const std::vector<SecureTransport::RsaCertificate *> &chain);
 		~RsaCertificateChain(void);
 	};
 
-	class RsaCertificate : public Certificate
-	{
+	class RsaCertificate : public Certificate {
 	public:
-		RsaCertificate(const Rsa::PrivateKey &priv, const string &name, const RsaCertificate *issuer = NULL);
+		RsaCertificate(const Rsa::PrivateKey &priv, const string &name,
+		               const RsaCertificate *issuer = NULL);
 		~RsaCertificate(void);
 
 	protected:
@@ -90,8 +85,9 @@ public:
 
 	virtual ~SecureTransport(void);
 
-	void addCredentials(Credentials *creds, bool mustDelete = false);	// creds will be deleted if mustDelete == true
-	void setHostname(const string &hostname);	// remote hostname for client
+	void addCredentials(Credentials *creds,
+	                    bool mustDelete = false); // creds will be deleted if mustDelete == true
+	void setHostname(const string &hostname);     // remote hostname for client
 
 	void handshake(void);
 	void close(void);
@@ -106,31 +102,36 @@ public:
 	bool isAnonymous(void) const;
 	bool hasPrivateSharedKey(void) const;
 	bool hasCertificate(void) const;
-	string getPrivateSharedKeyHint(void) const;	// only valid on client side
+	string getPrivateSharedKeyHint(void) const; // only valid on client side
 
-	struct Verifier
-	{
+	struct Verifier {
 		virtual bool verifyPublicKey(const std::vector<Rsa::PublicKey> &chain) { return false; }
 		virtual bool verifyPrivateSharedKey(const string &username, binary &key) { return false; }
-		virtual bool verifyPrivateSharedKey(string &username, binary &key, const string &hint) { return verifyPrivateSharedKey(username, key); }
-		virtual bool verifyName(const string &name, SecureTransport *transport) { return true; }	// default is true
+		virtual bool verifyPrivateSharedKey(string &username, binary &key, const string &hint) {
+			return verifyPrivateSharedKey(username, key);
+		}
+		virtual bool verifyName(const string &name, SecureTransport *transport) {
+			return true;
+		} // default is true
 	};
 
 	void setVerifier(Verifier *verifier);
 
 protected:
-	static ssize_t	DirectWriteCallback(gnutls_transport_ptr_t ptr, const void* data, size_t len);
-	static ssize_t	WriteCallback(gnutls_transport_ptr_t ptr, const void* data, size_t len);
-	static ssize_t	ReadCallback(gnutls_transport_ptr_t ptr, void* data, size_t maxlen);
-	static int	TimeoutCallback(gnutls_transport_ptr_t ptr, unsigned int ms);
+	static ssize_t DirectWriteCallback(gnutls_transport_ptr_t ptr, const void *data, size_t len);
+	static ssize_t WriteCallback(gnutls_transport_ptr_t ptr, const void *data, size_t len);
+	static ssize_t ReadCallback(gnutls_transport_ptr_t ptr, void *data, size_t maxlen);
+	static int TimeoutCallback(gnutls_transport_ptr_t ptr, unsigned int ms);
 
 	static int CertificateCallback(gnutls_session_t session);
-	static int PrivateSharedKeyCallback(gnutls_session_t session, const char* username, gnutls_datum_t* datum);
-	static int PrivateSharedKeyClientCallback(gnutls_session_t session, char** username, gnutls_datum_t* datum);
+	static int PrivateSharedKeyCallback(gnutls_session_t session, const char *username,
+	                                    gnutls_datum_t *datum);
+	static int PrivateSharedKeyClientCallback(gnutls_session_t session, char **username,
+	                                          gnutls_datum_t *datum);
 
 	static string Errorstring(int code);
 
-	SecureTransport(Stream *stream, bool server);	// stream will be deleted on success
+	SecureTransport(Stream *stream, bool server); // stream will be deleted on success
 
 	gnutls_session_t mSession;
 	Stream *mStream;
@@ -138,16 +139,14 @@ protected:
 	string mPriorities;
 	string mHostname;
 
-	std::list<Credentials*> mCredsToDelete;
+	std::list<Credentials *> mCredsToDelete;
 	bool mIsHandshakeDone;
 	bool mIsByeDone;
 };
 
-class SecureTransportClient : public SecureTransport
-{
+class SecureTransportClient : public SecureTransport {
 public:
-	class Anonymous : public Credentials
-	{
+	class Anonymous : public Credentials {
 	public:
 		Anonymous(void);
 		~Anonymous(void);
@@ -157,8 +156,7 @@ public:
 		gnutls_anon_client_credentials_t mCreds;
 	};
 
-	class PrivateSharedKey : public Credentials
-	{
+	class PrivateSharedKey : public Credentials {
 	public:
 		PrivateSharedKey(void);
 		PrivateSharedKey(const string &name, const binary &key);
@@ -169,15 +167,14 @@ public:
 		gnutls_psk_client_credentials_t mCreds;
 	};
 
-	SecureTransportClient(Stream *stream, Credentials *creds = NULL, const string &hostname = "");	// creds will be deleted
+	SecureTransportClient(Stream *stream, Credentials *creds = NULL,
+	                      const string &hostname = ""); // creds will be deleted
 	~SecureTransportClient(void);
 };
 
-class SecureTransportServer : public SecureTransport
-{
+class SecureTransportServer : public SecureTransport {
 public:
-	class Anonymous : public Credentials
-	{
+	class Anonymous : public Credentials {
 	public:
 		Anonymous(void);
 		~Anonymous(void);
@@ -187,8 +184,7 @@ public:
 		gnutls_anon_server_credentials_t mCreds;
 	};
 
-	class PrivateSharedKey : public Credentials
-	{
+	class PrivateSharedKey : public Credentials {
 	public:
 		PrivateSharedKey(const string &hint = "");
 		~PrivateSharedKey(void);
@@ -200,11 +196,13 @@ public:
 
 	/*
 	// These functions are preferred, especially for datagrams (protection against DoS)
-	static SecureTransport *Listen(ServerSocket &sock, Address *remote = NULL, bool requestClientCertificate = false);
-	static SecureTransport *Listen(DatagramSocket &sock, Address *remote = NULL, bool requestClientCertificate = false);
+	static SecureTransport *Listen(ServerSocket &sock, Address *remote = NULL, bool
+	requestClientCertificate = false); static SecureTransport *Listen(DatagramSocket &sock, Address
+	*remote = NULL, bool requestClientCertificate = false);
 	*/
 
-	SecureTransportServer(Stream *stream, Credentials *creds = NULL, bool requestClientCertificate = false);	// creds will be deleted
+	SecureTransportServer(Stream *stream, Credentials *creds = NULL,
+	                      bool requestClientCertificate = false); // creds will be deleted
 	~SecureTransportServer(void);
 
 	bool isClient(void) const;
@@ -213,6 +211,6 @@ protected:
 	static int PostClientHelloCallback(gnutls_session_t session);
 };
 
-}
+} // namespace pla
 
 #endif

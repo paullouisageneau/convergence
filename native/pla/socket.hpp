@@ -22,15 +22,13 @@
 #ifndef PLA_SOCKET_H
 #define PLA_SOCKET_H
 
+#include "pla/address.hpp"
 #include "pla/include.hpp"
 #include "pla/stream.hpp"
-#include "pla/address.hpp"
 
-namespace pla
-{
+namespace pla {
 
-class Socket : public Stream
-{
+class Socket : public Stream {
 public:
 	static Address HttpProxy;
 
@@ -39,7 +37,7 @@ public:
 	Socket(socket_t sock);
 	virtual ~Socket(void);
 
-	bool isConnected(void) const;	// Does not garantee the connection isn't actually lost
+	bool isConnected(void) const; // Does not garantee the connection isn't actually lost
 	bool isReadable(void) const;
 	bool isWriteable(void) const;
 	Address getLocalAddress(void) const;
@@ -48,7 +46,7 @@ public:
 	void setConnectTimeout(duration timeout);
 	void setReadTimeout(duration timeout);
 	void setWriteTimeout(duration timeout);
-	void setTimeout(duration timeout);	// connect + read + write
+	void setTimeout(duration timeout); // connect + read + write
 
 	void connect(const Address &addr);
 	void close(void);
@@ -71,6 +69,6 @@ private:
 	friend class ServerSocket;
 };
 
-}
+} // namespace pla
 
 #endif

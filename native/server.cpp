@@ -22,30 +22,22 @@
 
 namespace convergence {
 
-Server::Server(uint16_t port)
-{
+Server::Server(uint16_t port) {
 	// TODO
 }
 
-Server::~Server(void)
-{
-	stop();
-}
+Server::~Server(void) { stop(); }
 
-void Server::start(void)
-{
+void Server::start(void) {
 	stop();
 	mThread = std::thread(&Server::run, this);
 }
 
-void Server::stop(void)
-{
-	if(mThread.joinable()) mThread.join();
+void Server::stop(void) {
+	if (mThread.joinable())
+		mThread.join();
 }
 
-void Server::run(void)
-{
-	
-}
+void Server::run(void) {}
 
-}
+} // namespace convergence

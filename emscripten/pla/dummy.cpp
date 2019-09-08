@@ -1,5 +1,2 @@
 // dummy file
-namespace pla {
-
-}
-
+namespace pla {}

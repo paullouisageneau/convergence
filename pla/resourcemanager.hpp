@@ -25,42 +25,39 @@
 #include "pla/resource.hpp"
 #include "pla/string.hpp"
 
-namespace pla
-{
+namespace pla {
 
-class ResourceManager
-{
-public :
+class ResourceManager {
+public:
 	// Recupere une ressource
-	template <class T> sptr<T> get(const string& name) const;
+	template <class T> sptr<T> get(const string &name) const;
 
 	// Ajoute une ressource
-	void add(const string& name, sptr<Resource> resource);
+	void add(const string &name, sptr<Resource> resource);
 
 	// Retire une ressource
-	void remove(const string& name);
+	void remove(const string &name);
 
 	// Retire les ressources
 	void flush(void);
 
-private :
-	//Table contenant les ressources associees a leur nom de fichier
-	std::map<string, sptr<Resource> > mResources;
+private:
+	// Table contenant les ressources associees a leur nom de fichier
+	std::map<string, sptr<Resource>> mResources;
 };
 
 // Renvoie un pointeur sur une ressource déjà chargée (NULL si non trouvée)
-template <class T>
-inline sptr<T> ResourceManager::get(const string &name) const
-{
-    // Recherche de la ressource
-    auto it = mResources.find(name);
+template <class T> inline sptr<T> ResourceManager::get(const string &name) const {
+	// Recherche de la ressource
+	auto it = mResources.find(name);
 
-    // Si on l'a trouvée on la renvoie, sinon on renvoie NULL
-    if (it != mResources.end()) return std::dynamic_pointer_cast<T>(it->second);
-    else return NULL;
+	// Si on l'a trouvée on la renvoie, sinon on renvoie NULL
+	if (it != mResources.end())
+		return std::dynamic_pointer_cast<T>(it->second);
+	else
+		return NULL;
 }
 
-}
+} // namespace pla
 
 #endif // RESOURCEMANAGER_H
-

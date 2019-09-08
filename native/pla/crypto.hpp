@@ -22,28 +22,26 @@
 #ifndef PLA_CRYPTO_H
 #define PLA_CRYPTO_H
 
+#include "pla/binaryformatter.hpp"
 #include "pla/include.hpp"
 #include "pla/stream.hpp"
-#include "pla/binaryformatter.hpp"
 
-#include <nettle/sha1.h>
-#include <nettle/sha2.h>
-#include <nettle/sha3.h>
+#include <gnutls/gnutls.h>
+#include <gnutls/x509.h>
 #include <nettle/aes.h>
 #include <nettle/ctr.h>
 #include <nettle/gcm.h>
 #include <nettle/rsa.h>
-#include <gnutls/gnutls.h>
-#include <gnutls/x509.h>
+#include <nettle/sha1.h>
+#include <nettle/sha2.h>
+#include <nettle/sha3.h>
 
-namespace pla
-{
+namespace pla {
 
 class Rsa;
 
 // Hash function interface
-class Hash
-{
+class Hash {
 public:
 	Hash(void) {}
 	virtual ~Hash(void) {}
@@ -63,15 +61,15 @@ public:
 
 private:
 	// RSA signature
-	virtual bool rsaVerify(const binary &digest, const struct rsa_public_key *key, const mpz_t signature);
+	virtual bool rsaVerify(const binary &digest, const struct rsa_public_key *key,
+	                       const mpz_t signature);
 	virtual bool rsaSign(const binary &digest, const struct rsa_private_key *key, mpz_t signature);
 
 	friend class Rsa;
 };
 
 // SHA1 hash function implementation
-class Sha1 : public Hash
-{
+class Sha1 : public Hash {
 public:
 	size_t length(void) const;
 	void init(void);
@@ -82,7 +80,8 @@ public:
 	void mac(const binary &message, const binary &key, binary &digest);
 
 	// PBKDF2-HMAC-SHA1
-	void pbkdf2(const binary &secret, const binary &salt, binary &key, size_t key_len, unsigned iterations);
+	void pbkdf2(const binary &secret, const binary &salt, binary &key, size_t key_len,
+	            unsigned iterations);
 
 private:
 	bool rsaVerify(const binary &digest, const struct rsa_public_key *key, const mpz_t signature);
@@ -92,8 +91,7 @@ private:
 };
 
 // SHA256 hash function implementation
-class Sha256 : public Hash
-{
+class Sha256 : public Hash {
 public:
 	size_t length(void) const;
 	void init(void);
@@ -104,7 +102,8 @@ public:
 	void mac(const binary &message, const binary &key, binary &digest);
 
 	// PBKDF2-HMAC-SHA256
-	void pbkdf2(const binary &secret, const binary &salt, binary &key, size_t key_len, unsigned iterations);
+	void pbkdf2(const binary &secret, const binary &salt, binary &key, size_t key_len,
+	            unsigned iterations);
 
 private:
 	bool rsaVerify(const binary &digest, const struct rsa_public_key *key, const mpz_t signature);
@@ -114,8 +113,7 @@ private:
 };
 
 // SHA512 hash function implementation
-class Sha512 : public Hash
-{
+class Sha512 : public Hash {
 public:
 	size_t length(void) const;
 	void init(void);
@@ -126,7 +124,8 @@ public:
 	void mac(const binary &message, const binary &key, binary &digest);
 
 	// PBKDF2-HMAC-SHA512
-	void pbkdf2(const binary &secret, const binary &salt, binary &key, size_t key_len, unsigned iterations);
+	void pbkdf2(const binary &secret, const binary &salt, binary &key, size_t key_len,
+	            unsigned iterations);
 
 private:
 	bool rsaVerify(const binary &digest, const struct rsa_public_key *key, const mpz_t signature);
@@ -135,11 +134,10 @@ private:
 	struct sha512_ctx mCtx;
 };
 
-typedef Sha256 Sha2;	// SHA2 defaults to SHA256
+typedef Sha256 Sha2; // SHA2 defaults to SHA256
 
 // SHA3-256 hash function implementation
-class Sha3_256 : public Hash
-{
+class Sha3_256 : public Hash {
 public:
 	size_t length(void) const;
 	void init(void);
@@ -156,15 +154,14 @@ public:
 
 private:
 	// TODO: SHA3 signatures
-	//bool rsaVerify(const binary &digest, struct rsa_public_key *key, const mpz_t signature);
-	//bool rsaSign(const binary &digest, struct rsa_private_key *key, mpz_t signature);
+	// bool rsaVerify(const binary &digest, struct rsa_public_key *key, const mpz_t signature);
+	// bool rsaSign(const binary &digest, struct rsa_private_key *key, mpz_t signature);
 
 	struct sha3_256_ctx mCtx;
 };
 
 // SHA3-512 hash function implementation
-class Sha3_512 : public Hash
-{
+class Sha3_512 : public Hash {
 public:
 	size_t length(void) const;
 	void init(void);
@@ -176,16 +173,15 @@ public:
 
 private:
 	// TODO: SHA3 signatures
-	//bool rsaVerify(const binary &digest, struct rsa_public_key *key, const mpz_t signature);
-	//bool rsaSign(const binary &digest, struct rsa_private_key *key, mpz_t signature);
+	// bool rsaVerify(const binary &digest, struct rsa_public_key *key, const mpz_t signature);
+	// bool rsaSign(const binary &digest, struct rsa_private_key *key, mpz_t signature);
 
 	struct sha3_512_ctx mCtx;
 };
 
-typedef Sha3_256 Sha3;	// SHA3 defaults to SHA3-256
+typedef Sha3_256 Sha3; // SHA3 defaults to SHA3-256
 
-class Cipher : public Stream
-{
+class Cipher : public Stream {
 public:
 	Cipher(Stream *stream, bool mustDelete = false);
 	virtual ~Cipher(void);
@@ -231,11 +227,9 @@ private:
 	struct gcm_aes256_ctx mCtx;
 };
 
-class Rsa
-{
+class Rsa {
 public:
-	class PublicKey
-	{
+	class PublicKey {
 	public:
 		PublicKey(void);
 		PublicKey(const PublicKey &key);
@@ -250,13 +244,17 @@ public:
 
 		// Fingerprint
 		binary fingerprint(Hash &hash) const;
-		template<class H> binary fingerprint(void) const
-			{ H hash; return fingerprint(hash); }
+		template <class H> binary fingerprint(void) const {
+			H hash;
+			return fingerprint(hash);
+		}
 
 		// Verification
 		bool verify(Hash &hash, const binary &digest, const binary &signature) const;
-		template<class H> bool verify(const binary &digest, const binary &signature) const
-			{ H hash; return verify(hash, digest, signature); }
+		template <class H> bool verify(const binary &digest, const binary &signature) const {
+			H hash;
+			return verify(hash, digest, signature);
+		}
 
 		// Serialization
 		virtual string toString() const;
@@ -269,8 +267,7 @@ public:
 		friend class Rsa;
 	};
 
-	class PrivateKey : public PublicKey
-	{
+	class PrivateKey : public PublicKey {
 	public:
 		PrivateKey(void);
 		PrivateKey(const PrivateKey &key);
@@ -281,8 +278,10 @@ public:
 
 		// Signature
 		void sign(Hash &hash, const binary &digest, binary &signature) const;
-		template<class H> void sign(const binary &digest, binary &signature) const
-			{ H hash; sign(hash, digest, signature); }
+		template <class H> void sign(const binary &digest, binary &signature) const {
+			H hash;
+			sign(hash, digest, signature);
+		}
 
 		// Serialization
 		string toString() const;
@@ -300,16 +299,17 @@ public:
 
 	void generate(PrivateKey &priv);
 
-	static void CreateCertificate(gnutls_x509_crt_t crt, gnutls_x509_privkey_t key, const PrivateKey &priv, const string &name);
-	static void SignCertificate(gnutls_x509_crt_t crt, gnutls_x509_crt_t issuer, gnutls_x509_privkey_t issuerKey);
+	static void CreateCertificate(gnutls_x509_crt_t crt, gnutls_x509_privkey_t key,
+	                              const PrivateKey &priv, const string &name);
+	static void SignCertificate(gnutls_x509_crt_t crt, gnutls_x509_crt_t issuer,
+	                            gnutls_x509_privkey_t issuerKey);
 
 private:
 	unsigned mBits;
 };
 
 // Argon2 key derivation function for password hashing
-class Argon2
-{
+class Argon2 {
 public:
 	static unsigned DefaultTimeCost;
 	static unsigned DefaultMemoryCost;
@@ -327,19 +327,18 @@ private:
 	unsigned mParallelism;
 };
 
-class DerSequence
-{
+class DerSequence {
 public:
 	DerSequence(void);
 	DerSequence(const binary &b);
 
 	binary data(void) const;
 
-	DerSequence &operator>> (mpz_t n);
-	DerSequence &operator>> (unsigned long &n);
+	DerSequence &operator>>(mpz_t n);
+	DerSequence &operator>>(unsigned long &n);
 
-	DerSequence &operator<< (const mpz_t n);
-	DerSequence &operator<< (unsigned long n);
+	DerSequence &operator<<(const mpz_t n);
+	DerSequence &operator<<(unsigned long n);
 
 private:
 	static bool readLength(BinaryFormatter &formatter, size_t &length);
@@ -355,6 +354,6 @@ void mpz_export_binary(const mpz_t n, binary &bs);
 void mpz_import_string(mpz_t n, const string &str);
 void mpz_export_string(const mpz_t n, string &str);
 
-}
+} // namespace pla
 
 #endif

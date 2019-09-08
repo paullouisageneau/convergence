@@ -26,12 +26,10 @@
 
 #include <variant>
 
-namespace net
-{
+namespace net {
 
 // WebSocket wrapper for emscripten
-class WebSocket : public Channel
-{
+class WebSocket : public Channel {
 public:
 	WebSocket(void);
 	WebSocket(const string &url);
@@ -55,6 +53,6 @@ private:
 	static void MessageCallback(const char *data, int size, void *ptr);
 };
 
-}
+} // namespace net
 
 #endif // NET_WEBSOCKET_H

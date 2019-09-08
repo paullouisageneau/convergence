@@ -21,17 +21,20 @@
 #include "pla/include.hpp"
 #include "pla/linalg.hpp"
 
-namespace pla
-{
+namespace pla {
 
 // Intersection subroutines
-float intersectPlane(const vec3 &p, const vec3 &direction, const vec3 &planeOrigin, const vec3 &planeNormal);
+float intersectPlane(const vec3 &p, const vec3 &direction, const vec3 &planeOrigin,
+                     const vec3 &planeNormal);
 float intersectSphere(const vec3 &p, vec3 direction, const vec3 &centre, float radius);
 bool isInTriangle(const vec3 &p, const vec3 &p1, const vec3 &p2, const vec3 &p3);
-vec3 closestPointOnTriangle(const vec3 &p, const vec3 &p1,const vec3 &p2, const vec3 &p3);
+vec3 closestPointOnTriangle(const vec3 &p, const vec3 &p1, const vec3 &p2, const vec3 &p3);
 vec3 closestPointOnSegment(const vec3 &p, const vec3 &p1, const vec3 &p2);
-float intersectBox(const vec3 &p, const vec3 &move, float radius, const vec3 &min, const vec3 &max, vec3 *intersection);
-float intersectFace(const vec3 &p, const vec3 &move, float radius, const vec3 &p1, const vec3 &p2, const vec3 &p3, const vec3 &p4, vec3 *intersection);
-float intersectFace(const vec3 &p, const vec3 &move, float radius, const vec3 &p1, const vec3 &p2, const vec3 &p3, vec3 *intersection);
+float intersectBox(const vec3 &p, const vec3 &move, float radius, const vec3 &min, const vec3 &max,
+                   vec3 *intersection);
+float intersectFace(const vec3 &p, const vec3 &move, float radius, const vec3 &p1, const vec3 &p2,
+                    const vec3 &p3, const vec3 &p4, vec3 *intersection);
+float intersectFace(const vec3 &p, const vec3 &move, float radius, const vec3 &p1, const vec3 &p2,
+                    const vec3 &p3, vec3 *intersection);
 
-}
+} // namespace pla

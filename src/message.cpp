@@ -22,45 +22,37 @@
 
 #include "pla/binaryformatter.hpp"
 
-namespace convergence
-{
+namespace convergence {
 
 using pla::BinaryFormatter;
 
-Message::Message(Type _type) :
-	type(_type)
-{
-	
-}
+Message::Message(Type _type) : type(_type) {}
 
-Message::Message(const binary &data)
-{
+Message::Message(const binary &data) {
 	uint32_t size = 0;
 	uint32_t tmpType = 0;
-	
+
 	BinaryFormatter formatter(data);
 	formatter >> tmpType >> size;
 	payload.resize(size);
 	type = Type(tmpType);
-	
+
 	formatter >> source;
 	formatter >> destination;
 	formatter >> payload;
 }
 
-Message::operator binary(void) const
-{
+Message::operator binary(void) const {
 	uint32_t size(payload.size());
-	
+
 	BinaryFormatter formatter;
 	formatter << uint32_t(type) << size;
-	
+
 	formatter << source;
 	formatter << destination;
 	formatter << payload;
-	
+
 	return formatter.data();
 }
 
-}
-
+} // namespace convergence

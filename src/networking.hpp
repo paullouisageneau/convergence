@@ -22,13 +22,12 @@
 #define CONVERGENCE_NETWORKING_H
 
 #include "src/include.hpp"
-#include "src/peering.hpp"
 #include "src/messagebus.hpp"
+#include "src/peering.hpp"
 
 #include <map>
 
-namespace convergence
-{
+namespace convergence {
 
 using std::multimap;
 
@@ -48,7 +47,6 @@ private:
 	shared_ptr<MessageBus> mMessageBus;
 	std::map<identifier, shared_ptr<Peering>> mPeerings;
 };
-}
+} // namespace convergence
 
 #endif
-

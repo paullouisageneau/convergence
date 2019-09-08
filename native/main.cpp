@@ -25,32 +25,28 @@
 
 #include "server.hpp"
 
-using convergence::Server;
 using convergence::Game;
+using convergence::Server;
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
 	try {
 		// TODO
-		//Server server;
-		//server.start();
+		// Server server;
+		// server.start();
 
 		pla::Engine engine;
 		engine.openWindow(1024, 768, "Convergence");
 		engine.pushState(std::make_shared<Game>());
 
-		while(engine.update())
-		{
-			//int count = engine.display();
-			//std::cout << count << std::endl;
+		while (engine.update()) {
+			// int count = engine.display();
+			// std::cout << count << std::endl;
 			engine.display();
 		}
-	}
-	catch(const std::exception &e) {
+	} catch (const std::exception &e) {
 		std::cout << "Error: " << e.what() << std::endl;
 		return 1;
 	}
 
 	return 0;
 }
-

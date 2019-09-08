@@ -27,16 +27,14 @@
 #include <variant>
 #include <vector>
 
-namespace net
-{
+namespace net {
 
 using std::byte;
 using std::function;
 using std::string;
 typedef std::vector<byte> binary;
 
-class Channel
-{
+class Channel {
 public:
 	virtual void close(void) = 0;
 	virtual void send(const std::variant<binary, string> &data) = 0;
@@ -64,6 +62,6 @@ private:
 	function<void(const std::variant<binary, string> &data)> mMessageCallback;
 };
 
-}
+} // namespace net
 
 #endif // NET_CHANNEL_H

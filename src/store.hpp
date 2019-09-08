@@ -21,14 +21,13 @@
 #ifndef CONVERGENCE_STORE_H
 #define CONVERGENCE_STORE_H
 
-#include "src/messagebus.hpp"
 #include "src/include.hpp"
+#include "src/messagebus.hpp"
 
 #include <mutex>
 #include <unordered_map>
 
-namespace convergence
-{
+namespace convergence {
 
 class Store : public MessageBus::Listener {
 public:
@@ -58,7 +57,6 @@ private:
 
 	static binary Hash(const binary &data);
 };
-}
+} // namespace convergence
 
 #endif
-

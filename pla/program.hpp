@@ -21,16 +21,15 @@
 #ifndef PLA_PROGRAM_H
 #define PLA_PROGRAM_H
 
+#include "pla/buffer.hpp"
 #include "pla/include.hpp"
+#include "pla/linalg.hpp"
 #include "pla/opengl.hpp"
 #include "pla/resource.hpp"
 #include "pla/shader.hpp"
-#include "pla/buffer.hpp"
 #include "pla/string.hpp"
-#include "pla/linalg.hpp"
 
-namespace pla
-{
+namespace pla {
 
 class Program final : public Resource {
 public:
@@ -67,10 +66,10 @@ public:
 private:
 	GLuint mProgram;
 
-	std::set<sptr<Shader> > mShaders;
-	std::map<string, int> mUniformLocations;	// Cache
-	std::map<string, int> mAttribLocations;		// Cache
+	std::set<sptr<Shader>> mShaders;
+	std::map<string, int> mUniformLocations; // Cache
+	std::map<string, int> mAttribLocations;  // Cache
 };
-}
+} // namespace pla
 
 #endif

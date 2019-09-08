@@ -23,8 +23,7 @@
 
 #include "pla/binaryformatter.hpp"
 
-namespace convergence
-{
+namespace convergence {
 
 using pla::BinaryFormatter;
 using pla::to_hex;
@@ -75,8 +74,7 @@ void Store::request(const binary &digest, weak_ptr<Notifiable> notifiable) {
 }
 
 void Store::onMessage(const Message &message) {
-	switch(message.type)
-	{
+	switch (message.type) {
 	case Message::Store: {
 		std::cout << "Received data" << std::endl;
 		insert(message.payload);
@@ -121,4 +119,3 @@ binary Store::Hash(const binary &data) {
 }
 
 } // namespace convergence
-

@@ -24,37 +24,34 @@
 #include "src/include.hpp"
 #include "src/types.hpp"
 
-#include "pla/mesh.hpp"
-#include "pla/object.hpp"
 #include "pla/collidable.hpp"
 #include "pla/context.hpp"
+#include "pla/mesh.hpp"
+#include "pla/object.hpp"
+#include "pla/perlinnoise.hpp"
 #include "pla/program.hpp"
 #include "pla/shader.hpp"
-#include "pla/perlinnoise.hpp"
 
-#include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
+using pla::Collidable;
+using pla::Context;
+using pla::FragmentShader;
 using pla::Mesh;
 using pla::Object;
-using pla::Context;
-using pla::Collidable;
+using pla::PerlinNoise;
 using pla::Program;
 using pla::VertexShader;
-using pla::FragmentShader;
-using pla::PerlinNoise;
 
-namespace convergence
-{
+namespace convergence {
 
-class Surface : public Collidable
-{
+class Surface : public Collidable {
 public:
-	struct value
-	{
+	struct value {
 		value(uint8_t _type = 0, uint8_t _weight = 0) : type(_type), weight(_weight) {}
-		float w(void) const { return float(weight)/255.f; }
+		float w(void) const { return float(weight) / 255.f; }
 
 		bool operator==(const value &v) const { return type == v.type && weight == v.weight; }
 		bool operator!=(const value &v) const { return type != v.type || weight != v.weight; }
@@ -63,11 +60,10 @@ public:
 		uint8_t weight;
 	};
 
-	class Block : public Mesh
-    {
-    public:
-    	static const int Size = 8;
-	    static int blockCoord(int v);
+	class Block : public Mesh {
+	public:
+		static const int Size = 8;
+		static int blockCoord(int v);
 		static int3 blockCoord(const int3 &p);
 		static int cellCoord(int v);
 		static int3 cellCoord(const int3 &p);
@@ -80,23 +76,23 @@ public:
 		virtual value readValue(const int3 &c) const = 0;
 
 		int3 position(void) const;
-        vec3 center(void) const;
+		vec3 center(void) const;
 
 		value getValue(const int3 &c);
-        int84 getGradient(const int3 &c);
-        int84 computeGradient(const int3 &c);
+		int84 getGradient(const int3 &c);
+		int84 computeGradient(const int3 &c);
 
-        int update(void);
+		int update(void);
 
-    private:
+	private:
 		static uint16_t EdgeTable[256];
 		static int8_t TriTable[256][16];
 		static vec4 MaterialTable[4];
 
-        int polygonizeCell(const int3 &c,
-            std::vector<vec3> &vertices, std::vector<int84> &normals, std::vector<int84> &material,
-            std::vector<index_t> &indices);
-        vec3 interpolate(vec3 p1, vec3 p2, int84 g1, int84 g2, value v1, value v2, int84 &grad, int84 &mat);
+		int polygonizeCell(const int3 &c, std::vector<vec3> &vertices, std::vector<int84> &normals,
+		                   std::vector<int84> &material, std::vector<index_t> &indices);
+		vec3 interpolate(vec3 p1, vec3 p2, int84 g1, int84 g2, value v1, value v2, int84 &grad,
+		                 int84 &mat);
 
 		int3 mPos;
 		std::function<shared_ptr<Block>(const int3 &b)> mRetrieveFunc;
@@ -118,7 +114,6 @@ protected:
 	std::function<shared_ptr<Block>(const int3 &b)> mRetrieveFunc;
 };
 
-}
+} // namespace convergence
 
 #endif
-

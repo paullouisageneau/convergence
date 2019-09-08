@@ -22,17 +22,15 @@
 #ifndef PLA_WEBSOCKET_H
 #define PLA_WEBSOCKET_H
 
+#include "pla/binary.hpp"
 #include "pla/include.hpp"
 #include "pla/stream.hpp"
 #include "pla/string.hpp"
-#include "pla/binary.hpp"
 
-namespace pla
-{
+namespace pla {
 
 // WebSocket implementation
-class WebSocket : public Stream
-{
+class WebSocket : public Stream {
 public:
 	WebSocket(void);
 	WebSocket(const string &url);
@@ -55,6 +53,6 @@ private:
 	bool mSendMask;
 };
 
-}
+} // namespace pla
 
 #endif

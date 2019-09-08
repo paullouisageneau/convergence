@@ -20,30 +20,25 @@
 
 #include "pla/resourcemanager.hpp"
 
-namespace pla
-{
+namespace pla {
 
 // Ajoute une ressource
-void ResourceManager::add(const string &name, sptr<Resource> resource)
-{
-	if(resource) mResources[name] = resource;
+void ResourceManager::add(const string &name, sptr<Resource> resource) {
+	if (resource)
+		mResources[name] = resource;
 }
 
 // Retire une ressource
-void ResourceManager::remove(const string &name)
-{
-    	// Recherche de la ressource dans la table
-    	auto it = mResources.find(name);
-	
-     	// Retrait de la ressource de la liste
-	if (it != mResources.end()) mResources.erase(it);
+void ResourceManager::remove(const string &name) {
+	// Recherche de la ressource dans la table
+	auto it = mResources.find(name);
+
+	// Retrait de la ressource de la liste
+	if (it != mResources.end())
+		mResources.erase(it);
 }
 
 // Retire les ressources
-void ResourceManager::flush(void)
-{
-	mResources.clear();
-}
+void ResourceManager::flush(void) { mResources.clear(); }
 
-}
-
+} // namespace pla

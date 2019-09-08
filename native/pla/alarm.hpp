@@ -24,37 +24,34 @@
 
 #include "pla/scheduler.hpp"
 
-#include <mutex>
 #include <condition_variable>
-#include <future>
 #include <functional>
+#include <future>
+#include <mutex>
 #include <stdexcept>
 
-namespace pla
-{
+namespace pla {
 
-class Alarm
-{
+class Alarm {
 public:
 	using clock = std::chrono::steady_clock;
 	typedef std::chrono::duration<double> duration;
 	typedef std::chrono::time_point<clock, duration> time_point;
 
 	Alarm(void);
-	template<class F, class... Args> Alarm(F&& f, Args&&... args);
+	template <class F, class... Args> Alarm(F &&f, Args &&... args);
 	~Alarm(void);
 
-	template<class F, class... Args>
-	auto set(F&& f, Args&&... args)
-		-> std::future<typename std::result_of<F(Args...)>::type>;
+	template <class F, class... Args>
+	auto set(F &&f, Args &&... args) -> std::future<typename std::result_of<F(Args...)>::type>;
 
-	template<class F, class... Args>
-	auto schedule(time_point time, F&& f, Args&&... args)
-		-> std::future<typename std::result_of<F(Args...)>::type>;
+	template <class F, class... Args>
+	auto schedule(time_point time, F &&f, Args &&... args)
+	    -> std::future<typename std::result_of<F(Args...)>::type>;
 
-	template<class F, class... Args>
-	auto schedule(duration d, F&& f, Args&&... args)
-		-> std::future<typename std::result_of<F(Args...)>::type>;
+	template <class F, class... Args>
+	auto schedule(duration d, F &&f, Args &&... args)
+	    -> std::future<typename std::result_of<F(Args...)>::type>;
 
 	void schedule(time_point time);
 	void schedule(duration d);
@@ -72,34 +69,26 @@ private:
 	bool joining;
 };
 
-inline Alarm::Alarm(void) : joining(false)
-{
+inline Alarm::Alarm(void) : joining(false) {}
 
-}
-
-inline Alarm::~Alarm(void)
-{
+inline Alarm::~Alarm(void) {
 	cancel();
 	// No join to allow alarm autodeletion
 }
 
-template<class F, class... Args>
-Alarm::Alarm(F&& f, Args&&... args) : Alarm()
-{
+template <class F, class... Args> Alarm::Alarm(F &&f, Args &&... args) : Alarm() {
 	set(std::forward<F>(f), std::forward<Args>(args)...);
 }
 
-template<class F, class... Args>
-auto Alarm::set(F&& f, Args&&... args)
-	-> std::future<typename std::result_of<F(Args...)>::type>
-{
+template <class F, class... Args>
+auto Alarm::set(F &&f, Args &&... args) -> std::future<typename std::result_of<F(Args...)>::type> {
 	using type = typename std::result_of<F(Args...)>::type;
 
-	auto task = std::make_shared<std::packaged_task<type()> >(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+	auto task = std::make_shared<std::packaged_task<type()>>(
+	    std::bind(std::forward<F>(f), std::forward<Args>(args)...));
 	std::future<type> result = task->get_future();
 
-	function = [task]()
-	{
+	function = [task]() {
 		(*task)();
 		task->reset();
 	};
@@ -107,59 +96,49 @@ auto Alarm::set(F&& f, Args&&... args)
 	return result;
 }
 
-template<class F, class... Args>
-auto Alarm::schedule(time_point time, F&& f, Args&&... args)
-	-> std::future<typename std::result_of<F(Args...)>::type>
-{
+template <class F, class... Args>
+auto Alarm::schedule(time_point time, F &&f, Args &&... args)
+    -> std::future<typename std::result_of<F(Args...)>::type> {
 	using type = typename std::result_of<F(Args...)>::type;
 
-	auto task = std::make_shared<std::packaged_task<type()> >(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+	auto task = std::make_shared<std::packaged_task<type()>>(
+	    std::bind(std::forward<F>(f), std::forward<Args>(args)...));
 	std::future<type> result = task->get_future();
 
-	if(joining) throw std::runtime_error("schedule on closing Alarm");
-	scheduler.schedule(taskid, time, function = [task]()
-	{
-		(*task)();
-		task->reset();
-	});
+	if (joining)
+		throw std::runtime_error("schedule on closing Alarm");
+	scheduler.schedule(
+	    taskid, time, function = [task]() {
+		    (*task)();
+		    task->reset();
+	    });
 
 	return result;
 }
 
-template<class F, class... Args>
-auto Alarm::schedule(duration d, F&& f, Args&&... args)
-	-> std::future<typename std::result_of<F(Args...)>::type>
-{
+template <class F, class... Args>
+auto Alarm::schedule(duration d, F &&f, Args &&... args)
+    -> std::future<typename std::result_of<F(Args...)>::type> {
 	return schedule(clock::now() + d, std::forward<F>(f), std::forward<Args>(args)...);
 }
 
-inline void Alarm::schedule(time_point time)
-{
-	if(joining) throw std::runtime_error("schedule on closing Alarm");
+inline void Alarm::schedule(time_point time) {
+	if (joining)
+		throw std::runtime_error("schedule on closing Alarm");
 	scheduler.schedule(taskid, time, function);
 }
 
-inline void Alarm::schedule(duration d)
-{
-	schedule(clock::now() + d);
-}
+inline void Alarm::schedule(duration d) { schedule(clock::now() + d); }
 
-inline void Alarm::cancel(void)
-{
-	scheduler.cancel(taskid);
-}
+inline void Alarm::cancel(void) { scheduler.cancel(taskid); }
 
-inline void Alarm::join(void)
-{
+inline void Alarm::join(void) {
 	joining = true;
 	scheduler.wait(taskid);
 }
 
-inline bool Alarm::isScheduled(void) const
-{
-	return scheduler.isScheduled(taskid);
-}
+inline bool Alarm::isScheduled(void) const { return scheduler.isScheduled(taskid); }
 
-}
+} // namespace pla
 
 #endif

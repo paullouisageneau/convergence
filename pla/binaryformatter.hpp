@@ -22,14 +22,12 @@
 #ifndef PLA_BINARYFORMATTER_H
 #define PLA_BINARYFORMATTER_H
 
-#include "pla/include.hpp"
 #include "pla/binary.hpp"
+#include "pla/include.hpp"
 
-namespace pla
-{
+namespace pla {
 
-class BinaryFormatter
-{
+class BinaryFormatter {
 public:
 	BinaryFormatter(void);
 	BinaryFormatter(const binary &b);
@@ -44,32 +42,32 @@ public:
 	size_t read(byte *data, size_t size);
 	void write(const byte *data, size_t size);
 
-	BinaryFormatter &operator>> (binary &b);
-	BinaryFormatter &operator>> (string &s);
-	BinaryFormatter &operator>> (uint8_t &i);
-	BinaryFormatter &operator>> (uint16_t &i);
-	BinaryFormatter &operator>> (uint32_t &i);
-	BinaryFormatter &operator>> (uint64_t &i);
-	BinaryFormatter &operator>> (int8_t &i);
-	BinaryFormatter &operator>> (int16_t &i);
-	BinaryFormatter &operator>> (int32_t &i);
-	BinaryFormatter &operator>> (int64_t &i);
-	BinaryFormatter &operator>> (float32_t &f);
-	BinaryFormatter &operator>> (float64_t &f);
+	BinaryFormatter &operator>>(binary &b);
+	BinaryFormatter &operator>>(string &s);
+	BinaryFormatter &operator>>(uint8_t &i);
+	BinaryFormatter &operator>>(uint16_t &i);
+	BinaryFormatter &operator>>(uint32_t &i);
+	BinaryFormatter &operator>>(uint64_t &i);
+	BinaryFormatter &operator>>(int8_t &i);
+	BinaryFormatter &operator>>(int16_t &i);
+	BinaryFormatter &operator>>(int32_t &i);
+	BinaryFormatter &operator>>(int64_t &i);
+	BinaryFormatter &operator>>(float32_t &f);
+	BinaryFormatter &operator>>(float64_t &f);
 
-	BinaryFormatter &operator<< (const binary &b);
-	BinaryFormatter &operator<< (const string &s);
-	BinaryFormatter &operator<< (const char *s);
-	BinaryFormatter &operator<< (uint8_t i);
-	BinaryFormatter &operator<< (uint16_t i);
-	BinaryFormatter &operator<< (uint32_t i);
-	BinaryFormatter &operator<< (uint64_t i);
-	BinaryFormatter &operator<< (int8_t i);
-	BinaryFormatter &operator<< (int16_t i);
-	BinaryFormatter &operator<< (int32_t i);
-	BinaryFormatter &operator<< (int64_t i);
-	BinaryFormatter &operator<< (float32_t f);
-	BinaryFormatter &operator<< (float64_t f);
+	BinaryFormatter &operator<<(const binary &b);
+	BinaryFormatter &operator<<(const string &s);
+	BinaryFormatter &operator<<(const char *s);
+	BinaryFormatter &operator<<(uint8_t i);
+	BinaryFormatter &operator<<(uint16_t i);
+	BinaryFormatter &operator<<(uint32_t i);
+	BinaryFormatter &operator<<(uint64_t i);
+	BinaryFormatter &operator<<(int8_t i);
+	BinaryFormatter &operator<<(int16_t i);
+	BinaryFormatter &operator<<(int32_t i);
+	BinaryFormatter &operator<<(int64_t i);
+	BinaryFormatter &operator<<(float32_t f);
+	BinaryFormatter &operator<<(float64_t f);
 
 	bool operator!(void) const { return mReadFailed; }
 	operator bool(void) const { return !mReadFailed; }
@@ -84,9 +82,7 @@ protected:
 	bool mReadFailed = false;
 };
 
-template<typename T>
-T checksum(const binary &b, T &result)
-{
+template <typename T> T checksum(const binary &b, T &result) {
 	BinaryFormatter formatter(b);
 
 	size_t padding = (sizeof(T) - (b.size() % sizeof(T))) % sizeof(T);
@@ -95,12 +91,12 @@ T checksum(const binary &b, T &result)
 
 	result = 0;
 	T value = 0;
-	while(formatter >> value)
+	while (formatter >> value)
 		result = result ^ value;
 
 	return result;
 }
 
-}
+} // namespace pla
 
 #endif

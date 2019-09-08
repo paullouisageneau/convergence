@@ -24,48 +24,38 @@
 
 using pla::BinaryFormatter;
 
-namespace convergence
-{
+namespace convergence {
 
-LocalPlayer::LocalPlayer(sptr<MessageBus> messageBus) :
-	Player(messageBus, messageBus->localId())
-{
+LocalPlayer::LocalPlayer(sptr<MessageBus> messageBus) : Player(messageBus, messageBus->localId()) {
 	mOldYaw = mOldPitch = 0.f;
 	mOldSpeed = 0.f;
 	mOldIsJumping = false;
-	
+
 	mPositionUpdateCooldown = 0.f;
 }
 
-LocalPlayer::~LocalPlayer(void)
-{
+LocalPlayer::~LocalPlayer(void) {}
 
-}
-
-void LocalPlayer::update(sptr<Collidable> terrain, double time)
-{
+void LocalPlayer::update(sptr<Collidable> terrain, double time) {
 	Player::update(terrain, time);
-	
-	mPositionUpdateCooldown+= time;
-	
-	if(mPositionUpdateCooldown > 0.5
-		|| std::abs(mYaw - mOldYaw) > Epsilon || std::abs(mPitch - mOldPitch) > Epsilon
-		|| std::abs(mSpeed - mOldSpeed) > Epsilon
-		|| mIsJumping != mOldIsJumping)
-	{
+
+	mPositionUpdateCooldown += time;
+
+	if (mPositionUpdateCooldown > 0.5 || std::abs(mYaw - mOldYaw) > Epsilon ||
+	    std::abs(mPitch - mOldPitch) > Epsilon || std::abs(mSpeed - mOldSpeed) > Epsilon ||
+	    mIsJumping != mOldIsJumping) {
 		mPositionUpdateCooldown = 0.;
 		mOldYaw = mYaw;
 		mOldPitch = mPitch;
 		mOldSpeed = mSpeed;
 		mOldIsJumping = mIsJumping;
-		
+
 		sendPosition();
 		sendControl();
 	}
 }
 
-void LocalPlayer::sendPosition(void)
-{
+void LocalPlayer::sendPosition(void) {
 	Message message(Message::PlayerPosition);
 	BinaryFormatter formatter;
 	formatter << float32_t(mPosition.x);
@@ -75,8 +65,7 @@ void LocalPlayer::sendPosition(void)
 	mMessageBus->send(message);
 }
 
-void LocalPlayer::sendControl(void)
-{
+void LocalPlayer::sendControl(void) {
 	Message message(Message::PlayerControl);
 	BinaryFormatter formatter;
 	formatter << float32_t(mYaw) << float32_t(mPitch);
@@ -87,22 +76,20 @@ void LocalPlayer::sendControl(void)
 	mMessageBus->send(message);
 }
 
-void LocalPlayer::onMessage(const Message &message)
-{
-	switch(message.type)
-	{
-		case Message::PlayerPosition:
-			// Ignore
-			break;
-		
-		case Message::PlayerControl:
-			// Ignore
-			break;
-		
-		default:
-			Player::onMessage(message);
-			break;
+void LocalPlayer::onMessage(const Message &message) {
+	switch (message.type) {
+	case Message::PlayerPosition:
+		// Ignore
+		break;
+
+	case Message::PlayerControl:
+		// Ignore
+		break;
+
+	default:
+		Player::onMessage(message);
+		break;
 	}
 }
 
-}
+} // namespace convergence

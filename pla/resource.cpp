@@ -21,18 +21,10 @@
 #include "pla/resource.hpp"
 #include "pla/resourcemanager.hpp"
 
-namespace pla
-{
+namespace pla {
 
-void Resource::setName(const string &name)
-{
-	mName = name;
-}
+void Resource::setName(const string &name) { mName = name; }
 
-const string &Resource::name(void) const
-{
-	return mName;
-}
+const string &Resource::name(void) const { return mName; }
 
-}
-
+} // namespace pla

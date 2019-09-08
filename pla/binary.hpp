@@ -28,18 +28,17 @@
 #include <cstddef>
 #include <vector>
 
-namespace pla
-{
+namespace pla {
 
 using std::byte;
 using binary = std::vector<byte>;
 using std::to_integer;
 
-binary &operator^= (binary &a, const binary &b);
-binary operator^ (binary a, const binary &b);
+binary &operator^=(binary &a, const binary &b);
+binary operator^(binary a, const binary &b);
 
-binary &operator+= (binary &a, const binary &b);
-binary operator+ (binary a, const binary &b);
+binary &operator+=(binary &a, const binary &b);
+binary operator+(binary a, const binary &b);
 
 string to_string(const binary &data);
 binary to_binary(const string &str);
@@ -59,11 +58,10 @@ uint16_t checksum16(const binary &b);
 uint32_t checksum32(const binary &b);
 uint64_t checksum64(const binary &b);
 
-struct binary_hash
-{
+struct binary_hash {
 	std::size_t operator()(const binary &b) const noexcept;
 };
 
-}
+} // namespace pla
 
 #endif

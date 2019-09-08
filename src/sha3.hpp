@@ -23,8 +23,7 @@
 
 #include "src/include.hpp"
 
-namespace convergence
-{
+namespace convergence {
 
 void Shake128(const binary &input, binary &output, size_t len);
 void Shake256(const binary &input, binary &output, size_t len);
@@ -33,6 +32,6 @@ void Sha3_256(const binary &input, binary &output);
 void Sha3_384(const binary &input, binary &output);
 void Sha3_512(const binary &input, binary &output);
 
-}
+} // namespace convergence
 
 #endif

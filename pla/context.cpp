@@ -20,57 +20,33 @@
 
 #include "pla/context.hpp"
 
-namespace pla
-{
+namespace pla {
 
-Context::Context(const mat4 &projection, const mat4 &camera) :
-	mProjection(projection),
-	mModelview(glm::inverse(camera)),
-	mTransform(mProjection * mModelview),
-	mCameraPosition(camera*vec4(0.f, 0.f, 0.f, 1.f)),
-	mFrustum(mTransform)
-{
+Context::Context(const mat4 &projection, const mat4 &camera)
+    : mProjection(projection), mModelview(glm::inverse(camera)),
+      mTransform(mProjection * mModelview), mCameraPosition(camera * vec4(0.f, 0.f, 0.f, 1.f)),
+      mFrustum(mTransform) {
 	setUniform("projection", mProjection);
 	setUniform("modelview", mModelview);
 	setUniform("transform", mTransform);
 }
 
-Context::~Context(void)
-{
-	
-}
+Context::~Context(void) {}
 
-const mat4 &Context::projection(void) const
-{
-	return mProjection;
-}
+const mat4 &Context::projection(void) const { return mProjection; }
 
-const mat4 &Context::modelview(void) const
-{
-	return mModelview;
-}
+const mat4 &Context::modelview(void) const { return mModelview; }
 
-const mat4 &Context::transform(void) const
-{
-	return mTransform;
-}
+const mat4 &Context::transform(void) const { return mTransform; }
 
-const vec3 &Context::cameraPosition(void) const
-{
-	return mCameraPosition;
-}
+const vec3 &Context::cameraPosition(void) const { return mCameraPosition; }
 
-const Frustum &Context::frustum(void) const
-{
-	return mFrustum;
-}
+const Frustum &Context::frustum(void) const { return mFrustum; }
 
-void Context::prepare(sptr<Program> program) const
-{
-	for(auto p : mUniforms)
-		if(program->hasUniform(p.first))
+void Context::prepare(sptr<Program> program) const {
+	for (auto p : mUniforms)
+		if (program->hasUniform(p.first))
 			p.second->apply(p.first, program);
 }
-	
 
-}
+} // namespace pla

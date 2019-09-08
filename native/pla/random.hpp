@@ -25,13 +25,11 @@
 #include "pla/include.hpp"
 #include "pla/stream.hpp"
 
-#include <nettle/bignum.h>	// This will include nettle/version.h if it exists
+#include <nettle/bignum.h> // This will include nettle/version.h if it exists
 
-namespace pla
-{
+namespace pla {
 
-class Random : public Stream
-{
+class Random : public Stream {
 public:
 	enum QualityLevel { Nonce, Crypto, Key };
 
@@ -44,26 +42,21 @@ public:
 	size_t readSome(byte *buffer, size_t size);
 	size_t writeSome(const byte *data, size_t size);
 
-	template<typename T> T uniform(T min, T max)
-	{
+	template <typename T> T uniform(T min, T max) {
 		uint32_t i = 0;
 		while (!i)
 			generate(reinterpret_cast<byte *>(&i), sizeof(i));
-		double t = double(i-1)/double(std::numeric_limits<uint32_t>::max());
-		return min + T((max-min)*t);
+		double t = double(i - 1) / double(std::numeric_limits<uint32_t>::max());
+		return min + T((max - min) * t);
 	}
 
-	inline unsigned uniformInt(void)
-	{
+	inline unsigned uniformInt(void) {
 		uint64_t i = 0;
 		generate(reinterpret_cast<byte *>(&i), sizeof(i));
 		return unsigned(i);
 	}
 
-	inline double uniformDouble(void)
-	{
-		return uniform(0., 1.);
-	}
+	inline double uniformDouble(void) { return uniform(0., 1.); }
 
 	// Wrappers for internal use, used in crypto.cpp
 	// The size argument type changed from unsigned to size_t in nettle 3.0 (?!)
@@ -86,6 +79,6 @@ private:
 	QualityLevel mLevel;
 };
 
-}
+} // namespace pla
 
 #endif

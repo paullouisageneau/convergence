@@ -20,15 +20,14 @@
  *************************************************************************/
 
 #include "pla/websocket.hpp"
-#include "pla/securetransport.hpp"
 #include "pla/binaryformatter.hpp"
-#include "pla/crypto.hpp"	// for SHA1
-#include "pla/random.hpp"	// for mask
+#include "pla/crypto.hpp" // for SHA1
+#include "pla/random.hpp" // for mask
+#include "pla/securetransport.hpp"
 
 #include <regex>
 
-namespace pla
-{
+namespace pla {
 
 // http://tools.ietf.org/html/rfc6455#section-5.2  Base Framing Protocol
 //
@@ -99,38 +98,27 @@ side
 }
 */
 
-WebSocket::WebSocket(void) :
-	mStream(NULL),
-	mSendMask(true)
-{
+WebSocket::WebSocket(void) : mStream(NULL), mSendMask(true) {}
 
-}
-
-WebSocket::WebSocket(Stream *stream, bool disableMask) :
-	WebSocket()
-{
+WebSocket::WebSocket(Stream *stream, bool disableMask) : WebSocket() {
 	Assert(stream);
 	mStream = stream;
 	mSendMask = !disableMask;
 }
 
-WebSocket::WebSocket(const string &url) :
-	WebSocket()
-{
-	connect(url);
-}
+WebSocket::WebSocket(const string &url) : WebSocket() { connect(url); }
 
 WebSocket::~WebSocket(void) { NOEXCEPTION(close()); }
 
-void WebSocket::connect(const string &url)
-{
+void WebSocket::connect(const string &url) {
 	close();
 	try {
 		mSendMask = true;
 
-		std::regex regex(R"(^(([^:\/?#]+):)?(//([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?)", std::regex::extended);
+		std::regex regex(R"(^(([^:\/?#]+):)?(//([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?)",
+		                 std::regex::extended);
 		std::smatch match;
-		if(!std::regex_match(url, match, regex))
+		if (!std::regex_match(url, match, regex))
 			throw std::invalid_argument("Malformed URL: " + url);
 
 		const string &scheme = match[2];
@@ -139,57 +127,63 @@ void WebSocket::connect(const string &url)
 		const string &query = match[7];
 		const string &fragment = match[9];
 
-		if(scheme != "ws" && scheme != "wss")
+		if (scheme != "ws" && scheme != "wss")
 			throw std::invalid_argument("Invalid scheme for WebSocket: " + scheme);
 
 		mStream = new Socket(Address(host));
-		if(scheme == "wss") mStream = new SecureTransportClient(mStream, new SecureTransport::Certificate, host);
+		if (scheme == "wss")
+			mStream = new SecureTransportClient(mStream, new SecureTransport::Certificate, host);
 
 		const string fullPath = !query.empty() ? path + "?" + query : path;
 
 		binary key;
 		Random().read(key, 16);
 
-		string request = "GET " + fullPath + " HTTP/1.1\r\n"
-		"Host: " + host + "\r\n"
-		"Connection: Upgrade\r\n"
-		"Upgrade: websocket\r\n"
-		"Sec-WebSocket-Version: 13\r\n"
-		"Sec-WebSocket-Key: " + to_base64(key) + "\r\n"
-		"\r\n";
+		string request = "GET " + fullPath +
+		                 " HTTP/1.1\r\n"
+		                 "Host: " +
+		                 host +
+		                 "\r\n"
+		                 "Connection: Upgrade\r\n"
+		                 "Upgrade: websocket\r\n"
+		                 "Sec-WebSocket-Version: 13\r\n"
+		                 "Sec-WebSocket-Key: " +
+		                 to_base64(key) +
+		                 "\r\n"
+		                 "\r\n";
 		mStream->write(request);
 
 		string line;
-		if(!mStream->readLine(line)) throw std::runtime_error("Connection unexpectedly closed");
+		if (!mStream->readLine(line))
+			throw std::runtime_error("Connection unexpectedly closed");
 
 		std::istringstream ss(line);
 		string protocol;
 		unsigned int code = 0;
 		ss >> protocol >> code;
-		if(code != 101) throw std::runtime_error("Unexpected response code for WebSocket: " + to_string(code));
+		if (code != 101)
+			throw std::runtime_error("Unexpected response code for WebSocket: " + to_string(code));
 
 		while (true) {
-			if(!mStream->readLine(line)) throw std::runtime_error("Connection unexpectedly closed");
-			if(line.empty()) break;
+			if (!mStream->readLine(line))
+				throw std::runtime_error("Connection unexpectedly closed");
+			if (line.empty())
+				break;
 			// TODO
-			//if(response.headers["Upgrade"] != "websocket")
+			// if(response.headers["Upgrade"] != "websocket")
 			//	throw std::runtime_error("WebSocket upgrade header mismatch");
 
 			// We don't bother verifying Sec-WebSocket-Accept
 		}
-	}
-	catch(...)
-	{
+	} catch (...) {
 		delete mStream;
 		mStream = NULL;
 		throw;
 	}
 }
 
-void WebSocket::close(void)
-{
-	if(mStream)
-	{
+void WebSocket::close(void) {
+	if (mStream) {
 		sendFrame(CLOSE, NULL, 0, false);
 		delete mStream;
 		mStream = NULL;
@@ -201,8 +195,9 @@ size_t WebSocket::readSome(byte *buffer, size_t size) {
 	bool fin = false;
 	while (!fin) {
 		int len = recvFrame(buffer + length, size - length, fin);
-		if(len < 0) return 0;
-		length+= size_t(len);
+		if (len < 0)
+			return 0;
+		length += size_t(len);
 	}
 	return length;
 }
@@ -212,15 +207,16 @@ size_t WebSocket::writeSome(const byte *data, size_t size) {
 }
 
 int WebSocket::recvFrame(byte *buffer, size_t size, bool &fin) {
-	if(!mStream) throw std::runtime_error("WebSocket closed");
+	if (!mStream)
+		throw std::runtime_error("WebSocket closed");
 
-	while(true)
-	{
+	while (true) {
 		binary buf;
-		if(!mStream->read(buf, 2)) return -1;
+		if (!mStream->read(buf, 2))
+			return -1;
 
 		uint8_t b1, b2;
-		if(!(BinaryFormatter(buf) >> b1 >> b2))
+		if (!(BinaryFormatter(buf) >> b1 >> b2))
 			throw std::runtime_error("Connection unexpectedly closed");
 
 		fin = (b1 & 0x80) != 0;
@@ -228,108 +224,96 @@ int WebSocket::recvFrame(byte *buffer, size_t size, bool &fin) {
 		uint8_t opcode = b1 & 0x0F;
 		uint64_t length = b2 & 0x7F;
 
-		if(length == 0x7E)
-		{
+		if (length == 0x7E) {
 			mStream->read(buf, 2);
 			uint16_t extLen;
-			if(!(BinaryFormatter(buf) >> extLen))
+			if (!(BinaryFormatter(buf) >> extLen))
 				throw std::runtime_error("Connection unexpectedly closed");
 			length = extLen;
-		}
-		else if(length == 0x7F)
-		{
+		} else if (length == 0x7F) {
 			mStream->read(buf, 4);
 			uint64_t extLen;
-			if(!(BinaryFormatter(buf) >> extLen))
+			if (!(BinaryFormatter(buf) >> extLen))
 				throw std::runtime_error("Connection unexpectedly closed");
 			length = extLen;
 		}
 
 		binary maskKey;
-		if(mask && mStream->read(maskKey, 4) < 4)
+		if (mask && mStream->read(maskKey, 4) < 4)
 			throw std::runtime_error("Connection unexpectedly closed");
 
-		switch(opcode)
-		{
-			case TEXT_FRAME:
-			case BINARY_FRAME:
-			case CONTINUATION:
-			{
-				size_t s = std::min(size, length);
-				mStream->read(buffer, s);
-				if(length > s) mStream->ignore(length - s);
-				if(mask)
-				{
-					for(size_t i = 0; i < s; ++i)
-						buffer[i]^= maskKey[i%4];
-				}
-				return int(s);
+		switch (opcode) {
+		case TEXT_FRAME:
+		case BINARY_FRAME:
+		case CONTINUATION: {
+			size_t s = std::min(size, length);
+			mStream->read(buffer, s);
+			if (length > s)
+				mStream->ignore(length - s);
+			if (mask) {
+				for (size_t i = 0; i < s; ++i)
+					buffer[i] ^= maskKey[i % 4];
 			}
+			return int(s);
+		}
 
-		    case PING:
-			{
-			    byte payload[MAX_PING_PAYLOAD_SIZE];
-			    size_t s = std::min(MAX_PING_PAYLOAD_SIZE, length);
-			    mStream->read(payload, s);
-			    if(length > s) mStream->ignore(length - s);
-				if(mask)
-				{
-					for(size_t i = 0; i < s; ++i)
-						payload[i]^= maskKey[i%4];
-				}
-				sendFrame(PONG, payload, s, true);
-				break;
+		case PING: {
+			byte payload[MAX_PING_PAYLOAD_SIZE];
+			size_t s = std::min(MAX_PING_PAYLOAD_SIZE, length);
+			mStream->read(payload, s);
+			if (length > s)
+				mStream->ignore(length - s);
+			if (mask) {
+				for (size_t i = 0; i < s; ++i)
+					payload[i] ^= maskKey[i % 4];
 			}
+			sendFrame(PONG, payload, s, true);
+			break;
+		}
 
-		    case PONG:
-			{
-				break;
-			}
+		case PONG: {
+			break;
+		}
 
-		    case CLOSE: {
-			    close();
-			    return -1;
-		    }
+		case CLOSE: {
+			close();
+			return -1;
+		}
 
-		    default:
-			{
-				close();
-			    throw std::invalid_argument("Invalid WebSocket opcode: " + to_string(opcode));
-		    }
+		default: {
+			close();
+			throw std::invalid_argument("Invalid WebSocket opcode: " + to_string(opcode));
+		}
 		}
 	}
 }
 
 int WebSocket::sendFrame(uint8_t opcode, const byte *data, size_t size, bool fin) {
-	if(!mStream) throw std::runtime_error("WebSocket is closed");
+	if (!mStream)
+		throw std::runtime_error("WebSocket is closed");
 
 	BinaryFormatter frame;
 	frame << uint8_t((opcode & 0x0F) | (fin ? 0x80 : 0));
 
 	unsigned len = size;
-	if(len < 0x7E)
-	{
+	if (len < 0x7E) {
 		frame << uint8_t((len & 0x7F) | (mSendMask ? 0x80 : 0));
-	}
-	else if(len <= 0xFF)
-	{
+	} else if (len <= 0xFF) {
 		frame << uint8_t(0x7E | (mSendMask ? 0x80 : 0));
 		frame << uint16_t(len);
-	}
-	else {
+	} else {
 		frame << uint8_t(0x7F | (mSendMask ? 0x80 : 0));
 		frame << uint64_t(len);
 	}
 
 	binary content(data, data + size);
-	if(mSendMask)
-	{
+	if (mSendMask) {
 		binary maskKey;
 		Random().read(maskKey, 4);
 		frame << maskKey;
 
-		for(size_t i = 0; i < size; ++i)
-			content[i]^= maskKey[i%4];
+		for (size_t i = 0; i < size; ++i)
+			content[i] ^= maskKey[i % 4];
 	}
 
 	frame << content;
@@ -337,4 +321,4 @@ int WebSocket::sendFrame(uint8_t opcode, const byte *data, size_t size, bool fin
 	mStream->write(frame.data());
 	return int(size);
 }
-}
+} // namespace pla

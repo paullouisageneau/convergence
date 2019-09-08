@@ -20,22 +20,21 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/norm.hpp>
 
-namespace pla
-{
+namespace pla {
 
-using glm::vec2;
-using glm::vec3;
-using glm::vec4;
 using glm::mat2;
 using glm::mat3;
 using glm::mat4;
+using glm::vec2;
+using glm::vec3;
+using glm::vec4;
 
 extern const float Pi;
 extern const float Sqrt2;
 extern const float Epsilon;
 
-}
+} // namespace pla

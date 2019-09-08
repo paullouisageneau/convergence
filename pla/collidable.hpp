@@ -24,16 +24,16 @@
 #include "pla/include.hpp"
 #include "pla/linalg.hpp"
 
-namespace pla
-{
+namespace pla {
 
-class Collidable
-{
+class Collidable {
 public:
-	virtual float intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *intersection = NULL) = 0;
-	virtual bool collide(const vec3 &pos, const vec3 &move, float radius, vec3 *result = NULL, vec3 *intersection = NULL, vec3 *normal = NULL, int reclevel = 10);
+	virtual float intersect(const vec3 &pos, const vec3 &move, float radius,
+	                        vec3 *intersection = NULL) = 0;
+	virtual bool collide(const vec3 &pos, const vec3 &move, float radius, vec3 *result = NULL,
+	                     vec3 *intersection = NULL, vec3 *normal = NULL, int reclevel = 10);
 };
 
-}
+} // namespace pla
 
 #endif

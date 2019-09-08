@@ -20,71 +20,59 @@
 
 #include "pla/shader.hpp"
 
-namespace pla
-{
+namespace pla {
 
-Shader::Shader(GLenum type) :
-	mType(type)
-{
+Shader::Shader(GLenum type) : mType(type) {
 	mShader = glCreateShader(type);
-	if(!mShader) throw std::runtime_error("Unable to create shader");
+	if (!mShader)
+		throw std::runtime_error("Unable to create shader");
 }
 
-Shader::~Shader(void)
-{
-	glDeleteShader(mShader);
-}
-	
-void Shader::setSource(const std::string &source)
-{
+Shader::~Shader(void) { glDeleteShader(mShader); }
+
+void Shader::setSource(const std::string &source) {
 	const char *str = source.data();
 	GLint len = source.size();
 	glShaderSource(mShader, 1, &str, &len);
 }
 
-void Shader::loadFile(const std::string &filename)
-{
+void Shader::loadFile(const std::string &filename) {
 	try {
 		std::ifstream file(filename.c_str());
-		if(!file.is_open()) throw std::runtime_error("Unable to open file: "+filename);
+		if (!file.is_open())
+			throw std::runtime_error("Unable to open file: " + filename);
 
 		std::string source;
-		while(file.good())
-		{
+		while (file.good()) {
 			std::string line;
 			getline(file, line);
 
-			#ifdef USE_OPENGL_ES
-			if(line.substr(0, 8) == "#version")
-			{
-				source+= "#version 100\n";
-				source+= "precision highp float;\n";
+#ifdef USE_OPENGL_ES
+			if (line.substr(0, 8) == "#version") {
+				source += "#version 100\n";
+				source += "precision highp float;\n";
 				continue;
 			}
-			#endif
-			
-			source+= line + '\n';
+#endif
+
+			source += line + '\n';
 		}
 
 		setSource(source);
-	}
-	catch(std::exception &e)
-	{
+	} catch (std::exception &e) {
 		throw std::runtime_error("Shader loading failed: " + string(e.what()));
 	}
 }
 
-void Shader::compile(void)
-{
+void Shader::compile(void) {
 	glCompileShader(mShader);
-	
+
 	GLint status = GL_TRUE;
 	glGetShaderiv(mShader, GL_COMPILE_STATUS, &status);
-	if(status != GL_TRUE)
-	{
+	if (status != GL_TRUE) {
 		GLint logsize;
 		glGetShaderiv(mShader, GL_INFO_LOG_LENGTH, &logsize);
-		char *buffer = new char[logsize+1];
+		char *buffer = new char[logsize + 1];
 		glGetShaderInfoLog(mShader, logsize, &logsize, buffer);
 		string log(buffer);
 		delete[] buffer;
@@ -92,4 +80,4 @@ void Shader::compile(void)
 	}
 }
 
-}
+} // namespace pla

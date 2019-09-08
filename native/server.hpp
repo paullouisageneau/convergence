@@ -30,18 +30,16 @@ namespace convergence {
 class Server {
 	Server(uint16_t port);
 	~Server(void);
-	
+
 	void start(void);
 	void stop(void);
-	
+
 private:
 	void run(void);
-	
+
 	std::thread mThread;
 };
 
-}
+} // namespace convergence
 
 #endif
-
-

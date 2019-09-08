@@ -20,67 +20,46 @@
 
 #include "pla/object.hpp"
 
-namespace pla
-{
+namespace pla {
 
-Object::Object(void)
-{
-	
-}
+Object::Object(void) {}
 
-Object::Object(	const index_t *indices,
-		size_t nindices,
-		const float *vertices,
-		size_t nvertices,
-		sptr<Program> program) :
-	Mesh(	indices,
-		nindices,
-		vertices,
-		nvertices)
-{
+Object::Object(const index_t *indices, size_t nindices, const float *vertices, size_t nvertices,
+               sptr<Program> program)
+    : Mesh(indices, nindices, vertices, nvertices) {
 	setProgram(program, 0);
 }
 
-Object::~Object(void)
-{
-	
-}
+Object::~Object(void) {}
 
-void Object::setProgram(sptr<Program> program, size_t firstIndex)
-{
+void Object::setProgram(sptr<Program> program, size_t firstIndex) {
 	mPrograms.insert(std::make_pair(firstIndex, program));
 }
 
-void Object::unsetProgram(size_t firstIndex)
-{
-	mPrograms.erase(firstIndex);
-}
+void Object::unsetProgram(size_t firstIndex) { mPrograms.erase(firstIndex); }
 
-int Object::draw(const Context &context)
-{
+int Object::draw(const Context &context) {
 	int count = 0;
 	auto it = mPrograms.begin();
-	while(it != mPrograms.end())
-	{
+	while (it != mPrograms.end()) {
 		size_t first = it->first;
 		size_t last = indicesCount();
 		auto program = it->second;
-		
+
 		++it;
-		if(it != mPrograms.end())
+		if (it != mPrograms.end())
 			last = it->first;
-		
-		if(program)
-		{
+
+		if (program) {
 			context.prepare(program);
-			
+
 			program->bind();
-			count+= drawElements(first, last-first);
+			count += drawElements(first, last - first);
 			program->unbind();
 		}
 	}
-	
+
 	return count;
 }
-	
-}
+
+} // namespace pla
