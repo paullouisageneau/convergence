@@ -51,12 +51,12 @@ namespace pla
 // |                     Payload Data continued ...                |
 // +---------------------------------------------------------------+
 
-const uint8_t CONTINUATION = 0x0;
-const uint8_t TEXT_FRAME = 0x1;
-const uint8_t BINARY_FRAME = 0x2;
-const uint8_t CLOSE = 0x8;
-const uint8_t PING = 0x9;
-const uint8_t PONG = 0xA;
+const uint8_t CONTINUATION = 0;
+const uint8_t TEXT_FRAME = 1;
+const uint8_t BINARY_FRAME = 2;
+const uint8_t CLOSE = 8;
+const uint8_t PING = 9;
+const uint8_t PONG = 10;
 
 const size_t MAX_PING_PAYLOAD_SIZE = 125;
 
@@ -268,10 +268,10 @@ int WebSocket::recvFrame(byte *buffer, size_t size, bool &fin) {
 
 		    case PING:
 			{
-				const size_t s = MAX_PING_PAYLOAD_SIZE;
-			    byte payload[s];
+			    byte payload[MAX_PING_PAYLOAD_SIZE];
+			    size_t s = std::min(MAX_PING_PAYLOAD_SIZE, length);
 			    mStream->read(payload, s);
-				if(length > s) mStream->ignore(length - s);
+			    if(length > s) mStream->ignore(length - s);
 				if(mask)
 				{
 					for(size_t i = 0; i < s; ++i)
@@ -294,8 +294,8 @@ int WebSocket::recvFrame(byte *buffer, size_t size, bool &fin) {
 		    default:
 			{
 				close();
-				throw std::invalid_argument("Invalid WebSocket opcode");
-			}
+			    throw std::invalid_argument("Invalid WebSocket opcode: " + to_string(opcode));
+		    }
 		}
 	}
 }
