@@ -273,7 +273,8 @@ void MessageBus::route(Message &message)
 	}
 	else {
 		shared_ptr<Channel> channel = findRoute(message.destination);
-		channel->send(message);
+		if (channel)
+			channel->send(message);
 	}
 }
 
