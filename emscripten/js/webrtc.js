@@ -49,7 +49,7 @@
 						var pType = WEBRTC.allocUTF8FromString(desc.type);
 						var callback =  peerConnection.rtcDescriptionCallback;
 						var userPointer = peerConnection.rtcUserPointer || 0;
-						Module.dyncall_viii(callback, pSdp, pType, userPointer);
+						Module.dynCall_viii(callback, pSdp, pType, userPointer);
 						_free(pSdp);
 						_free(pType);
 					});
@@ -58,8 +58,8 @@
 			handleCandidate: function(peerConnection, candidate) {
 				if(peerConnection.rtcUserDeleted) return;
 				if(!peerConnection.rtcCandidateCallback) return;
-				var pCandidate = WEBRTC.allocUTF8FromString(candidate ? candidate.candidate : "");
-				var pSdpMid = WEBRTC.allocUTF8FromString(candidate ? candidate.mid : "");
+				var pCandidate = candidate ? WEBRTC.allocUTF8FromString(candidate.candidate) : 0;
+				var pSdpMid = candidate ? WEBRTC.allocUTF8FromString(candidate.sdpMid) : 0;
 				var candidateCallback =  peerConnection.rtcCandidateCallback;
 				var userPointer = peerConnection.rtcUserPointer || 0;
 				Module.dynCall_viii(candidateCallback, pCandidate, pSdpMid, userPointer);
@@ -131,7 +131,7 @@
 		},
 
 		rtcSetRemoteDescription: function(pc, pSdp, pType) {
-			var description = new RTCDescription({
+			var description = new RTCSessionDescription({
 				sdp: UTF8ToString(pSdp),
 				type: UTF8ToString(pType),
 			});
@@ -155,12 +155,12 @@
 		},
 
 		rtcAddRemoteCandidate: function(pc, pCandidate, pSdpMid) {
-			var iceCandidate = new RTCCandidate({
+			var iceCandidate = new RTCIceCandidate({
 				candidate: UTF8ToString(pCandidate),
-				mid: UTF8ToString(pSdpMid),
+				sdpMid: UTF8ToString(pSdpMid),
 			});
 			var peerConnection = WEBRTC.peerConnectionsMap[pc];
-			peerConnection.addCandidate(iceCandidate)
+			peerConnection.addIceCandidate(iceCandidate)
 				.catch(function(err) {
 					console.error(err);
 				});
