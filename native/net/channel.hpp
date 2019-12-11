@@ -27,6 +27,7 @@
 namespace net {
 
 using rtc::Channel;
+using rtc::Queue;
 
 using rtc::binary;
 using rtc::string;
