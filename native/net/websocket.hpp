@@ -42,6 +42,7 @@ public:
 	void open(const string &url);
 	void close(void);
 	void send(const std::variant<binary, string> &data);
+	std::optional<std::variant<binary, string>> receive();
 
 	bool isOpen(void) const;
 	bool isClosed(void) const;
@@ -55,6 +56,7 @@ private:
 	pla::WebSocket mWebSocket;
 	std::atomic<bool> mConnected;
 	std::atomic<size_t> mMaxPayloadSize;
+	Queue<binary> mQueue;
 
 	std::thread mThread;
 };

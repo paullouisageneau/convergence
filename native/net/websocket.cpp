@@ -64,7 +64,11 @@ void WebSocket::send(const std::variant<binary, string> &data) {
 			    throw std::runtime_error("WebSocket string messages are not supported");
 	    },
 	    data);
+
+	triggerSent();
 }
+
+std::optional<std::variant<binary, string>> WebSocket::receive() { return mQueue.tryPop(); }
 
 void WebSocket::run(void) {
 	if (mUrl.empty())
@@ -76,9 +80,13 @@ void WebSocket::run(void) {
 		mConnected = true;
 		triggerOpen();
 
-		binary buffer;
-		while (mWebSocket.read(buffer, mMaxPayloadSize))
-			triggerMessage(buffer);
+		while (true) {
+			binary payload;
+			if (!mWebSocket.read(payload, mMaxPayloadSize))
+				break;
+			mQueue.push(std::move(payload));
+			triggerAvailable(mQueue.size());
+		}
 	} catch (const std::exception &e) {
 		triggerError(e.what());
 	}
