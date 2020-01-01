@@ -56,13 +56,11 @@ Peering::Peering(const identifier &id, shared_ptr<MessageBus> messageBus)
 		sendSignaling(Message::Description, pack_strings(fields));
 	});
 
-	mPeerConnection->onLocalCandidate([this](const std::optional<net::Candidate> &candidate) {
-		if (!candidate)
-			return;
-		std::cout << "Local candidate: " << *candidate << std::endl;
+	mPeerConnection->onLocalCandidate([this](const net::Candidate &candidate) {
+		std::cout << "Local candidate: " << candidate << std::endl;
 		vector<string> fields;
-		fields.push_back(candidate->mid());
-		fields.push_back(candidate->candidate());
+		fields.push_back(candidate.mid());
+		fields.push_back(candidate.candidate());
 		sendSignaling(Message::Candidate, pack_strings(fields));
 	});
 }
@@ -95,16 +93,23 @@ void Peering::onMessage(const Message &message) {
 void Peering::setDataChannel(shared_ptr<net::DataChannel> dataChannel) {
 	mDataChannel = dataChannel;
 
-	mDataChannel->onOpen([this]() {
+	auto openCallback = [this]() {
 		std::cout << "Data channel open" << std::endl;
 		mMessageBus->addChannel(mDataChannel, MessageBus::Priority::Relay);
 		mMessageBus->addRoute(mId, mDataChannel, MessageBus::Priority::Direct);
-	});
+	};
 
-	mDataChannel->onClosed([this]() {
+	auto closeCallback = [this]() {
 		std::cout << "Data channel closed" << std::endl;
 		mMessageBus->removeChannel(mDataChannel);
-	});
+	};
+
+	if (mDataChannel->isOpen())
+		openCallback();
+	else
+		mDataChannel->onOpen(openCallback);
+
+	mDataChannel->onClosed(closeCallback);
 }
 
 void Peering::processSignaling(Message::Type type, const binary &payload) {

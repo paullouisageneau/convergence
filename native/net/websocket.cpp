@@ -54,21 +54,20 @@ bool WebSocket::isClosed(void) const { return !mThread.joinable(); }
 
 void WebSocket::setMaxPayloadSize(size_t size) { mMaxPayloadSize = size; }
 
-void WebSocket::send(const std::variant<binary, string> &data) {
-	std::visit(
-	    [this](const auto &v) {
-		    using T = std::decay_t<decltype(v)>;
-		    if constexpr (std::is_same_v<T, binary>)
-			    mWebSocket.write(v);
-		    else
-			    throw std::runtime_error("WebSocket string messages are not supported");
-	    },
-	    data);
+bool WebSocket::send(const std::variant<binary, string> &data) {
+	if (!std::holds_alternative<binary>(data))
+		throw std::runtime_error("WebSocket string messages are not supported");
 
-	triggerSent();
+	mWebSocket.write(std::get<binary>(data));
+	return true;
 }
 
-std::optional<std::variant<binary, string>> WebSocket::receive() { return mQueue.tryPop(); }
+std::optional<std::variant<binary, string>> WebSocket::receive() {
+	if (!mQueue.empty())
+		return mQueue.pop();
+	else
+		return std::nullopt;
+}
 
 void WebSocket::run(void) {
 	if (mUrl.empty())

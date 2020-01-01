@@ -41,7 +41,7 @@ public:
 
 	void open(const string &url);
 	void close(void);
-	void send(const std::variant<binary, string> &data);
+	bool send(const std::variant<binary, string> &data);
 	std::optional<std::variant<binary, string>> receive();
 
 	bool isOpen(void) const;

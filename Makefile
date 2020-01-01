@@ -27,7 +27,7 @@ OUTPUT:=$(OUTPUT).html
 else
 DIR:=native
 LIBS:=$(BUILDDIR)/libdatachannel.a $(BUILDDIR)/libusrsctp.a
-INCLUDE+=-I$(DIR)/libdatachannel/include
+INCLUDE+=-I$(DIR)/libdatachannel/include -I$(DIR)/libdatachannel/deps/plog/include
 LDLIBS+=$(shell pkg-config --libs glib-2.0 gobject-2.0 nice) -lGLEW -lnettle -lhogweed -lgmp -lgnutls -largon2
 LDLIBS+=$(LIBS)
 endif
@@ -59,7 +59,7 @@ dist-clean: clean
 	-rm -r build
 
 $(BUILDDIR)/libdatachannel.a $(BUILDDIR)/libusrsctp.a: | $(BUILDDIR)
-	cd $(DIR)/libdatachannel && make
+	cd $(DIR)/libdatachannel && make USE_GNUTLS=1
 	cp $(DIR)/libdatachannel/libdatachannel.a $(BUILDDIR)
 	cp $(DIR)/libdatachannel/libusrsctp.a $(BUILDDIR)
 
