@@ -36,6 +36,8 @@ typedef std::vector<byte> binary;
 
 class Channel {
 public:
+	virtual ~Channel(void) = default;
+
 	virtual void close(void) = 0;
 	virtual void send(const std::variant<binary, string> &data) = 0;
 

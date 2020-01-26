@@ -1,51 +1,54 @@
 NAME=convergence
 
-CPPFLAGS=-std=c++17 -g -O1 -fPIC -Wall -Wno-reorder -Wno-sign-compare -Wno-switch
-LDFLAGS=-g -O1
-LDLIBS=-lpthread -lGL -lglfw
-INCLUDE=-I. -Iglm
-BUNDLE=shader
-EMFLAGS=-D USE_OPENGL_ES -s USE_GLFW=3 -s WASM=1 -s BINARYEN_METHOD=native-wasm -s TOTAL_MEMORY=256MB -s DISABLE_EXCEPTION_CATCHING=1 -s BINARYEN_TRAP_MODE=clamp
-
-BUILDDIR=build/$(ARCH)
-OBJDIR=$(BUILDDIR)
-OUTPUT=$(BUILDDIR)/$(NAME)
+CPPFLAGS=-g -O1 -fPIC -Wall -Wno-reorder -Wno-sign-compare -Wno-switch
+CXXFLAGS=-std=c++17
+LDFLAGS=
+LDLIBS=-lGL -lglfw
+LOCALLIBS=
+BUNDLES=
+INCLUDES=-I. -Ideps/glm
 
 ARCH:=$(shell $(CC) -dumpmachine | cut -f 1 -d -)
-SRCS:=$(shell printf "%s " pla/*.cpp src/*.cpp)
-JSLIBS:=$(shell printf "%s " emscripten/js/*.js)
-BUNDLEDFILES:=$(shell printf "%s " $(addsuffix /*,$(BUNDLE)))
+BUILDDIR:=build/$(ARCH)
+OBJDIR:=$(BUILDDIR)
+OUTPUT:=$(BUILDDIR)/$(NAME)
 
 ifeq ($(notdir $(CXX)),em++)
-DIR:=emscripten
-LIBS:=$(JSLIBS)
+DIR=emscripten
+EMFLAGS=-s USE_GLFW=3 -s WASM=1 -s BINARYEN_METHOD=native-wasm -s TOTAL_MEMORY=256MB -s DISABLE_EXCEPTION_CATCHING=1 -s BINARYEN_TRAP_MODE=clamp
+EMFLAGS+=-DUSE_OPENGL_ES
+JSLIBS=$(shell printf "%s " emscripten/js/*.js)
+BUNDLEDIRS+=shader
 CPPFLAGS+=$(EMFLAGS)
 LDFLAGS+=$(EMFLAGS)
-LDLIBS+=$(addprefix --js-library ,$(JSLIBS))
-LDLIBS+=$(addprefix --preload-file ,$(BUNDLE))
+LDFLAGS+=$(addprefix --js-library ,$(JSLIBS))
+LDFLAGS+=$(addprefix --preload-file ,$(BUNDLEDIRS))
+BUNDLES+=$(JSLIBS) $(shell printf "%s " $(addsuffix /*,$(BUNDLEDIRS)))
 OUTPUT:=$(OUTPUT).html
 else
-DIR:=native
-LIBS:=$(BUILDDIR)/libdatachannel.a $(BUILDDIR)/libusrsctp.a
-INCLUDE+=-I$(DIR)/libdatachannel/include -I$(DIR)/libdatachannel/deps/plog/include
-LDLIBS+=$(shell pkg-config --libs glib-2.0 gobject-2.0 nice) -lGLEW -lnettle -lhogweed -lgmp -lgnutls -largon2
-LDLIBS+=$(LIBS)
+DIR=native
+INCLUDES+=-Ideps/libdatachannel/include -Ideps/libdatachannel/deps/plog/include
+LOCALLIBS+=$(BUILDDIR)/libdatachannel.a $(BUILDDIR)/libjuice.a $(BUILDDIR)/libusrsctp.a
+LDLIBS+=-lGLEW -lnettle -lhogweed -lgmp -lgnutls -largon2
+LDFLAGS+=-pthread
 endif
 
-INCLUDE+=-I$(DIR)
-SRCS+=$(shell printf "%s " $(DIR)/net/*.cpp $(DIR)/pla/*.cpp $(DIR)/*.cpp)
-OBJS:=$(addprefix $(OBJDIR)/, $(SRCS:.cpp=.o))
+INCLUDES+=-I$(DIR)
+
+SRCS=$(shell printf "%s " pla/*.cpp src/*.cpp)
+SRCS+=$(shell printf "%s " $(DIR)/pla/*.cpp $(DIR)/net/*.cpp $(DIR)/*.cpp)
+OBJS=$(addprefix $(OBJDIR)/, $(SRCS:.cpp=.o))
 
 all: $(OUTPUT)
 
 $(OBJDIR)/%.o: %.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(INCLUDE) -MMD -MP -c -o $@ $<
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(INCLUDES) -MMD -MP -c -o $@ $<
 
 -include $(SRCS:.cpp=.d)
 
-$(OUTPUT): $(LIBS) $(OBJS) $(BUNDLEDFILES) | $(BUILDDIR)
-	$(CXX) $(LDFLAGS) -o $(OUTPUT) $(OBJS) $(LDLIBS)
+$(OUTPUT): $(LOCALLIBS) $(OBJS) $(BUNDLES) | $(BUILDDIR)
+	$(CXX) $(LDFLAGS) -o $(OUTPUT) $(OBJS) $(LOCALLIBS) $(LDLIBS)
 
 $(BUILDDIR):
 	mkdir -p $(BUILDDIR)
@@ -53,13 +56,14 @@ $(BUILDDIR):
 clean:
 	-rm *.d {pla,src}/*.d $(DIR)/*.d $(DIR)/{pla,src}/*.d
 	-rm -r $(BUILDDIR)/$(DIR) $(BUILDDIR)/pla $(BUILDDIR)/src
-	-cd $(DIR)/libdatachannel && make clean
+	-cd deps/libdatachannel && make clean
 
 dist-clean: clean
 	-rm -r build
 
-$(BUILDDIR)/libdatachannel.a $(BUILDDIR)/libusrsctp.a: | $(BUILDDIR)
-	cd $(DIR)/libdatachannel && make USE_GNUTLS=1
-	cp $(DIR)/libdatachannel/libdatachannel.a $(BUILDDIR)
-	cp $(DIR)/libdatachannel/libusrsctp.a $(BUILDDIR)
+$(BUILDDIR)/libdatachannel.a $(BUILDDIR)/libjuice.a $(BUILDDIR)/libusrsctp.a: | $(BUILDDIR)
+	cd deps/libdatachannel && $(MAKE) USE_JUICE=1 USE_GNUTLS=1
+	cp deps/libdatachannel/libdatachannel.a $(BUILDDIR)
+	cp deps/libdatachannel/libjuice.a $(BUILDDIR)
+	cp deps/libdatachannel/libusrsctp.a $(BUILDDIR)
 

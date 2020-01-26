@@ -27,7 +27,7 @@
 						});
 				};
 				peerConnection.onicecandidate = function(evt) {
-					WEBRTC.handleCandidate(peerConnection, evt.candidate);
+					if(evt.candidate) WEBRTC.handleCandidate(peerConnection, evt.candidate);
 				};
 				return pc;
 			},
@@ -58,8 +58,8 @@
 			handleCandidate: function(peerConnection, candidate) {
 				if(peerConnection.rtcUserDeleted) return;
 				if(!peerConnection.rtcCandidateCallback) return;
-				var pCandidate = candidate ? WEBRTC.allocUTF8FromString(candidate.candidate) : 0;
-				var pSdpMid = candidate ? WEBRTC.allocUTF8FromString(candidate.sdpMid) : 0;
+				var pCandidate = WEBRTC.allocUTF8FromString(candidate.candidate);
+				var pSdpMid = WEBRTC.allocUTF8FromString(candidate.sdpMid);
 				var candidateCallback =  peerConnection.rtcCandidateCallback;
 				var userPointer = peerConnection.rtcUserPointer || 0;
 				Module.dynCall_viii(candidateCallback, pCandidate, pSdpMid, userPointer);
