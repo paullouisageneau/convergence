@@ -74,6 +74,7 @@ using pla::binary_hash;
 using pla::string;
 
 using pla::to_binary;
+using pla::to_hex;
 using pla::to_integer;
 
 using pla::Epsilon;

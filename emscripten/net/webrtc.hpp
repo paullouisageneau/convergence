@@ -98,16 +98,16 @@ public:
 
 	void onDataChannel(std::function<void(shared_ptr<DataChannel>)> callback);
 	void onLocalDescription(std::function<void(const Description &description)> callback);
-	void onLocalCandidate(std::function<void(const std::optional<Candidate> &candidate)> callback);
+	void onLocalCandidate(std::function<void(const Candidate &candidate)> callback);
 
 protected:
 	void triggerDataChannel(shared_ptr<DataChannel> dataChannel);
 	void triggerLocalDescription(const Description &description);
-	void triggerLocalCandidate(const std::optional<Candidate> &candidate);
+	void triggerLocalCandidate(const Candidate &candidate);
 
 	std::function<void(shared_ptr<DataChannel>)> mDataChannelCallback;
 	std::function<void(const Description &description)> mLocalDescriptionCallback;
-	std::function<void(const std::optional<Candidate> &candidate)> mLocalCandidateCallback;
+	std::function<void(const Candidate &candidate)> mLocalCandidateCallback;
 
 private:
 	int mId;
