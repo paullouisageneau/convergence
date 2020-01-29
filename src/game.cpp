@@ -85,27 +85,18 @@ bool Game::onUpdate(Engine *engine, double time) {
 
 	mWorld->update(time);
 
-	if (engine->isMouseButtonDown(MOUSE_BUTTON_LEFT) ||
-	    engine->isMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
+	if (engine->isMouseButtonDown(MOUSE_BUTTON_LEFT)) {
 		sptr<Terrain> terrain = mWorld->terrain();
 
 		vec3 position = localPlayer->getPosition();
 		vec3 front = localPlayer->getDirection();
 		vec3 intersection;
 		if (terrain->intersect(position, front * 10.f, 0.25f, &intersection) <= 1.f) {
-			bool diggingMode = engine->isMouseButtonDown(MOUSE_BUTTON_RIGHT);
-			if (diggingMode)
-				mAccumulator -= 200.f * time;
-			else
-				mAccumulator += 200.f * time;
-
+			mAccumulator += 200.f * time;
 			int delta = int(mAccumulator);
 			if (delta) {
 				mAccumulator -= float(delta);
-				if (diggingMode)
-					terrain->dig(intersection, delta, 2.5f);
-				else
-					terrain->build(intersection, delta);
+				terrain->dig(intersection, delta, 2.5f);
 			}
 		}
 	}

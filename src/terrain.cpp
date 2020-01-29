@@ -18,9 +18,8 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#include "src/world.hpp"
-
-#include "pla/binaryformatter.hpp"
+#include "terrain.hpp"
+#include "world.hpp"
 
 #include <set>
 
@@ -48,25 +47,8 @@ float Terrain::intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *
 	return mSurface.intersect(pos, move, radius, intersection);
 }
 
-void Terrain::build(const vec3 &p, int weight) {
-	if (weight == 0)
-		return;
-
-	const int3 i(p + vec3(0.5f));
-	const auto block = getBlock(Block::blockCoord(i));
-	const int3 c = Block::cellCoord(i);
-	Surface::value v = block->getValue(c);
-	const int newWeight = pla::bounds(int(v.weight) + weight, 0, 255);
-	if (newWeight != v.weight) {
-		v.weight = newWeight;
-		v.type = 0;
-		block->writeValue(c, v);
-		block->commit();
-	}
-}
-
 void Terrain::dig(const vec3 &p, int weight, float radius) {
-	if (weight == 0 || radius <= 0.f)
+	if (weight <= 0 || radius <= 0.f)
 		return;
 
 	const int3 origin = p + vec3(0.5f);
@@ -83,7 +65,7 @@ void Terrain::dig(const vec3 &p, int weight, float radius) {
 					auto block = getBlock(Block::blockCoord(i));
 					const int3 c = Block::cellCoord(i);
 					Surface::value v = block->getValue(c);
-					const int newWeight = pla::bounds(int(v.weight) + int(weight * t), 0, 255);
+					const int newWeight = pla::bounds(int(v.weight) - int(weight * t), 0, 255);
 					if (newWeight != v.weight) {
 						v.weight = newWeight;
 						block->writeValue(c, v);
@@ -141,7 +123,21 @@ void Terrain::processMessage(const Message &message) {
 	}
 }
 
-bool Terrain::processRoot(const binary &digest) {
+bool Terrain::mergeData(const Index &index, binary &data) {
+	TerrainIndex terrainIndex(index);
+	int3 pos(terrainIndex.position());
+	std::cout << "Updating block at position " << pos.x << "," << pos.y << "," << pos.z
+	          << std::endl;
+	auto block = getBlock(pos);
+	return block->merge(data);
+}
+
+void Terrain::commitData(const int3 &b, const binary &data) {
+	TerrainIndex index(b);
+	updateData(index, data);
+}
+
+bool Terrain::propagateRoot(const binary &digest) {
 	std::cout << "Publishing terrain root " << pla::to_hex(digest) << std::endl;
 
 	Message message(Message::TerrainRoot);
@@ -150,18 +146,9 @@ bool Terrain::processRoot(const binary &digest) {
 	return true;
 }
 
-bool Terrain::processData(const Index &index, const binary &data) {
-	TerrainIndex terrainIndex(index);
-	int3 pos(terrainIndex.position());
-	std::cout << "Updating block at position " << pos.x << "," << pos.y << "," << pos.z
-	          << std::endl;
-	auto block = getBlock(pos);
-	return block->update(data);
-}
-
-void Terrain::commitData(const int3 &b, const binary &data) {
-	TerrainIndex index(b);
-	updateData(index, data);
+bool Terrain::propagateData(const Index &index, const binary &data) {
+	// TODO
+	return false;
 }
 
 void Terrain::populateBlock(shared_ptr<Block> block) {
@@ -214,38 +201,47 @@ Terrain::Block::Block(Terrain *terrain, const int3 &b)
 
 Terrain::Block::~Block(void) {}
 
-bool Terrain::Block::update(const binary &data) {
-	if (data.size() != Size * Size * Size * 2) {
-		std::cerr << "Wrong block data size: " << data.size() << std::endl;
-		return false;
-	}
+bool Terrain::Block::merge(binary &data) {
+	if (data.size() != 1 + Size * Size * Size * 2)
+		throw std::runtime_error("Wrong block data size: " + std::to_string(data.size()));
+
+	bool changed = false;
+	uint8_t *bytes = reinterpret_cast<uint8_t *>(data.data());
+	uint8_t type = *(bytes++); // TODO check constant
 	int c = 0;
-	auto it = data.begin();
 	for (int x = 0; x < Size; ++x)
 		for (int y = 0; y < Size; ++y)
 			for (int z = 0; z < Size; ++z) {
+				uint8_t &newType = *(bytes++);
+				uint8_t &newWeight = *(bytes++);
 				auto &cell = mCells[c++];
-				cell.type = to_integer<uint8_t>(*(it++));
-				cell.weight = to_integer<uint8_t>(*(it++));
-			}
+				newType = std::min(newType, cell.type);
+				newWeight = std::min(newWeight, cell.weight);
 
-	mChanged = true;
-	return true;
+				if (newType != cell.type || newWeight != cell.weight) {
+					cell.type = newType;
+					cell.weight = newWeight;
+					changed = true;
+				}
+			}
+	if (changed)
+		markChanged();
+	return changed;
 }
 
 void Terrain::Block::commit(void) {
-	binary data;
-	data.reserve(Size * Size * Size * 2);
+	binary data(1 + Size * Size * Size * 2);
+	uint8_t *bytes = reinterpret_cast<uint8_t *>(data.data());
+	*(bytes++) = uint8_t(1); // TODO: constant
 	int c = 0;
 	for (int x = 0; x < Size; ++x)
 		for (int y = 0; y < Size; ++y)
 			for (int z = 0; z < Size; ++z) {
 				const auto &cell = mCells[c++];
-				data.push_back(byte(cell.type));
-				data.push_back(byte(cell.weight));
+				*(bytes++) = cell.type;
+				*(bytes++) = cell.weight;
 			}
 	mTerrain->commitData(position(), data);
-	mChanged = true;
 }
 
 bool Terrain::Block::hasChanged(void) const {

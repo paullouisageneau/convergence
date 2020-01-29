@@ -40,7 +40,7 @@ public:
 	enum class Priority : int { Default = 0, Relay = 1, Direct = 2 };
 
 	MessageBus(void);
-	~MessageBus(void);
+	virtual ~MessageBus(void);
 
 	identifier localId(void) const;
 

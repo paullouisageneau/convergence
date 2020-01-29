@@ -49,7 +49,7 @@ binary Store::insert(const binary &data) {
 
 	for (auto notif : notifiables) {
 		if (auto locked = notif.lock()) {
-			locked->notify(digest, dataPtr);
+			locked->notify(digest, dataPtr, shared_from_this());
 		}
 	}
 
@@ -65,7 +65,7 @@ shared_ptr<binary> Store::retrieve(const binary &digest) const {
 void Store::request(const binary &digest, weak_ptr<Notifiable> notifiable) {
 	if (auto data = retrieve(digest)) {
 		if (auto locked = notifiable.lock()) {
-			locked->notify(digest, data);
+			locked->notify(digest, data, shared_from_this());
 		}
 	} else {
 		insertNotifiable(digest, notifiable);

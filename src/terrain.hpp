@@ -21,11 +21,11 @@
 #ifndef CONVERGENCE_TERRAIN_H
 #define CONVERGENCE_TERRAIN_H
 
-#include "src/include.hpp"
-#include "src/merkle.hpp"
-#include "src/messagebus.hpp"
-#include "src/store.hpp"
-#include "src/surface.hpp"
+#include "include.hpp"
+#include "merkle.hpp"
+#include "messagebus.hpp"
+#include "store.hpp"
+#include "surface.hpp"
 
 #include "pla/context.hpp"
 
@@ -34,13 +34,12 @@ namespace convergence {
 class Terrain : public Merkle, public MessageBus::AsyncListener, public Collidable {
 public:
 	Terrain(shared_ptr<MessageBus> messageBus, shared_ptr<Store> store, int seed);
-	~Terrain(void);
+	virtual ~Terrain(void);
 
 	void update(double time);
 	int draw(const Context &context);
 	float intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *intersection = NULL);
 
-	void build(const vec3 &p, int weight);
 	void dig(const vec3 &p, int weight, float radius);
 
 protected:
@@ -54,9 +53,11 @@ protected:
 	};
 
 	void processMessage(const Message &message);
-	bool processRoot(const binary &digest);
-	bool processData(const Index &index, const binary &data);
+	bool mergeData(const Index &index, binary &data);
 	void commitData(const int3 &b, const binary &data);
+
+	bool propagateRoot(const binary &digest);
+	bool propagateData(const Index &index, const binary &data);
 
 private:
 	class Block : public Surface::Block {
@@ -64,7 +65,7 @@ private:
 		Block(Terrain *terrain, const int3 &b);
 		~Block(void);
 
-		bool update(const binary &data);
+		bool merge(binary &data);
 		void commit(void);
 
 		bool hasChanged(void) const;
