@@ -29,17 +29,18 @@
 
 namespace convergence {
 
-class Store : public MessageBus::Listener {
+class Store : public MessageBus::Listener, public std::enable_shared_from_this<Store> {
 public:
 	Store(sptr<MessageBus> messageBus);
-	~Store(void);
+	virtual ~Store(void);
 
 	binary insert(const binary &data);
 	shared_ptr<binary> retrieve(const binary &digest) const;
 
 	class Notifiable {
 	public:
-		virtual void notify(const binary &digest, shared_ptr<binary> data) = 0;
+		virtual void notify(const binary &digest, shared_ptr<binary> data,
+		                    shared_ptr<Store> store) = 0;
 	};
 
 	void request(const binary &digest, weak_ptr<Notifiable> notifiable);

@@ -33,7 +33,7 @@ namespace convergence {
 class Peering : public MessageBus::Listener {
 public:
 	Peering(const identifier &id, shared_ptr<MessageBus> signaling);
-	~Peering(void);
+	virtual ~Peering(void);
 
 	identifier id(void) const;
 	bool isConnected(void) const;
