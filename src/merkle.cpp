@@ -27,11 +27,46 @@ namespace convergence {
 
 using namespace std::placeholders;
 
-Merkle::Merkle(shared_ptr<Store> store) : mStore(store) {}
+Merkle::Merkle(shared_ptr<Store> store) : mStore(std::move(store)) {}
 
 Merkle::~Merkle(void) {}
 
-shared_ptr<Store> Merkle::store() const { return mStore; }
+void Merkle::update(double time) {
+	std::lock_guard lock(mMutex);
+	for (const auto &[index, data] : mChangedData)
+			changeData(index, *data);
+	mChangedData.clear();
+}
+
+void Merkle::updateRoot(const binary &digest) {
+	std::lock_guard lock(mMutex);
+
+	if (mRoot && mRoot->digest() == digest)
+		return;
+	if (mCandidates.find(digest) != mCandidates.end())
+		return;
+	std::cout << "Adding root candidate with digest" << to_hex(digest) << std::endl;
+	auto candidate = createNode({}, digest);
+	candidate->addResolvedCallback(std::bind(&Merkle::mergeRoot, this, _1));
+	mCandidates[digest] = candidate;
+}
+
+void Merkle::updateData(Index index, const binary &data) {
+	std::lock_guard lock(mMutex);
+
+	auto digest = mStore->insert(data);
+	std::cout << "Updating data with digest " << to_hex(digest) << std::endl;
+
+	mRoot = mRoot ? mRoot->fork(index, digest, this)
+	              : createNode({}, std::move(index), std::move(digest));
+	propagateRoot(mRoot->digest());
+}
+
+shared_ptr<Merkle::Node> Merkle::createNode(Index index, binary digest) {
+	auto node = std::make_shared<Node>(std::move(index), std::move(digest));
+	node->populate(mStore);
+	return node;
+}
 
 shared_ptr<Merkle::Node> Merkle::get(Index index) const {
 	return index.length() && mRoot ? mRoot->child(index) : mRoot;
@@ -39,36 +74,9 @@ shared_ptr<Merkle::Node> Merkle::get(Index index) const {
 
 shared_ptr<Merkle::Node> Merkle::root(void) const { return mRoot; }
 
-void Merkle::updateRoot(const binary &digest) {
-	if (mRoot && mRoot->digest() == digest)
-		return;
-	if (mCandidates.find(digest) != mCandidates.end())
-		return;
-	std::cout << "Adding root candidate " << to_hex(digest) << std::endl;
-	auto candidate = createNode({}, digest);
-	candidate->addResolvedCallback(std::bind(&Merkle::mergeRoot, this, _1));
-	mCandidates[digest] = candidate;
-}
-
 void Merkle::mergeRoot(shared_ptr<Node> node) {
 	std::cout << "Merging root " << to_hex(node->digest()) << std::endl;
 	mRoot = mRoot ? mRoot->merge(node, this) : node;
-}
-
-void Merkle::updateData(Index index, const binary &data) {
-	auto digest = mStore->insert(data);
-	std::cout << "Updating data with digest " << to_hex(digest) << std::endl;
-
-	mRoot =
-	    mRoot ? mRoot->fork(index, digest, this) : createNode(std::move(index), std::move(digest));
-	propagateRoot(mRoot->digest());
-}
-
-shared_ptr<Merkle::Node> Merkle::createNode(Index index, binary digest) {
-	std::cout << "Creating leaf node " << to_hex(digest) << std::endl;
-	auto node = std::make_shared<Node>(std::move(index), std::move(digest));
-	node->populate(mStore);
-	return node;
 }
 
 shared_ptr<Merkle::Node> Merkle::createNode(Index index, Index target, binary digest) {
@@ -81,7 +89,6 @@ shared_ptr<Merkle::Node> Merkle::createNode(Index index, Index target, binary di
 	children[n] = createNode(Index(n, index), std::move(target), std::move(digest));
 
 	auto node = std::make_shared<Node>(std::move(index), std::move(children), mStore);
-	std::cout << "Creating node " << to_hex(node->digest()) << std::endl;
 	return node;
 }
 
@@ -201,29 +208,30 @@ shared_ptr<Merkle::Node> Merkle::Node::fork(Index target, const binary &digest, 
 	child = child ? child->fork(std::move(target), digest, merkle)
 	              : merkle->createNode(Index(n, mIndex), std::move(target), digest);
 
-	return std::make_shared<Node>(mIndex, std::move(children), merkle->store());
+	return std::make_shared<Node>(mIndex, std::move(children), merkle->mStore);
 }
 
 shared_ptr<Merkle::Node> Merkle::Node::merge(shared_ptr<Node> other, Merkle *merkle) {
 	if (!other || !other->isResolved() || mIndex != other->mIndex)
 		throw std::runtime_error("Illegal node merge");
 
-	if (mChildren) {
+	if (mDigest == other->mDigest)
+		return shared_from_this();
+
+	if (mIndex.length() < 16) {
 		ChildrenArray children = *mChildren;
 		ChildrenArray &others = *other->mChildren;
-		bool changed = false;
-		for (int i = 0; i < ChildrenCount; ++i) {
-			if (children[i] != others[i]) {
+		for (int i = 0; i < ChildrenCount; ++i)
+			if (others[i])
 				children[i] = children[i] ? children[i]->merge(others[i], merkle) : others[i];
-				changed = true;
-			}
-		}
-		return changed ? std::make_shared<Node>(mIndex, children, merkle->store())
-		               : shared_from_this();
+
+		return children != *mChildren ? std::make_shared<Node>(mIndex, children, merkle->mStore)
+		                              : shared_from_this();
 	} else {
 		binary data = *other->data();
-		if (merkle->mergeData(mIndex, data)) {
-			auto digest = merkle->store()->insert(data);
+		if (merkle->merge(*mData, data)) {
+			auto digest = merkle->mStore->insert(data);
+			merkle->mChangedData[mIndex] = merkle->mStore->retrieve(digest);
 			return merkle->createNode(mIndex, digest);
 		} else {
 			return shared_from_this();
@@ -248,8 +256,9 @@ void Merkle::Node::checkResolved(void) {
 
 void Merkle::Node::markResolved(void) {
 	mResolved = true;
+	auto self = shared_from_this();
 	for (auto callback : mResolvedCallbacks)
-		callback(shared_from_this());
+		callback(self);
 	mResolvedCallbacks.clear();
 }
 

@@ -32,6 +32,7 @@ World::World(sptr<MessageBus> messageBus) : mMessageBus(messageBus) {
 	unsigned seed = 130;
 	mTerrain = std::make_shared<Terrain>(mMessageBus, mStore, seed);
 	mMessageBus->registerTypeListener(Message::TerrainRoot, mTerrain);
+	mMessageBus->registerTypeListener(Message::TerrainUpdate, mTerrain);
 
 	mLocalPlayer = std::make_shared<LocalPlayer>(mMessageBus);
 	mMessageBus->registerListener(mLocalPlayer->id(), mLocalPlayer);

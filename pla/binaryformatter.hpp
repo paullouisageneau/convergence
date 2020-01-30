@@ -33,8 +33,9 @@ public:
 	BinaryFormatter(const binary &b);
 
 	binary remaining(void) const;
-	binary data(void) const;
-	binary data(const binary &data);
+	const binary &data(void) const;
+	binary &data(void);
+	binary &data(const binary &data);
 
 	void append(const binary &b);
 	void clear(void);

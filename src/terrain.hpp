@@ -53,18 +53,26 @@ protected:
 	};
 
 	void processMessage(const Message &message);
-	bool mergeData(const Index &index, binary &data);
-	void commitData(const int3 &b, const binary &data);
+
+	bool replaceData(const int3 &pos, const binary &data);
+	bool mergeData(const int3 &pos, binary &data);
+	void commitData(const int3 &pos, const binary &data);
+
+	bool merge(const binary &a, binary &b);
+	bool changeData(const Index &index, const binary &data);
 
 	bool propagateRoot(const binary &digest);
-	bool propagateData(const Index &index, const binary &data);
+	bool propagateData(const int3 &pos, const binary &data);
 
 private:
 	class Block : public Surface::Block {
 	public:
+		static bool Merge(const Surface::value *a, Surface::value *b);
+
 		Block(Terrain *terrain, const int3 &b);
 		~Block(void);
 
+		bool replace(const binary &data);
 		bool merge(binary &data);
 		void commit(void);
 
@@ -73,20 +81,20 @@ private:
 
 		Surface::value readValue(const int3 &c) const;
 
-		void writeValue(const int3 &c, Surface::value v, bool markChanged = true);
-		void writeType(const int3 &c, uint8_t t, bool markChanged = true);
+		bool writeValue(const int3 &c, Surface::value v, bool markChanged = true);
+		bool writeType(const int3 &c, uint8_t t, bool markChanged = true);
 
 	private:
 		Terrain *mTerrain;
-		Surface::value mCells[Size * Size * Size];
+		Surface::value mCells[CellsCount];
 
 		mutable bool mChanged;
 	};
 
 	shared_ptr<Block> getBlock(const int3 &b);
 	Surface::value getValue(const int3 &p);
-	void setValue(const int3 &p, Surface::value v);
-	void setType(const int3 &p, uint8_t t);
+	bool setValue(const int3 &p, Surface::value v);
+	bool setType(const int3 &p, uint8_t t);
 
 	void populateBlock(shared_ptr<Block> block);
 	void markChangedBlock(const int3 &b);

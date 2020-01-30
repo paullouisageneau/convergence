@@ -33,7 +33,9 @@ namespace convergence
 class Merkle {
 public:
 	Merkle(shared_ptr<Store> store);
-	~Merkle(void);
+	virtual ~Merkle(void);
+
+	virtual void update(double time);
 
 	class Index {
 	public:
@@ -52,6 +54,15 @@ public:
 
 		bool operator==(const Index &other) const { return mValues == other.mValues; }
 		bool operator!=(const Index &other) const { return mValues != other.mValues; }
+
+		struct hash {
+			std::size_t operator()(const Index &index) const noexcept {
+				std::size_t seed = 0;
+				std::for_each(index.mValues.begin(), index.mValues.end(),
+				              [&seed](int v) { hash_combine(seed, v); });
+				return seed;
+			}
+		};
 
 	protected:
 		std::vector<int> mValues;
@@ -95,28 +106,28 @@ public:
 		bool mResolved = false;
 	};
 
-	shared_ptr<Store> store() const;
-
-	shared_ptr<Node> get(Index index) const;
+	shared_ptr<Node> get(Index target) const;
 	shared_ptr<Node> root() const;
 
 protected:
 	void updateRoot(const binary &digest);
-	void mergeRoot(shared_ptr<Node> node);
-
 	void updateData(Index index, const binary &data);
-	virtual bool mergeData(const Index &index, binary &data) = 0;
 
+	virtual bool merge(const binary &a, binary &b) = 0;
+	virtual bool changeData(const Index &index, const binary &data) = 0;
 	virtual bool propagateRoot(const binary &digest) = 0;
-	virtual bool propagateData(const Index &index, const binary &data) = 0;
 
 private:
+	void mergeRoot(shared_ptr<Node> node);
 	shared_ptr<Node> createNode(Index index, binary digest);
 	shared_ptr<Node> createNode(Index index, Index target, binary digest);
 
 	const shared_ptr<Store> mStore;
 	shared_ptr<Node> mRoot;
 	std::unordered_map<binary, shared_ptr<Node>, binary_hash> mCandidates;
+	std::unordered_map<Index, shared_ptr<binary>, Index::hash> mChangedData;
+
+	mutable std::mutex mMutex;
 };
 }
 
