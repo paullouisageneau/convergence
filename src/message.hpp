@@ -50,7 +50,8 @@ public:
 		Request = 0x31,
 
 		// Terrain
-		TerrainRoot = 0x40
+		TerrainRoot = 0x40,
+		TerrainUpdate = 0x41
 	};
 
 	Message(Type _type = Dummy);

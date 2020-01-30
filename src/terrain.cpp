@@ -21,10 +21,13 @@
 #include "terrain.hpp"
 #include "world.hpp"
 
+#include "pla/binaryformatter.hpp"
+
 #include <set>
 
 namespace convergence {
 
+using pla::BinaryFormatter;
 using namespace std::placeholders;
 
 Terrain::Terrain(shared_ptr<MessageBus> messageBus, shared_ptr<Store> store, int seed)
@@ -34,6 +37,8 @@ Terrain::Terrain(shared_ptr<MessageBus> messageBus, shared_ptr<Store> store, int
 Terrain::~Terrain(void) {}
 
 void Terrain::update(double time) {
+	Merkle::update(time);
+
 	Message message;
 	while (readMessage(message))
 		processMessage(message);
@@ -95,17 +100,14 @@ Surface::value Terrain::getValue(const int3 &p) {
 	return block->readValue(Block::cellCoord(p));
 }
 
-void Terrain::setValue(const int3 &p, Surface::value v) {
+bool Terrain::setValue(const int3 &p, Surface::value v) {
 	sptr<Block> block = getBlock(Block::blockCoord(p));
-	block->writeValue(Block::cellCoord(p), v);
+	return block->writeValue(Block::cellCoord(p), v, true); // mark changed
 }
 
-void Terrain::setType(const int3 &p, uint8_t t) {
+bool Terrain::setType(const int3 &p, uint8_t t) {
 	sptr<Block> block = getBlock(Block::blockCoord(p));
-	int3 c = Block::cellCoord(p);
-	Surface::value v = block->readValue(c);
-	v.type = t;
-	block->writeValue(c, v);
+	return block->writeType(Block::cellCoord(p), t, true); // mark changed
 }
 
 void Terrain::processMessage(const Message &message) {
@@ -116,25 +118,56 @@ void Terrain::processMessage(const Message &message) {
 		updateRoot(digest);
 		break;
 	}
-
+	case Message::TerrainUpdate: {
+		BinaryFormatter formatter(message.payload);
+		int32_t x, y, z;
+		if (!(formatter >> x >> y >> z))
+			throw std::runtime_error("Invalid terrain update message");
+		int3 pos(x, y, z);
+		std::cout << "Received terrain update for position " << pos.x << "," << pos.y << ","
+		          << pos.z << std::endl;
+		binary data = formatter.remaining();
+		if (mergeData(pos, data))
+			updateData(TerrainIndex(pos), data);
+		break;
+	}
 	default:
 		// Ignore
 		break;
 	}
 }
 
-bool Terrain::mergeData(const Index &index, binary &data) {
-	TerrainIndex terrainIndex(index);
-	int3 pos(terrainIndex.position());
-	std::cout << "Updating block at position " << pos.x << "," << pos.y << "," << pos.z
+bool Terrain::replaceData(const int3 &pos, const binary &data) {
+	std::cout << "Replacing block at position " << pos.x << "," << pos.y << "," << pos.z
 	          << std::endl;
+	auto block = getBlock(pos);
+	return block->replace(data);
+}
+
+bool Terrain::mergeData(const int3 &pos, binary &data) {
+	std::cout << "Merging block at position " << pos.x << "," << pos.y << "," << pos.z << std::endl;
 	auto block = getBlock(pos);
 	return block->merge(data);
 }
 
-void Terrain::commitData(const int3 &b, const binary &data) {
-	TerrainIndex index(b);
-	updateData(index, data);
+void Terrain::commitData(const int3 &pos, const binary &data) {
+	propagateData(pos, data);
+	updateData(TerrainIndex(pos), data);
+}
+
+bool Terrain::merge(const binary &a, binary &b) {
+	if (a.size() != Block::CellsCount * sizeof(Surface::value))
+		throw std::runtime_error("Wrong terrain block size: " + std::to_string(a.size()));
+	if (b.size() != Block::CellsCount * sizeof(Surface::value))
+		throw std::runtime_error("Wrong merged terrain block size: " + std::to_string(b.size()));
+
+	auto va = reinterpret_cast<const Surface::value *>(a.data());
+	auto vb = reinterpret_cast<Surface::value *>(b.data());
+	return Block::Merge(va, vb);
+}
+
+bool Terrain::changeData(const Index &index, const binary &data) {
+	return replaceData(TerrainIndex(index).position(), data);
 }
 
 bool Terrain::propagateRoot(const binary &digest) {
@@ -146,23 +179,33 @@ bool Terrain::propagateRoot(const binary &digest) {
 	return true;
 }
 
-bool Terrain::propagateData(const Index &index, const binary &data) {
-	// TODO
-	return false;
+bool Terrain::propagateData(const int3 &pos, const binary &data) {
+	std::cout << "Sending terrain update for position " << pos.x << "," << pos.y << "," << pos.z
+	          << std::endl;
+	Message message(Message::TerrainUpdate);
+	BinaryFormatter formatter;
+	formatter << int32_t(pos.x);
+	formatter << int32_t(pos.y);
+	formatter << int32_t(pos.z);
+	formatter << data;
+	message.payload = std::move(formatter.data());
+	mMessageBus->broadcast(message);
+	return true;
 }
 
 void Terrain::populateBlock(shared_ptr<Block> block) {
+	static const auto Size = Block::Size;
 	// Layer 0
 	const float f1 = 0.15f;
 	const float f2 = 0.03f;
-	for (int x = 0; x < Block::Size; ++x) {
-		for (int y = 0; y < Block::Size; ++y) {
+	for (int x = 0; x < Size; ++x) {
+		for (int y = 0; y < Size; ++y) {
 			bool inside = false;
-			for (int z = -1; z < Block::Size; ++z) {
+			for (int z = -1; z < Size; ++z) {
 				int3 pos = block->position();
-				const float ax = float(pos.x * Block::Size + x);
-				const float ay = float(pos.y * Block::Size + y);
-				const float az = float(pos.z * Block::Size + z);
+				const float ax = float(pos.x * Size + x);
+				const float ay = float(pos.y * Size + y);
+				const float az = float(pos.z * Size + z);
 				const float d2 = ax * ax + ay * ay + az * az;
 				const float noise1 = mPerlin.noise(ax * f1, ay * f1, az * f1 * 0.1f);
 				const float noise2 = mPerlin.noise(ax * f2, ay * f2, az * f2 * 4.f);
@@ -191,9 +234,20 @@ void Terrain::populateBlock(shared_ptr<Block> block) {
 }
 
 void Terrain::markChangedBlock(const int3 &b) {
-	if (auto it = mBlocks.find(b); it != mBlocks.end()) {
+	if (auto it = mBlocks.find(b); it != mBlocks.end())
 		it->second->markChanged();
+}
+
+bool Terrain::Block::Merge(const Surface::value *a, Surface::value *b) {
+	bool changed = false;
+	for (int c = 0; c < CellsCount; ++c) {
+		const Surface::value &va = a[c];
+		Surface::value &vb = b[c];
+		vb.type = std::min(va.type, vb.type);
+		vb.weight = std::min(va.weight, vb.weight);
+		changed |= (va != vb);
 	}
+	return changed;
 }
 
 Terrain::Block::Block(Terrain *terrain, const int3 &b)
@@ -201,45 +255,35 @@ Terrain::Block::Block(Terrain *terrain, const int3 &b)
 
 Terrain::Block::~Block(void) {}
 
-bool Terrain::Block::merge(binary &data) {
-	if (data.size() != Size * Size * Size * 2)
-		throw std::runtime_error("Wrong block data size: " + std::to_string(data.size()));
+bool Terrain::Block::replace(const binary &data) {
+	if (data.size() != CellsCount * sizeof(Surface::value))
+		throw std::runtime_error("Wrong terrain block size: " + std::to_string(data.size()));
 
-	uint8_t *bytes = reinterpret_cast<uint8_t *>(data.data());
+	auto cells = reinterpret_cast<const Surface::value *>(data.data());
 	bool changed = false;
-	int c = 0;
 	for (int x = 0; x < Size; ++x)
 		for (int y = 0; y < Size; ++y)
-			for (int z = 0; z < Size; ++z) {
-				uint8_t &newType = *(bytes++);
-				uint8_t &newWeight = *(bytes++);
-				auto &cell = mCells[c++];
-				newType = std::min(newType, cell.type);
-				newWeight = std::min(newWeight, cell.weight);
-
-				if (newType != cell.type || newWeight != cell.weight) {
-					cell.type = newType;
-					cell.weight = newWeight;
-					changed = true;
-				}
-			}
-	if (changed)
-		markChanged();
+			for (int z = 0; z < Size; ++z)
+				changed |= writeValue(int3(x, y, z), *(cells++), true);
 	return changed;
 }
 
+bool Terrain::Block::merge(binary &data) {
+	if (data.size() != CellsCount * sizeof(Surface::value))
+		throw std::runtime_error("Wrong merged terrain block size: " + std::to_string(data.size()));
+
+	auto cells = reinterpret_cast<Surface::value *>(data.data());
+	if (Merge(mCells, cells)) {
+		replace(data);
+		return true;
+	}
+	return false;
+}
+
 void Terrain::Block::commit(void) {
-	binary data(Size * Size * Size * 2);
-	uint8_t *bytes = reinterpret_cast<uint8_t *>(data.data());
-	int c = 0;
-	for (int x = 0; x < Size; ++x)
-		for (int y = 0; y < Size; ++y)
-			for (int z = 0; z < Size; ++z) {
-				const auto &cell = mCells[c++];
-				*(bytes++) = cell.type;
-				*(bytes++) = cell.weight;
-			}
-	mTerrain->commitData(position(), data);
+	auto data = reinterpret_cast<const byte *>(mCells);
+	auto size = CellsCount * sizeof(Surface::value);
+	mTerrain->commitData(position(), binary(data, data + size));
 }
 
 bool Terrain::Block::hasChanged(void) const {
@@ -258,9 +302,12 @@ Surface::value Terrain::Block::readValue(const int3 &c) const {
 	}
 }
 
-void Terrain::Block::writeValue(const int3 &c, Surface::value v, bool markChanged) {
+bool Terrain::Block::writeValue(const int3 &c, Surface::value v, bool markChanged) {
 	if (c.x >= 0 && c.y >= 0 && c.z >= 0 && c.x < Size && c.y < Size && c.z < Size) {
-		mCells[(c.x * Size + c.y) * Size + c.z] = v;
+		auto &cell = mCells[(c.x * Size + c.y) * Size + c.z];
+		if (cell == v)
+			return false;
+		cell = v;
 
 		if (markChanged) {
 			mChanged = true;
@@ -283,16 +330,21 @@ void Terrain::Block::writeValue(const int3 &c, Surface::value v, bool markChange
 				}
 			}
 		}
+		return true;
 	} else {
 		throw std::runtime_error("Write block value out of bounds");
 	}
 }
 
-void Terrain::Block::writeType(const int3 &c, uint8_t t, bool markChanged) {
+bool Terrain::Block::writeType(const int3 &c, uint8_t t, bool markChanged) {
 	if (c.x >= 0 && c.y >= 0 && c.z >= 0 && c.x < Size && c.y < Size && c.z < Size) {
-		mCells[(c.x * Size + c.y) * Size + c.z].type = t;
+		auto &cell = mCells[(c.x * Size + c.y) * Size + c.z];
+		if (cell.type == t)
+			return false;
+		cell.type = t;
 		if (markChanged)
 			mChanged = true;
+		return true;
 	} else {
 		throw std::runtime_error("Write block value out of bounds");
 	}

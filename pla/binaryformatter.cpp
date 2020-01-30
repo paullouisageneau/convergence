@@ -31,9 +31,11 @@ binary BinaryFormatter::remaining(void) const {
 	return binary(mData.begin() + mReadPosition, mData.end());
 }
 
-binary BinaryFormatter::data(void) const { return mData; }
+const binary &BinaryFormatter::data(void) const { return mData; }
 
-binary BinaryFormatter::data(const binary &data) {
+binary &BinaryFormatter::data(void) { return mData; }
+
+binary &BinaryFormatter::data(const binary &data) {
 	mData = data;
 	mReadPosition = 0;
 	return mData;

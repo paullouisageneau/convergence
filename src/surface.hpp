@@ -49,6 +49,7 @@ namespace convergence {
 
 class Surface : public Collidable {
 public:
+#pragma pack(push, 1) // pack tightly
 	struct value {
 		value(uint8_t _type = 0, uint8_t _weight = 0) : type(_type), weight(_weight) {}
 		float w(void) const { return float(weight) / 255.f; }
@@ -59,10 +60,13 @@ public:
 		uint8_t type;
 		uint8_t weight;
 	};
+#pragma pack(pop)
 
 	class Block : public Mesh {
 	public:
 		static const int Size = 8;
+		static const int CellsCount = Size * Size * Size;
+
 		static int blockCoord(int v);
 		static int3 blockCoord(const int3 &p);
 		static int cellCoord(int v);
