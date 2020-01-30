@@ -50,6 +50,9 @@ public:
 		Index parent(void) const;
 		int child(void) const;
 
+		bool operator==(const Index &other) const { return mValues == other.mValues; }
+		bool operator!=(const Index &other) const { return mValues != other.mValues; }
+
 	protected:
 		std::vector<int> mValues;
 	};
@@ -59,8 +62,8 @@ public:
 		static const int ChildrenCount = 64;
 		using ChildrenArray = std::array<shared_ptr<Node>, ChildrenCount>;
 
-		Node(binary digest);
-		Node(ChildrenArray children, shared_ptr<Store> store);
+		Node(Index index, binary digest);
+		Node(Index index, ChildrenArray children, shared_ptr<Store> store);
 		virtual ~Node(void);
 
 		shared_ptr<binary> data() { return mData; }
@@ -68,8 +71,8 @@ public:
 		void populate(shared_ptr<Store> store);
 		void notify(const binary &digest, shared_ptr<binary> data, shared_ptr<Store> store);
 		shared_ptr<Node> child(Index index);
-		shared_ptr<Node> fork(Index index, const binary &digest, Merkle *merkle);
-		shared_ptr<Node> merge(Index index, shared_ptr<Node> other, Merkle *merkle);
+		shared_ptr<Node> fork(Index target, const binary &digest, Merkle *merkle);
+		shared_ptr<Node> merge(shared_ptr<Node> other, Merkle *merkle);
 
 		using ResolvedCallback = std::function<void(shared_ptr<Node>)>;
 		void addResolvedCallback(ResolvedCallback callback);
@@ -84,11 +87,11 @@ public:
 		std::optional<ChildrenArray> children(void) const;
 
 	private:
+		const Index mIndex;
 		binary mDigest;
-		shared_ptr<binary> mData;
 		std::optional<ChildrenArray> mChildren;
+		shared_ptr<binary> mData;
 		std::list<ResolvedCallback> mResolvedCallbacks;
-
 		bool mResolved = false;
 	};
 
@@ -108,8 +111,8 @@ protected:
 	virtual bool propagateData(const Index &index, const binary &data) = 0;
 
 private:
-	shared_ptr<Node> createNode(binary digest);
 	shared_ptr<Node> createNode(Index index, binary digest);
+	shared_ptr<Node> createNode(Index index, Index target, binary digest);
 
 	const shared_ptr<Store> mStore;
 	shared_ptr<Node> mRoot;

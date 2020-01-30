@@ -202,12 +202,11 @@ Terrain::Block::Block(Terrain *terrain, const int3 &b)
 Terrain::Block::~Block(void) {}
 
 bool Terrain::Block::merge(binary &data) {
-	if (data.size() != 1 + Size * Size * Size * 2)
+	if (data.size() != Size * Size * Size * 2)
 		throw std::runtime_error("Wrong block data size: " + std::to_string(data.size()));
 
-	bool changed = false;
 	uint8_t *bytes = reinterpret_cast<uint8_t *>(data.data());
-	uint8_t type = *(bytes++); // TODO check constant
+	bool changed = false;
 	int c = 0;
 	for (int x = 0; x < Size; ++x)
 		for (int y = 0; y < Size; ++y)
@@ -230,9 +229,8 @@ bool Terrain::Block::merge(binary &data) {
 }
 
 void Terrain::Block::commit(void) {
-	binary data(1 + Size * Size * Size * 2);
+	binary data(Size * Size * Size * 2);
 	uint8_t *bytes = reinterpret_cast<uint8_t *>(data.data());
-	*(bytes++) = uint8_t(1); // TODO: constant
 	int c = 0;
 	for (int x = 0; x < Size; ++x)
 		for (int y = 0; y < Size; ++y)

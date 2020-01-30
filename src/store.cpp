@@ -73,6 +73,16 @@ void Store::request(const binary &digest, weak_ptr<Notifiable> notifiable) {
 	}
 }
 
+bool Store::broadcast(const binary &digest) {
+	if (auto data = retrieve(digest)) {
+		Message msg(Message::Store);
+		msg.payload = *data;
+		mMessageBus->broadcast(msg);
+		return true;
+	}
+	return false;
+}
+
 void Store::onMessage(const Message &message) {
 	switch (message.type) {
 	case Message::Store: {

@@ -44,6 +44,7 @@ public:
 	};
 
 	void request(const binary &digest, weak_ptr<Notifiable> notifiable);
+	bool broadcast(const binary &digest);
 
 private:
 	void onMessage(const Message &message);
