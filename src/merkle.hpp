@@ -84,10 +84,12 @@ public:
 		shared_ptr<Node> child(Index index);
 		shared_ptr<Node> fork(Index target, const binary &digest, Merkle *merkle);
 		shared_ptr<Node> merge(shared_ptr<Node> other, Merkle *merkle);
+		void markChangedData(Merkle *merkle);
 
 		using ResolvedCallback = std::function<void(shared_ptr<Node>)>;
 		void addResolvedCallback(ResolvedCallback callback);
 
+		void initResolved(void);
 		void checkResolved(void);
 		void markResolved(void);
 		bool isResolved(void) const;
@@ -108,6 +110,7 @@ public:
 
 	shared_ptr<Node> get(Index target) const;
 	shared_ptr<Node> root() const;
+	binary rootDigest() const;
 
 protected:
 	void updateRoot(const binary &digest);

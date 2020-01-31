@@ -85,6 +85,8 @@ void Terrain::dig(const vec3 &p, int weight, float radius) {
 		block->commit();
 }
 
+void Terrain::broadcast() { propagateRoot(rootDigest()); }
+
 sptr<Terrain::Block> Terrain::getBlock(const int3 &b) {
 	if (auto it = mBlocks.find(b); it != mBlocks.end())
 		return it->second;
@@ -264,7 +266,7 @@ bool Terrain::Block::replace(const binary &data) {
 	for (int x = 0; x < Size; ++x)
 		for (int y = 0; y < Size; ++y)
 			for (int z = 0; z < Size; ++z)
-				changed |= writeValue(int3(x, y, z), *(cells++), true);
+				changed |= writeValueImpl(int3(x, y, z), *(cells++), true);
 	return changed;
 }
 
@@ -295,59 +297,69 @@ bool Terrain::Block::hasChanged(void) const {
 void Terrain::Block::markChanged(void) { mChanged = true; }
 
 Surface::value Terrain::Block::readValue(const int3 &c) const {
-	if (c.x >= 0 && c.y >= 0 && c.z >= 0 && c.x < Size && c.y < Size && c.z < Size) {
-		return mCells[(c.x * Size + c.y) * Size + c.z];
-	} else {
+	if (c.x >= 0 && c.y >= 0 && c.z >= 0 && c.x < Size && c.y < Size && c.z < Size)
+		return readValueImpl(c);
+	else
 		throw std::runtime_error("Read block value out of bounds");
-	}
+}
+
+Surface::value Terrain::Block::readValueImpl(const int3 &c) const {
+	return mCells[(c.x * Size + c.y) * Size + c.z];
 }
 
 bool Terrain::Block::writeValue(const int3 &c, Surface::value v, bool markChanged) {
-	if (c.x >= 0 && c.y >= 0 && c.z >= 0 && c.x < Size && c.y < Size && c.z < Size) {
-		auto &cell = mCells[(c.x * Size + c.y) * Size + c.z];
-		if (cell == v)
-			return false;
-		cell = v;
+	if (c.x >= 0 && c.y >= 0 && c.z >= 0 && c.x < Size && c.y < Size && c.z < Size)
+		return writeValueImpl(c, v, markChanged);
+	else
+		throw std::runtime_error("Write block value out of bounds");
+}
 
-		if (markChanged) {
-			mChanged = true;
+bool Terrain::Block::writeValueImpl(const int3 &c, Surface::value v, bool markChanged) {
+	auto &cell = mCells[(c.x * Size + c.y) * Size + c.z];
+	if (cell == v)
+		return false;
 
-			// Mark neighboring blocks as changed
-			int3 pos = position();
-			for (int dx = -1; dx <= 1; ++dx) {
-				if ((c.x != 0 && dx == -1) || (c.x != Size - 1 && dx == 1))
+	cell = v;
+	if (markChanged) {
+		mChanged = true;
+
+		// Mark neighboring blocks as changed
+		int3 pos = position();
+		for (int dx = -1; dx <= 1; ++dx) {
+			if ((c.x != 0 && dx == -1) || (c.x != Size - 1 && dx == 1))
+				continue;
+			for (int dy = -1; dy <= 1; ++dy) {
+				if ((c.y != 0 && dy == -1) || (c.y != Size - 1 && dy == 1))
 					continue;
-				for (int dy = -1; dy <= 1; ++dy) {
-					if ((c.y != 0 && dy == -1) || (c.y != Size - 1 && dy == 1))
+				for (int dz = -1; dz <= 1; ++dz) {
+					if ((c.z != 0 && dz == -1) || (c.z != Size - 1 && dz == 1))
 						continue;
-					for (int dz = -1; dz <= 1; ++dz) {
-						if ((c.z != 0 && dz == -1) || (c.z != Size - 1 && dz == 1))
-							continue;
-						if (dx == 0 && dy == 0 && dz == 0)
-							continue;
-						mTerrain->markChangedBlock(int3(pos.x + dx, pos.y + dy, pos.z + dz));
-					}
+					if (dx == 0 && dy == 0 && dz == 0)
+						continue;
+					mTerrain->markChangedBlock(int3(pos.x + dx, pos.y + dy, pos.z + dz));
 				}
 			}
 		}
-		return true;
-	} else {
-		throw std::runtime_error("Write block value out of bounds");
 	}
+	return true;
 }
 
 bool Terrain::Block::writeType(const int3 &c, uint8_t t, bool markChanged) {
-	if (c.x >= 0 && c.y >= 0 && c.z >= 0 && c.x < Size && c.y < Size && c.z < Size) {
-		auto &cell = mCells[(c.x * Size + c.y) * Size + c.z];
-		if (cell.type == t)
-			return false;
-		cell.type = t;
-		if (markChanged)
-			mChanged = true;
-		return true;
-	} else {
+	if (c.x >= 0 && c.y >= 0 && c.z >= 0 && c.x < Size && c.y < Size && c.z < Size)
+		return writeTypeImpl(c, t, markChanged);
+	else
 		throw std::runtime_error("Write block value out of bounds");
-	}
+}
+
+bool Terrain::Block::writeTypeImpl(const int3 &c, uint8_t t, bool markChanged) {
+	auto &cell = mCells[(c.x * Size + c.y) * Size + c.z];
+	if (cell.type == t)
+		return false;
+
+	cell.type = t;
+	if (markChanged)
+		mChanged = true;
+	return true;
 }
 
 Terrain::TerrainIndex::TerrainIndex(const Index &index) : Index(index) {}
