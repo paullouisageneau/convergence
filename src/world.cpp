@@ -72,6 +72,8 @@ void World::processMessage(const Message &message) {
 		if (mPlayers.find(id) == mPlayers.end()) {
 			std::cout << "New player: " << to_hex(id) << std::endl;
 			mPlayers[id] = createPlayer(id);
+
+			mTerrain->broadcast();
 		}
 	}
 }

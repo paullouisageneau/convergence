@@ -42,6 +42,8 @@ public:
 
 	void dig(const vec3 &p, int weight, float radius);
 
+	void broadcast();
+
 protected:
 	class TerrainIndex : public Index {
 	public:
@@ -80,15 +82,18 @@ private:
 		void markChanged(void);
 
 		Surface::value readValue(const int3 &c) const;
-
 		bool writeValue(const int3 &c, Surface::value v, bool markChanged = true);
 		bool writeType(const int3 &c, uint8_t t, bool markChanged = true);
 
 	private:
-		Terrain *mTerrain;
-		Surface::value mCells[CellsCount];
+		Surface::value readValueImpl(const int3 &c) const;
+		bool writeValueImpl(const int3 &c, Surface::value v, bool markChanged);
+		bool writeTypeImpl(const int3 &c, uint8_t t, bool markChanged);
 
-		mutable bool mChanged;
+		Terrain *mTerrain;
+		Surface::value mCells[CellsCount] = {};
+
+		mutable bool mChanged = true;
 	};
 
 	shared_ptr<Block> getBlock(const int3 &b);
