@@ -78,8 +78,8 @@ void Merkle::mergeRoot(shared_ptr<Node> node) {
 	if (mRoot) {
 		mRoot = mRoot->merge(node, this);
 	} else {
-		node->markChangedData(this);
 		mRoot = node;
+		mRoot->markChangedData(this);
 	}
 	propagateRoot(mRoot->digest());
 }
@@ -228,16 +228,23 @@ shared_ptr<Merkle::Node> Merkle::Node::merge(shared_ptr<Node> other, Merkle *mer
 	if (mIndex.length() < 16) {
 		ChildrenArray children = *mChildren;
 		ChildrenArray &others = *other->mChildren;
-		for (int i = 0; i < ChildrenCount; ++i)
-			if (others[i])
-				children[i] = children[i] ? children[i]->merge(others[i], merkle) : others[i];
+		for (int i = 0; i < ChildrenCount; ++i) {
+			if (!others[i])
+				continue;
+
+			if (children[i]) {
+				children[i] = children[i]->merge(others[i], merkle);
+			} else {
+				children[i] = others[i];
+				children[i]->markChangedData(merkle);
+			}
+		}
 
 		if (children == *mChildren)
 			return shared_from_this();
 
 		auto node = std::make_shared<Node>(mIndex, children, merkle->mStore);
 		node->populate(merkle->mStore);
-		node->markChangedData(merkle);
 		return node;
 	} else {
 		binary data = *other->data();
