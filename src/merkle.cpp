@@ -60,7 +60,7 @@ void Merkle::updateData(Index index, const binary &data, bool change) {
 	auto digest = mStore->insert(data);
 	std::cout << "Updating data with digest " << to_hex(digest) << std::endl;
 
-	mRoot = mRoot ? mRoot->fork(index, digest, change, this)
+	mRoot = mRoot ? mRoot->fork(std::move(index), digest, change, this)
 	              : createNode({}, std::move(index), std::move(digest));
 	propagateRoot(mRoot->digest());
 }
