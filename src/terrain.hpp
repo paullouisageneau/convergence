@@ -31,7 +31,7 @@
 
 namespace convergence {
 
-class Terrain : public Merkle, public MessageBus::AsyncListener, public Collidable {
+class Terrain : public Merkle, public MessageBus::Listener, public Collidable {
 public:
 	Terrain(shared_ptr<MessageBus> messageBus, shared_ptr<Store> store, int seed);
 	virtual ~Terrain(void);
@@ -54,7 +54,7 @@ protected:
 		int3 position(void) const;
 	};
 
-	void processMessage(const Message &message);
+	void onMessage(const Message &message);
 
 	bool replaceData(const int3 &pos, const binary &data);
 	bool mergeData(const int3 &pos, binary &data);

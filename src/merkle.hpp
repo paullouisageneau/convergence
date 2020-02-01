@@ -82,7 +82,7 @@ public:
 		void populate(shared_ptr<Store> store);
 		void notify(const binary &digest, shared_ptr<binary> data, shared_ptr<Store> store);
 		shared_ptr<Node> child(Index index);
-		shared_ptr<Node> fork(Index target, const binary &digest, Merkle *merkle);
+		shared_ptr<Node> fork(Index target, const binary &digest, bool markChanged, Merkle *merkle);
 		shared_ptr<Node> merge(shared_ptr<Node> other, Merkle *merkle);
 		void markChangedData(Merkle *merkle);
 
@@ -114,7 +114,7 @@ public:
 
 protected:
 	void updateRoot(const binary &digest);
-	void updateData(Index index, const binary &data);
+	void updateData(Index index, const binary &data, bool change = false);
 
 	virtual bool merge(const binary &a, binary &b) = 0;
 	virtual bool changeData(const Index &index, const binary &data) = 0;

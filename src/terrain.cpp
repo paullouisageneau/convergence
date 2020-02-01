@@ -38,11 +38,6 @@ Terrain::~Terrain(void) {}
 
 void Terrain::update(double time) {
 	Merkle::update(time);
-
-	Message message;
-	while (readMessage(message))
-		processMessage(message);
-
 	mSurface.update(time);
 }
 
@@ -112,7 +107,7 @@ bool Terrain::setType(const int3 &p, uint8_t t) {
 	return block->writeType(Block::cellCoord(p), t, true); // mark changed
 }
 
-void Terrain::processMessage(const Message &message) {
+void Terrain::onMessage(const Message &message) {
 	switch (message.type) {
 	case Message::TerrainRoot: {
 		const binary &digest = message.payload;
@@ -129,8 +124,7 @@ void Terrain::processMessage(const Message &message) {
 		std::cout << "Received terrain update for position " << pos.x << "," << pos.y << ","
 		          << pos.z << std::endl;
 		binary data = formatter.remaining();
-		if (mergeData(pos, data))
-			updateData(TerrainIndex(pos), data);
+		updateData(TerrainIndex(pos), data, true); // call changeData()
 		break;
 	}
 	default:
@@ -154,7 +148,7 @@ bool Terrain::mergeData(const int3 &pos, binary &data) {
 
 void Terrain::commitData(const int3 &pos, const binary &data) {
 	propagateData(pos, data);
-	updateData(TerrainIndex(pos), data);
+	updateData(TerrainIndex(pos), data, false); // don't call changeData()
 }
 
 bool Terrain::merge(const binary &a, binary &b) {
