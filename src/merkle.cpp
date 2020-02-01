@@ -54,13 +54,13 @@ void Merkle::updateRoot(const binary &digest) {
 	mCandidates[digest] = candidate;
 }
 
-void Merkle::updateData(Index index, const binary &data) {
+void Merkle::updateData(Index index, const binary &data, bool change) {
 	std::lock_guard lock(mMutex);
 
 	auto digest = mStore->insert(data);
 	std::cout << "Updating data with digest " << to_hex(digest) << std::endl;
 
-	mRoot = mRoot ? mRoot->fork(index, digest, this)
+	mRoot = mRoot ? mRoot->fork(index, digest, change, this)
 	              : createNode({}, std::move(index), std::move(digest));
 	propagateRoot(mRoot->digest());
 }
@@ -196,11 +196,14 @@ shared_ptr<Merkle::Node> Merkle::Node::child(Index target) {
 	return child ? child->child(target) : nullptr;
 }
 
-shared_ptr<Merkle::Node> Merkle::Node::fork(Index target, const binary &digest, Merkle *merkle) {
+shared_ptr<Merkle::Node> Merkle::Node::fork(Index target, const binary &digest, bool markChanged,
+                                            Merkle *merkle) {
 	if (target.length() == 0) {
 		std::cout << "Forking " << to_hex(mDigest) << " to " << to_hex(digest) << std::endl;
 		auto node = std::make_shared<Node>(mIndex, digest);
 		node->populate(merkle->mStore);
+		if (markChanged)
+			node->markChangedData(merkle);
 		return node;
 	}
 
@@ -210,7 +213,7 @@ shared_ptr<Merkle::Node> Merkle::Node::fork(Index target, const binary &digest, 
 
 	int n = target.pop();
 	auto &child = children[n];
-	child = child ? child->fork(std::move(target), digest, merkle)
+	child = child ? child->fork(std::move(target), digest, markChanged, merkle)
 	              : merkle->createNode(Index(n, mIndex), std::move(target), digest);
 
 	auto node = std::make_shared<Node>(mIndex, std::move(children), merkle->mStore);
