@@ -359,14 +359,18 @@ bool Terrain::Block::writeTypeImpl(const int3 &c, uint8_t t, bool markChanged) {
 Terrain::TerrainIndex::TerrainIndex(const Index &index) : Index(index) {}
 
 Terrain::TerrainIndex::TerrainIndex(int3 pos) {
-	// Circumvent modulo implementation for negative values with an offset
 	const unsigned offset = 0x80000000;
+	unsigned x = offset + pos.x;
+	unsigned y = offset + pos.y;
+	unsigned z = offset + pos.z;
 	for (int i = 0; i < 16; ++i) {
 		int n = 0;
-		n += ((offset + pos.x) % 4);
-		n += ((offset + pos.y) % 4) << 2;
-		n += ((offset + pos.z) % 4) << 4;
-		pos /= 4;
+		n |= x & 0x3;
+		n |= (y & 0x3) << 2;
+		n |= (z & 0x3) << 4;
+		x >>= 2;
+		y >>= 2;
+		z >>= 2;
 		mValues.push_back(n);
 	}
 }
@@ -374,17 +378,22 @@ Terrain::TerrainIndex::TerrainIndex(int3 pos) {
 Terrain::TerrainIndex::~TerrainIndex(void) {}
 
 int3 Terrain::TerrainIndex::position(void) const {
-	int3 pos;
+	unsigned x = 0;
+	unsigned y = 0;
+	unsigned z = 0;
 	std::vector<int> values(mValues);
 	while (values.size() > 0) {
 		int n = values.back();
-		pos *= 4;
-		pos.x += (n % 4 + 2) % 4 - 2;
-		pos.y += ((n >> 2) % 4 + 2) % 4 - 2;
-		pos.z += ((n >> 4) % 4 + 2) % 4 - 2;
+		x <<= 2;
+		y <<= 2;
+		z <<= 2;
+		x |= n & 0x3;
+		y |= (n >> 2) & 0x3;
+		z |= (n >> 4) & 0x3;
 		values.pop_back();
 	}
-	return pos;
+	const unsigned offset = 0x80000000;
+	return int3(int(x - offset), int(y - offset), int(z - offset));
 }
 
 } // namespace convergence
