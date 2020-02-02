@@ -96,7 +96,7 @@ bool Game::onUpdate(Engine *engine, double time) {
 			int delta = int(mAccumulator);
 			if (delta) {
 				mAccumulator -= float(delta);
-				terrain->dig(intersection, delta, 2.5f);
+				terrain->dig(intersection, delta, 3.f);
 			}
 		}
 	}
@@ -114,7 +114,7 @@ int Game::onDraw(Engine *engine) {
 	engine->getWindowSize(&width, &height);
 
 	mat4 projection =
-	    glm::perspective(glm::radians(45.0f), float(width) / float(height), 0.1f, 30.0f);
+	    glm::perspective(glm::radians(45.0f), float(width) / float(height), 0.01f, 40.0f);
 
 	Context context(projection, mWorld->localPlayer()->getTransform());
 	context.setUniform("lightPosition", mWorld->localPlayer()->getPosition());

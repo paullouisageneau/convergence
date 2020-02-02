@@ -6,18 +6,22 @@ uniform vec3 lightPosition;
 
 attribute vec3 position;
 attribute vec3 normal;
-attribute vec3 color;
+attribute vec4 ambient;
+attribute vec4 diffuse;
 
+varying vec3 fragPosition;
 varying vec3 fragNormal;
 varying vec3 fragLight;
-varying vec3 fragColor;
+varying vec4 fragAmbient;
+varying vec4 fragDiffuse;
 
-void main() 
+void main()
 {
+	fragPosition = position;
 	fragNormal = normal;
 	fragLight = normalize(position - lightPosition);
-	//fragColor = color;
-	fragColor = vec3(0.933, 0.510, 0.933);
+	fragAmbient = ambient;
+	fragDiffuse = diffuse;
 	gl_Position = transform*vec4(position, 1.0);
 }
 

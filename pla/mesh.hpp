@@ -47,6 +47,8 @@ public:
 	                     bool normalize = false);
 	void setVertexAttrib(unsigned layout, const char *attribs, size_t count = 0, int size = 1,
 	                     bool normalize = false);
+	void setVertexAttrib(unsigned layout, const unsigned char *attribs, size_t count = 0,
+	                     int size = 1, bool normalize = false);
 	void unsetVertexAttrib(unsigned layout);
 
 	size_t indicesCount(void) const;

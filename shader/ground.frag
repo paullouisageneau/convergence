@@ -5,7 +5,8 @@ uniform vec3 lightPosition;
 varying vec3 fragPosition;
 varying vec3 fragNormal;
 varying vec3 fragLight;
-varying vec4 fragMaterial;
+varying vec4 fragAmbient;
+varying vec4 fragDiffuse;
 
 vec3 mod289(vec3 x)
 {
@@ -47,10 +48,10 @@ vec3 snoise(vec3 v)
 	vec3 x3 = x0 - D.yyy;      // -1.0+3.0*C.x = -0.5 = -D.y
 
 	// Permutations
-	i = mod289(i); 
-	vec4 p = permute( permute( permute( 
+	i = mod289(i);
+	vec4 p = permute( permute( permute(
 		i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
-		+ i.y + vec4(0.0, i1.y, i2.y, 1.0 )) 
+		+ i.y + vec4(0.0, i1.y, i2.y, 1.0 ))
 		+ i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
 
 	// Gradients: 7x7 points over a square, mapped onto an octahedron.
@@ -104,18 +105,13 @@ vec3 snoise(vec3 v)
 
 void main()
 {
-	vec3 grad1 = snoise(fragPosition*1.7)*4.0 + snoise(fragPosition*4.0)*2.0;
-	vec3 normal = normalize(fragNormal + grad1);
+	vec3 grad = snoise(fragPosition*1.7)*4.0 + snoise(fragPosition*4.0)*2.0 + snoise(fragPosition*0.9);
+	vec3 normal = normalize(fragNormal + grad);
 	float light = clamp(dot(normal, -fragLight), 0.0, 1.0);
-	
+
 	float z = gl_FragCoord.z/gl_FragCoord.w;
-	float fog = min((exp2(0.2*z) - 1.0)*0.02, 1.0);
-	
-	vec3 grad2 = snoise(fragPosition*0.9);
-	vec4 mask = vec4(1.0) + vec4(normalize(grad2), 0.0)*0.8;
-	vec4 material = normalize(fragMaterial * mask);
-	vec3 ambient = vec3(0.01, 0.01, 0.01)*material.x + vec3(0.01, 0.025, 0.01)*material.y;
-	vec3 diffuse = vec3(0.2, 0.2, 0.2)*material.x + vec3(0.2, 0.5, 0.2)*material.y;
-	vec3 color = (ambient + diffuse * light)*(1.0-fog);
+	float fog = min((exp2(0.2 * z) - 1.0) * 0.02, 1.0);
+	vec3 color = vec3(fragAmbient + fragDiffuse * light) * (1.0 - fog);
 	gl_FragColor = vec4(color, 1.0);
 }
+

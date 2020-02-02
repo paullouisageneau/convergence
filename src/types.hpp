@@ -92,7 +92,7 @@ struct int4_hash {
 	}
 };
 
-#pragma pack(push, 4) // Align on 4 bytes
+#pragma pack(push, 1)
 struct int84 {
 	int84(int8_t _x = 0, int8_t _y = 0, int8_t _z = 0, int8_t _w = 0);
 	int84(const vec4 &v);
