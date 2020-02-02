@@ -7,6 +7,7 @@ varying vec3 fragNormal;
 varying vec3 fragLight;
 varying vec4 fragAmbient;
 varying vec4 fragDiffuse;
+varying float fragSmoothness;
 
 vec3 mod289(vec3 x)
 {
@@ -105,7 +106,7 @@ vec3 snoise(vec3 v)
 
 void main()
 {
-	vec3 grad = snoise(fragPosition*1.7)*4.0 + snoise(fragPosition*4.0)*2.0 + snoise(fragPosition*0.9);
+	vec3 grad = snoise(fragPosition*0.9) + (snoise(fragPosition*1.7)*4.0 + snoise(fragPosition*4.0)*3.0)*(1.0 - fragSmoothness);
 	vec3 normal = normalize(fragNormal + grad);
 	float light = clamp(dot(normal, -fragLight), 0.0, 1.0);
 

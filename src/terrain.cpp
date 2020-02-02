@@ -219,8 +219,8 @@ void Terrain::populateBlock(shared_ptr<Block> block) {
 				} else if (inside) {
 					inside = false;
 					if (z >= 0) {
-						const float noise = mPerlin.noise(ax * f3, ay * f3, az * f3);
-						uint8_t type = noise > 0.5f ? 1 : 2;
+						const float noise = mPerlin.noise(ax * f3, ay * f3, az * f3 + 2000.f);
+						uint8_t type = noise > 0.333f ? (noise > 0.666f ? 2 : 1) : 0;
 						block->writeType(int3(x, y, z), type, false);
 						setType(int3(ax, ay, az - 1), type);
 					}
