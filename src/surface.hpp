@@ -91,14 +91,15 @@ public:
 	private:
 		static vec4 MaterialAmbientTable[4];
 		static vec4 MaterialDiffuseTable[4];
+		static float MaterialSmoothnessTable[4];
 		static uint16_t EdgeTable[256];
 		static int8_t TriTable[256][16];
 
 		int polygonizeCell(const int3 &c, std::vector<vec3> &vertices, std::vector<int84> &normals,
 		                   std::vector<int84> &ambient, std::vector<int84> &diffuse,
-		                   std::vector<index_t> &indices);
+		                   std::vector<int8_t> &smooth, std::vector<index_t> &indices);
 		vec3 interpolate(vec3 p1, vec3 p2, int84 g1, int84 g2, value v1, value v2, int84 &grad,
-		                 int84 &amb, int84 &dif);
+		                 int84 &amb, int84 &dif, int8_t &smooth);
 
 		int3 mPos;
 		std::function<shared_ptr<Block>(const int3 &b)> mRetrieveFunc;
