@@ -41,7 +41,7 @@ Player::Player(sptr<MessageBus> messageBus, const identifier &id)
 
 	mPosition = vec3(0.f, 0.f, 0.f);
 
-	auto program = std::make_shared<Program>(std::make_shared<VertexShader>("shader/color.vert"),
+	auto program = std::make_shared<Program>(std::make_shared<VertexShader>("shader/color.vect"),
 	                                         std::make_shared<FragmentShader>("shader/color.frag"));
 
 	program->bindAttribLocation(0, "position");

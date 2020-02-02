@@ -74,6 +74,15 @@ void Mesh::setVertexAttrib(unsigned layout, const char *attribs, size_t count, i
 	attrib->fill(attribs, count);
 }
 
+void Mesh::setVertexAttrib(unsigned layout, const unsigned char *attribs, size_t count, int size,
+                           bool normalize) {
+	sptr<Attrib> attrib = getAttribBuffer<unsigned char>(layout);
+	attrib->size = size;
+	attrib->type = GL_UNSIGNED_BYTE;
+	attrib->normalize = (normalize ? GL_TRUE : GL_FALSE);
+	attrib->fill(attribs, count);
+}
+
 void Mesh::unsetVertexAttrib(unsigned layout) { mAttribBuffers.erase(layout); }
 
 size_t Mesh::indicesCount(void) const { return mIndexBuffer->count(); }

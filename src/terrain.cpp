@@ -191,9 +191,10 @@ bool Terrain::propagateData(const int3 &pos, const binary &data) {
 
 void Terrain::populateBlock(shared_ptr<Block> block) {
 	static const auto Size = Block::Size;
-	// Layer 0
-	const float f1 = 0.15f;
-	const float f2 = 0.03f;
+	const float tune = 0.7f;
+	const float f1 = 0.1517f;
+	const float f2 = 0.0269f;
+	const float f3 = 0.0612f;
 	for (int x = 0; x < Size; ++x) {
 		for (int y = 0; y < Size; ++y) {
 			bool inside = false;
@@ -203,11 +204,11 @@ void Terrain::populateBlock(shared_ptr<Block> block) {
 				const float ay = float(pos.y * Size + y);
 				const float az = float(pos.z * Size + z);
 				const float d2 = ax * ax + ay * ay + az * az;
-				const float noise1 = mPerlin.noise(ax * f1, ay * f1, az * f1 * 0.1f);
-				const float noise2 = mPerlin.noise(ax * f2, ay * f2, az * f2 * 4.f);
+				const float noise1 = mPerlin.noise(ax * f1, ay * f1, az * f1 * 0.10f);
+				const float noise2 = mPerlin.noise(ax * f2, ay * f2, az * f2 * 4.f + 1000.f);
 				const float noise =
-				    noise1 * noise1 * 0.53f + (noise2 - 0.5f) * 2.f * 0.47f - 20.f / d2;
-				uint8_t weight = uint8_t(pla::bounds(int(noise * 10000.f), 0, 255));
+				    noise1 * noise1 + (noise2 - (0.4f + tune * 0.1f)) * 2.f - 10.f / d2;
+				uint8_t weight = uint8_t(pla::bounds(int(noise * 5000.f), 0, 255));
 
 				if (z >= 0)
 					block->writeValue(int3(x, y, z), Surface::value(0, weight), false);
@@ -218,8 +219,10 @@ void Terrain::populateBlock(shared_ptr<Block> block) {
 				} else if (inside) {
 					inside = false;
 					if (z >= 0) {
-						block->writeType(int3(x, y, z), 1, false);
-						setType(int3(ax, ay, az - 1), 1);
+						const float noise = mPerlin.noise(ax * f3, ay * f3, az * f3);
+						uint8_t type = noise > 0.5f ? 1 : 2;
+						block->writeType(int3(x, y, z), type, false);
+						setType(int3(ax, ay, az - 1), type);
 					}
 				}
 			}

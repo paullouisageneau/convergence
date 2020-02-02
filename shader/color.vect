@@ -6,19 +6,18 @@ uniform vec3 lightPosition;
 
 attribute vec3 position;
 attribute vec3 normal;
-attribute vec4 material;
+attribute vec3 color;
 
-varying vec3 fragPosition;
 varying vec3 fragNormal;
 varying vec3 fragLight;
-varying vec4 fragMaterial;
+varying vec3 fragColor;
 
-void main() 
+void main()
 {
-	fragPosition = position;
 	fragNormal = normal;
 	fragLight = normalize(position - lightPosition);
-	fragMaterial = material;
+	//fragColor = color;
+	fragColor = vec3(0.933, 0.510, 0.933);
 	gl_Position = transform*vec4(position, 1.0);
 }
 

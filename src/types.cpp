@@ -77,11 +77,12 @@ int4::operator vec4(void) const { return vec4(x, y, z, w); }
 int84::int84(int8_t _x, int8_t _y, int8_t _z, int8_t _w) : x(_x), y(_y), z(_z), w(_w) {}
 
 int84::int84(const vec4 &v)
-    : x(int8_t(std::floor(v.x))), y(int8_t(std::floor(v.y))), z(int8_t(std::floor(v.z))),
-      w(int8_t(std::floor(v.w))) {}
+    : x(int8_t(int(std::floor(v.x)))), y(int8_t(int(std::floor(v.y)))),
+      z(int8_t(int(std::floor(v.z)))), w(int8_t(int(std::floor(v.w)))) {}
 
 int84::int84(const vec3 &v)
-    : x(int8_t(std::floor(v.x))), y(int8_t(std::floor(v.y))), z(int8_t(std::floor(v.z))), w(0) {}
+    : x(int8_t(int(std::floor(v.x)))), y(int8_t(int(std::floor(v.y)))),
+      z(int8_t(int(std::floor(v.z)))), w(0) {}
 
 int84 int84::normalize(void) const {
 	const int ix(x);

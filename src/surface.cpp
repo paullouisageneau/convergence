@@ -22,14 +22,22 @@
 
 namespace convergence {
 
+vec4 Surface::Block::MaterialAmbientTable[4] = {vec4(0.01, 0.01, 0.01, 1),
+                                                vec4(0.01, 0.025, 0.01, 1),
+                                                vec4(0.025, 0.025, 0.01, 1), vec4(0.5, 0.5, 0, 1)};
+
+vec4 Surface::Block::MaterialDiffuseTable[4] = {vec4(0.2, 0.2, 0.2, 1), vec4(0.2, 0.5, 0.2, 1),
+                                                vec4(0.6, 0.6, 0.1, 1), vec4(0.75, 0.75, 0, 1)};
+
 Surface::Surface(std::function<shared_ptr<Block>(const int3 &b)> retrieveFunc)
     : mRetrieveFunc(retrieveFunc) {
-	mProgram = std::make_shared<Program>(std::make_shared<VertexShader>("shader/ground.vert"),
+	mProgram = std::make_shared<Program>(std::make_shared<VertexShader>("shader/ground.vect"),
 	                                     std::make_shared<FragmentShader>("shader/ground.frag"));
 
 	mProgram->bindAttribLocation(0, "position");
 	mProgram->bindAttribLocation(1, "normal");
-	mProgram->bindAttribLocation(2, "material");
+	mProgram->bindAttribLocation(2, "ambient");
+	mProgram->bindAttribLocation(3, "diffuse");
 	mProgram->link();
 }
 
@@ -43,7 +51,7 @@ int Surface::draw(const Context &context) {
 	const float d = (float(Block::Size) + 1.f) * 0.5f * pla::Sqrt2;
 
 	std::unordered_set<sptr<Block>> blocks, processed;
-	getBlocksRec(b, blocks, processed, [context, pos, b, d](sptr<Block> blk) {
+	getBlocksRec(b, blocks, processed, [context, b, d](sptr<Block> blk) {
 		if (blk->position() == b)
 			return true;
 		const vec3 p0 = blk->center();
@@ -184,23 +192,27 @@ int Surface::Block::update(void) {
 
 	std::vector<vec3> vertices;
 	std::vector<int84> normals;
-	std::vector<int84> materials;
+	std::vector<int84> ambient, diffuse;
 	std::vector<index_t> indices;
 
 	vertices.reserve(vertexAttribCount() * 2);
 	normals.reserve(vertexAttribCount() * 2);
-	materials.reserve(vertexAttribCount() * 2);
+	ambient.reserve(vertexAttribCount() * 2);
+	diffuse.reserve(vertexAttribCount() * 2);
 	indices.reserve(indicesCount() * 2);
 
 	for (int x = 0; x < Size; ++x)
 		for (int y = 0; y < Size; ++y)
 			for (int z = 0; z < Size; ++z)
-				polygonizeCell(int3(x, y, z), vertices, normals, materials, indices);
+				polygonizeCell(int3(x, y, z), vertices, normals, ambient, diffuse, indices);
 
-	setIndices(&indices[0], indices.size());
-	setVertexAttrib(0, glm::value_ptr(vertices[0]), vertices.size() * 3, 3, false);
-	setVertexAttrib(1, reinterpret_cast<char *>(&normals[0]), normals.size() * 4, 4, true);
-	setVertexAttrib(2, reinterpret_cast<char *>(&materials[0]), materials.size() * 4, 4, true);
+	setIndices(indices.data(), indices.size());
+	setVertexAttrib(0, glm::value_ptr(*vertices.data()), vertices.size() * 3, 3, false);
+	setVertexAttrib(1, reinterpret_cast<const char *>(normals.data()), normals.size() * 4, 4, true);
+	setVertexAttrib(2, reinterpret_cast<const unsigned char *>(ambient.data()), ambient.size() * 4,
+	                4, true);
+	setVertexAttrib(3, reinterpret_cast<const unsigned char *>(diffuse.data()), diffuse.size() * 4,
+	                4, true);
 
 	optimize();
 	return indicesCount() / 3;
@@ -209,8 +221,8 @@ int Surface::Block::update(void) {
 // Given a grid cell, calculate the triangular faces required to represent the surface through the
 // cell. Fill indices and attributes arrays, and return the number of faces generated.
 int Surface::Block::polygonizeCell(const int3 &c, std::vector<vec3> &vertices,
-                                   std::vector<int84> &normals, std::vector<int84> &materials,
-                                   std::vector<index_t> &indices) {
+                                   std::vector<int84> &normals, std::vector<int84> &ambient,
+                                   std::vector<int84> &diffuse, std::vector<index_t> &indices) {
 	vec3 center = vec3(float(mPos.x * Size + c.x), float(mPos.y * Size + c.y),
 	                   float(mPos.z * Size + c.z)); // cell center
 
@@ -272,32 +284,33 @@ int Surface::Block::polygonizeCell(const int3 &c, std::vector<vec3> &vertices,
 	// Find the vertices, gradients and materials where the surface intersects the cube
 	vec3 vert[12];
 	int84 grad[12];
-	int84 mat[12];
+	int84 amb[12];
+	int84 dif[12];
 
 	if (edge & 0x001)
-		vert[0] = interpolate(p[0], p[1], g[0], g[1], v[0], v[1], grad[0], mat[0]);
+		vert[0] = interpolate(p[0], p[1], g[0], g[1], v[0], v[1], grad[0], amb[0], dif[0]);
 	if (edge & 0x002)
-		vert[1] = interpolate(p[1], p[2], g[1], g[2], v[1], v[2], grad[1], mat[1]);
+		vert[1] = interpolate(p[1], p[2], g[1], g[2], v[1], v[2], grad[1], amb[1], dif[1]);
 	if (edge & 0x004)
-		vert[2] = interpolate(p[2], p[3], g[2], g[3], v[2], v[3], grad[2], mat[2]);
+		vert[2] = interpolate(p[2], p[3], g[2], g[3], v[2], v[3], grad[2], amb[2], dif[2]);
 	if (edge & 0x008)
-		vert[3] = interpolate(p[3], p[0], g[3], g[0], v[3], v[0], grad[3], mat[3]);
+		vert[3] = interpolate(p[3], p[0], g[3], g[0], v[3], v[0], grad[3], amb[3], dif[3]);
 	if (edge & 0x010)
-		vert[4] = interpolate(p[4], p[5], g[4], g[5], v[4], v[5], grad[4], mat[4]);
+		vert[4] = interpolate(p[4], p[5], g[4], g[5], v[4], v[5], grad[4], amb[4], dif[4]);
 	if (edge & 0x020)
-		vert[5] = interpolate(p[5], p[6], g[5], g[6], v[5], v[6], grad[5], mat[5]);
+		vert[5] = interpolate(p[5], p[6], g[5], g[6], v[5], v[6], grad[5], amb[5], dif[5]);
 	if (edge & 0x040)
-		vert[6] = interpolate(p[6], p[7], g[6], g[7], v[6], v[7], grad[6], mat[6]);
+		vert[6] = interpolate(p[6], p[7], g[6], g[7], v[6], v[7], grad[6], amb[6], dif[6]);
 	if (edge & 0x080)
-		vert[7] = interpolate(p[7], p[4], g[7], g[4], v[7], v[4], grad[7], mat[7]);
+		vert[7] = interpolate(p[7], p[4], g[7], g[4], v[7], v[4], grad[7], amb[7], dif[7]);
 	if (edge & 0x100)
-		vert[8] = interpolate(p[0], p[4], g[0], g[4], v[0], v[4], grad[8], mat[8]);
+		vert[8] = interpolate(p[0], p[4], g[0], g[4], v[0], v[4], grad[8], amb[8], dif[8]);
 	if (edge & 0x200)
-		vert[9] = interpolate(p[1], p[5], g[1], g[5], v[1], v[5], grad[9], mat[9]);
+		vert[9] = interpolate(p[1], p[5], g[1], g[5], v[1], v[5], grad[9], amb[9], dif[9]);
 	if (edge & 0x400)
-		vert[10] = interpolate(p[2], p[6], g[2], g[6], v[2], v[6], grad[10], mat[10]);
+		vert[10] = interpolate(p[2], p[6], g[2], g[6], v[2], v[6], grad[10], amb[10], dif[10]);
 	if (edge & 0x800)
-		vert[11] = interpolate(p[3], p[7], g[3], g[7], v[3], v[7], grad[11], mat[11]);
+		vert[11] = interpolate(p[3], p[7], g[3], g[7], v[3], v[7], grad[11], amb[11], dif[11]);
 
 	// Create the triangles
 	int n = 0;
@@ -312,7 +325,8 @@ int Surface::Block::polygonizeCell(const int3 &c, std::vector<vec3> &vertices,
 				index_t mi = index_t(vertices.size());
 				vertices.push_back(vert[vi]);
 				normals.push_back(-grad[vi].normalize());
-				materials.push_back(mat[vi]);
+				ambient.push_back(amb[vi]);
+				diffuse.push_back(dif[vi]);
 				indices.push_back(mi);
 				mapping[vi] = mi;
 			} else {
@@ -328,7 +342,7 @@ int Surface::Block::polygonizeCell(const int3 &c, std::vector<vec3> &vertices,
 
 // Linearly interpolate position, gradient, and material where the surface intersects an edge.
 vec3 Surface::Block::interpolate(vec3 p1, vec3 p2, int84 g1, int84 g2, value v1, value v2,
-                                 int84 &grad, int84 &mat) {
+                                 int84 &grad, int84 &amb, int84 &dif) {
 	static auto comp = [](const vec3 &a, const vec3 &b) {
 		if (a.x < b.y)
 			return true;
@@ -356,9 +370,13 @@ vec3 Surface::Block::interpolate(vec3 p1, vec3 p2, int84 g1, int84 g2, value v1,
 	vec4 grad2(g2);
 	grad = int84(grad1 + (grad2 - grad1) * mu);
 
-	vec4 mat1 = (v1.type < 4 ? MaterialTable[v1.type] * 127.f : vec4(0.f, 0.f, 0.f, 0.f));
-	vec4 mat2 = (v2.type < 4 ? MaterialTable[v2.type] * 127.f : vec4(0.f, 0.f, 0.f, 0.f));
-	mat = int84(mat1 + (mat2 - mat1) * mu);
+	vec4 amb1 = (v1.type < 4 ? MaterialAmbientTable[v1.type] * 255.f : vec4(0.f, 0.f, 0.f, 0.f));
+	vec4 amb2 = (v2.type < 4 ? MaterialAmbientTable[v2.type] * 255.f : vec4(0.f, 0.f, 0.f, 0.f));
+	amb = int84(amb1 + (amb2 - amb1) * mu);
+
+	vec4 dif1 = (v1.type < 4 ? MaterialDiffuseTable[v1.type] * 255.f : vec4(0.f, 0.f, 0.f, 0.f));
+	vec4 dif2 = (v2.type < 4 ? MaterialDiffuseTable[v2.type] * 255.f : vec4(0.f, 0.f, 0.f, 0.f));
+	dif = int84(dif1 + (dif2 - dif1) * mu);
 
 	return p1 + (p2 - p1) * mu;
 }
@@ -653,8 +671,5 @@ int8_t Surface::Block::TriTable[256][16] = {
     {0, 9, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
     {0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
     {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}};
-
-vec4 Surface::Block::MaterialTable[4] = {vec4(1, 0, 0, 0), vec4(0, 1, 0, 0), vec4(0, 0, 1, 0),
-                                         vec4(0, 0, 0, 1)};
 
 } // namespace convergence
