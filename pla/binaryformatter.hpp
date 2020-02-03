@@ -83,21 +83,6 @@ protected:
 	bool mReadFailed = false;
 };
 
-template <typename T> T checksum(const binary &b, T &result) {
-	BinaryFormatter formatter(b);
-
-	size_t padding = (sizeof(T) - (b.size() % sizeof(T))) % sizeof(T);
-	for (size_t i = 0; i < padding; ++i)
-		formatter << uint8_t(0);
-
-	result = 0;
-	T value = 0;
-	while (formatter >> value)
-		result = result ^ value;
-
-	return result;
-}
-
 } // namespace pla
 
 #endif

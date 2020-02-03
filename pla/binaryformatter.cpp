@@ -52,7 +52,7 @@ size_t BinaryFormatter::read(byte *data, size_t size) {
 	auto begin = mData.begin() + mReadPosition;
 	size = std::min(size, size_t(mData.end() - begin));
 	std::copy(begin, begin + size, data);
-	mData.erase(begin, begin + size);
+	mReadPosition += size;
 	return size;
 }
 
@@ -99,38 +99,38 @@ BinaryFormatter &BinaryFormatter::operator>>(int64_t &i) {
 }
 
 BinaryFormatter &BinaryFormatter::operator>>(uint8_t &i) {
-	mReadFailed = !read(reinterpret_cast<byte *>(&i), sizeof(i));
+	mReadFailed = (read(reinterpret_cast<byte *>(&i), sizeof(i)) != sizeof(i));
 	return *this;
 }
 
 BinaryFormatter &BinaryFormatter::operator>>(uint16_t &i) {
-	mReadFailed = !read(reinterpret_cast<byte *>(&i), sizeof(i));
+	mReadFailed = (read(reinterpret_cast<byte *>(&i), sizeof(i)) != sizeof(i));
 	if (!mReadFailed)
 		i = toBigEndian(i);
 	return *this;
 }
 
 BinaryFormatter &BinaryFormatter::operator>>(uint32_t &i) {
-	mReadFailed = !read(reinterpret_cast<byte *>(&i), sizeof(i));
+	mReadFailed = (read(reinterpret_cast<byte *>(&i), sizeof(i)) != sizeof(i));
 	if (!mReadFailed)
 		i = toBigEndian(i);
 	return *this;
 }
 
 BinaryFormatter &BinaryFormatter::operator>>(uint64_t &i) {
-	mReadFailed = !read(reinterpret_cast<byte *>(&i), sizeof(i));
+	mReadFailed = (read(reinterpret_cast<byte *>(&i), sizeof(i)) != sizeof(i));
 	if (!mReadFailed)
 		i = toBigEndian(i);
 	return *this;
 }
 
 BinaryFormatter &BinaryFormatter::operator>>(float32_t &f) {
-	mReadFailed = !read(reinterpret_cast<byte *>(&f), sizeof(f));
+	mReadFailed = (read(reinterpret_cast<byte *>(&f), sizeof(f)) != sizeof(f));
 	return *this;
 }
 
 BinaryFormatter &BinaryFormatter::operator>>(float64_t &f) {
-	mReadFailed = !read(reinterpret_cast<byte *>(&f), sizeof(f));
+	mReadFailed = (read(reinterpret_cast<byte *>(&f), sizeof(f)) != sizeof(f));
 	return *this;
 }
 

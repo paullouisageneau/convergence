@@ -54,10 +54,6 @@ binary from_base64(const string &str);
 binary pack_strings(const std::vector<string> &strs);
 std::vector<string> unpack_strings(const binary &data);
 
-uint16_t checksum16(const binary &b);
-uint32_t checksum32(const binary &b);
-uint64_t checksum64(const binary &b);
-
 struct binary_hash {
 	std::size_t operator()(const binary &b) const noexcept;
 };

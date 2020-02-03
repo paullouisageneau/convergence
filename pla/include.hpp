@@ -247,6 +247,11 @@ inline void memxor(void *a, const void *b, size_t size) {
 		ca[i] ^= cb[i];
 }
 
+template <class T> inline void hash_combine(std::size_t &seed, const T &v) {
+	std::hash<T> hash;
+	seed ^= hash(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
 inline duration structToDuration(const struct timeval &tv) {
 	return seconds(double(tv.tv_sec) + double(tv.tv_usec) / 1000000.);
 }

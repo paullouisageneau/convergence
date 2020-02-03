@@ -2,7 +2,7 @@ NAME=convergence
 
 CPPFLAGS=-g -O2 -fPIC -Wall -Wno-reorder -Wno-sign-compare -Wno-switch
 CXXFLAGS=-std=c++17
-LDFLAGS=
+LDFLAGS=-g -O2
 LDLIBS=-lGL -lglfw
 LOCALLIBS=
 BUNDLES=
@@ -15,7 +15,7 @@ OUTPUT:=$(BUILDDIR)/$(NAME)
 
 ifeq ($(notdir $(CXX)),em++)
 DIR=emscripten
-EMFLAGS=-s USE_GLFW=3 -s WASM=1 -s BINARYEN_METHOD=native-wasm -s TOTAL_MEMORY=256MB -s DISABLE_EXCEPTION_CATCHING=1 -s BINARYEN_TRAP_MODE=clamp
+EMFLAGS=-s WASM=1 -s BINARYEN_METHOD=native-wasm -s TOTAL_MEMORY=256MB -s DISABLE_EXCEPTION_CATCHING=1 -s BINARYEN_TRAP_MODE=clamp -s USE_PTHREADS=0 -s USE_GLFW=3
 EMFLAGS+=-DUSE_OPENGL_ES
 JSLIBS=$(shell printf "%s " emscripten/js/*.js)
 BUNDLEDIRS+=shader
