@@ -210,12 +210,13 @@ int Surface::Block::update(void) {
 	setVertexAttrib(4, reinterpret_cast<const unsigned char *>(arrays.smoothness.data()),
 	                arrays.smoothness.size(), 1, true);
 
-	optimize();
 	return indicesCount() / 3;
 }
 
 // Compute the faces representing the surface through the cell, fill indices and attributes arrays,
 // and return the number of faces generated.
+#pragma GCC push_options
+#pragma GCC optimize("unroll-loops")
 int Surface::Block::polygonizeCell(const int3 &c, GeometryArrays &arrays) {
 	// Vertex offset given index
 	static const int3 offset[8] = {{-1, -1, -1}, {0, -1, -1}, {0, 0, -1}, {-1, 0, -1},
@@ -293,6 +294,7 @@ int Surface::Block::polygonizeCell(const int3 &c, GeometryArrays &arrays) {
 	}
 	return (n - 1) / 3;
 }
+#pragma GCC pop_options
 
 // Linearly interpolate vertex attributes given the values
 Surface::Block::Attribs Surface::Block::interpolateAttribs(const Attribs &a, const Attribs &b,
