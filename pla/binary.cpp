@@ -20,7 +20,6 @@
  *************************************************************************/
 
 #include "pla/binary.hpp"
-#include "pla/binaryformatter.hpp" // for checksum()
 
 #include <algorithm>
 
@@ -210,23 +209,11 @@ std::vector<string> unpack_strings(const binary &data) {
 	return result;
 }
 
-uint16_t checksum16(const binary &b) {
-	uint16_t i = 0;
-	return checksum(b, i);
-}
-uint32_t checksum32(const binary &b) {
-	uint32_t i = 0;
-	return checksum(b, i);
-}
-uint64_t checksum64(const binary &b) {
-	uint64_t i = 0;
-	return checksum(b, i);
-}
-
-std::size_t binary_hash::operator()(const binary &b) const noexcept {
-	std::size_t i = 0;
-	checksum(b, i);
-	return i;
+std::size_t binary_hash::operator()(const binary &data) const noexcept {
+	std::size_t seed = 0;
+	for (const byte b : data)
+		hash_combine(seed, b);
+	return seed;
 }
 
 } // namespace pla

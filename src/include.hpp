@@ -22,6 +22,7 @@
 #define CONVERGENCE_INCLUDE_H
 
 #include "pla/binary.hpp"
+#include "pla/include.hpp"
 #include "pla/linalg.hpp"
 
 #include <algorithm>
@@ -73,6 +74,7 @@ using pla::binary;
 using pla::binary_hash;
 using pla::string;
 
+using pla::hash_combine;
 using pla::to_binary;
 using pla::to_hex;
 using pla::to_integer;
@@ -91,11 +93,6 @@ public:
 
 	inline void clear(void) { assign(8, byte(0)); }
 };
-
-template <class T> inline void hash_combine(std::size_t &seed, const T &v) {
-	std::hash<T> hash;
-	seed ^= hash(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-}
 
 } // namespace convergence
 

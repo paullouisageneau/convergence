@@ -330,7 +330,7 @@ Surface::Block::Attribs Surface::Block::Attribs::operator*(float f) const {
 Surface::Material Surface::MaterialTable[4] = {
     {{5, 5, 5, 255}, {50, 50, 50, 255}, 0}, // ambient, diffuse, smoothness
     {{5, 15, 5, 255}, {50, 128, 50, 255}, 200},
-    {{15, 15, 5, 255}, {150, 150, 25, 255}, 250},
+    {{15, 15, 5, 255}, {150, 150, 25, 255}, 230},
     {{128, 128, 0, 255}, {200, 200, 0, 255}, 128}};
 
 uint16_t Surface::Block::EdgeTable[256] = {
