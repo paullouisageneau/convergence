@@ -49,6 +49,7 @@ public:
 	void rotate(float yaw, float pitch);
 	void move(float speed);
 	void jump(void);
+	void jolt(float force);
 
 	virtual void update(sptr<Collidable> terrain, double time);
 	virtual int draw(const Context &context);

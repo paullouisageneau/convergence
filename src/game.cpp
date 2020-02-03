@@ -83,12 +83,13 @@ bool Game::onUpdate(Engine *engine, double time) {
 		vec3 position = localPlayer->getPosition();
 		vec3 front = localPlayer->getDirection();
 		vec3 intersection;
-		if (terrain->intersect(position, front * 10.f, 0.5f, &intersection) <= 1.f) {
-			mAccumulator += 200.f * time;
+		if (terrain->intersect(position, front * 4.f, 0.25f, &intersection) <= 1.f) {
+			mAccumulator += 100.f * time;
 			int delta = int(mAccumulator);
-			if (delta) {
+			if (delta > 100) {
 				mAccumulator -= float(delta);
-				terrain->dig(intersection, delta, 3.f);
+				terrain->dig(intersection, delta, 2.f);
+				localPlayer->jolt(1.f);
 			}
 		}
 	}

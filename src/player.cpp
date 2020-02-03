@@ -99,6 +99,11 @@ void Player::jump(void) {
 		mIsJumping = true;
 }
 
+void Player::jolt(float force) {
+	if (mIsOnGround)
+		mGravity -= std::abs(force);
+}
+
 void Player::update(sptr<Collidable> terrain, double time) {
 	Message message;
 	while (readMessage(message))

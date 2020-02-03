@@ -214,9 +214,8 @@ int Surface::Block::update(void) {
 	return indicesCount() / 3;
 }
 
-// Given a grid cell, calculate the triangular faces required to represent the surface through the
-// cell. Fill indices and attributes arrays, and return the number of faces generated.
-
+// Compute the faces representing the surface through the cell, fill indices and attributes arrays,
+// and return the number of faces generated.
 int Surface::Block::polygonizeCell(const int3 &c, GeometryArrays &arrays) {
 	// Vertex offset given index
 	static const int3 offset[8] = {{-1, -1, -1}, {0, -1, -1}, {0, 0, -1}, {-1, 0, -1},
@@ -295,7 +294,7 @@ int Surface::Block::polygonizeCell(const int3 &c, GeometryArrays &arrays) {
 	return (n - 1) / 3;
 }
 
-// Linearly interpolate position, gradient, and material where the surface intersects an edge.
+// Linearly interpolate vertex attributes given the values
 Surface::Block::Attribs Surface::Block::interpolateAttribs(const Attribs &a, const Attribs &b,
                                                            const value &va, const value &vb) {
 	// One and only one of va.weight and vb.weight is zero
