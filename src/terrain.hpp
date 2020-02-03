@@ -104,7 +104,7 @@ private:
 	void populateBlock(shared_ptr<Block> block);
 	void markChangedBlock(const int3 &b);
 
-	std::unordered_map<int3, shared_ptr<Block>, int3_hash> mBlocks;
+	std::unordered_map<int3, shared_ptr<Block>, int3::hash> mBlocks;
 
 	shared_ptr<MessageBus> mMessageBus;
 	PerlinNoise mPerlin;

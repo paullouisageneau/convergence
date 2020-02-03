@@ -62,6 +62,15 @@ public:
 	};
 #pragma pack(pop)
 
+	struct Material {
+		uint84 ambient;
+		uint84 diffuse;
+		uint8_t smoothness;
+
+		Material operator+(const Material &m) const;
+		Material operator*(float f) const;
+	};
+
 	class Block : public Mesh {
 	public:
 		static const int Size = 8;
@@ -89,20 +98,37 @@ public:
 		int update(void);
 
 	private:
-		static vec4 MaterialAmbientTable[4];
-		static vec4 MaterialDiffuseTable[4];
-		static float MaterialSmoothnessTable[4];
+		template <typename T> static T interpolate(const T &a, const T &b, float t) {
+			return a * (1.f - t) + b * t;
+		}
+
 		static uint16_t EdgeTable[256];
-		static int8_t TriTable[256][16];
+		static int8_t TriangleTable[256][16];
 
-		int polygonizeCell(const int3 &c, std::vector<vec3> &vertices, std::vector<int84> &normals,
-		                   std::vector<int84> &ambient, std::vector<int84> &diffuse,
-		                   std::vector<int8_t> &smooth, std::vector<index_t> &indices);
-		vec3 interpolate(vec3 p1, vec3 p2, int84 g1, int84 g2, value v1, value v2, int84 &grad,
-		                 int84 &amb, int84 &dif, int8_t &smooth);
+		struct GeometryArrays {
+			std::vector<vec3> vertices;
+			std::vector<int84> normals;
+			std::vector<uint84> ambient;
+			std::vector<uint84> diffuse;
+			std::vector<uint8_t> smoothness;
+			std::vector<index_t> indices;
+		};
 
-		int3 mPos;
+		struct Attribs {
+			vec3 vert;
+			int84 grad;
+			Material mat;
+
+			Attribs operator+(const Attribs &m) const;
+			Attribs operator*(float f) const;
+		};
+
+		int polygonizeCell(const int3 &c, GeometryArrays &arrays);
+		Attribs interpolateAttribs(const Attribs &a, const Attribs &b, const value &va,
+		                           const value &vb);
+
 		std::function<shared_ptr<Block>(const int3 &b)> mRetrieveFunc;
+		int3 mPos;
 	};
 
 	Surface(std::function<shared_ptr<Block>(const int3 &b)> retrieveFunc);
@@ -119,6 +145,9 @@ protected:
 
 	shared_ptr<Program> mProgram;
 	std::function<shared_ptr<Block>(const int3 &b)> mRetrieveFunc;
+
+private:
+	static Material MaterialTable[4];
 };
 
 } // namespace convergence
