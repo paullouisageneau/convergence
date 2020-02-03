@@ -22,15 +22,6 @@
 
 namespace convergence {
 
-vec4 Surface::Block::MaterialAmbientTable[4] = {vec4(0.01, 0.01, 0.01, 1),
-                                                vec4(0.01, 0.025, 0.01, 1),
-                                                vec4(0.025, 0.025, 0.01, 1), vec4(0.5, 0.5, 0, 1)};
-
-vec4 Surface::Block::MaterialDiffuseTable[4] = {vec4(0.2, 0.2, 0.2, 1), vec4(0.2, 0.5, 0.2, 1),
-                                                vec4(0.6, 0.6, 0.1, 1), vec4(0.75, 0.75, 0, 1)};
-
-float Surface::Block::MaterialSmoothnessTable[4] = {0.f, 0.75f, 0.9f, 0.5f};
-
 Surface::Surface(std::function<shared_ptr<Block>(const int3 &b)> retrieveFunc)
     : mRetrieveFunc(retrieveFunc) {
 	mProgram = std::make_shared<Program>(std::make_shared<VertexShader>("shader/ground.vect"),
@@ -193,33 +184,31 @@ int Surface::Block::update(void) {
 	if (!hasChanged())
 		return indicesCount() / 3;
 
-	std::vector<vec3> vertices;
-	std::vector<int84> normals;
-	std::vector<int84> ambient, diffuse;
-	std::vector<int8_t> smooth;
-	std::vector<index_t> indices;
-
-	vertices.reserve(vertexAttribCount() * 2);
-	normals.reserve(vertexAttribCount() * 2);
-	ambient.reserve(vertexAttribCount() * 2);
-	diffuse.reserve(vertexAttribCount() * 2);
-	smooth.reserve(vertexAttribCount() * 2);
-	indices.reserve(indicesCount() * 2);
+	size_t reserved = 3 * 1024;
+	GeometryArrays arrays;
+	arrays.vertices.reserve(reserved);
+	arrays.normals.reserve(reserved);
+	arrays.ambient.reserve(reserved);
+	arrays.diffuse.reserve(reserved);
+	arrays.smoothness.reserve(reserved);
+	arrays.indices.reserve(reserved);
 
 	for (int x = 0; x < Size; ++x)
 		for (int y = 0; y < Size; ++y)
 			for (int z = 0; z < Size; ++z)
-				polygonizeCell(int3(x, y, z), vertices, normals, ambient, diffuse, smooth, indices);
+				polygonizeCell(int3(x, y, z), arrays);
 
-	setIndices(indices.data(), indices.size());
-	setVertexAttrib(0, glm::value_ptr(*vertices.data()), vertices.size() * 3, 3, false);
-	setVertexAttrib(1, reinterpret_cast<const char *>(normals.data()), normals.size() * 4, 4, true);
-	setVertexAttrib(2, reinterpret_cast<const unsigned char *>(ambient.data()), ambient.size() * 4,
-	                4, true);
-	setVertexAttrib(3, reinterpret_cast<const unsigned char *>(diffuse.data()), diffuse.size() * 4,
-	                4, true);
-	setVertexAttrib(4, reinterpret_cast<const unsigned char *>(smooth.data()), smooth.size(), 1,
-	                true);
+	setIndices(arrays.indices.data(), arrays.indices.size());
+	setVertexAttrib(0, glm::value_ptr(*arrays.vertices.data()), arrays.vertices.size() * 3, 3,
+	                false);
+	setVertexAttrib(1, reinterpret_cast<const char *>(arrays.normals.data()),
+	                arrays.normals.size() * 4, 4, true);
+	setVertexAttrib(2, reinterpret_cast<const unsigned char *>(arrays.ambient.data()),
+	                arrays.ambient.size() * 4, 4, true);
+	setVertexAttrib(3, reinterpret_cast<const unsigned char *>(arrays.diffuse.data()),
+	                arrays.diffuse.size() * 4, 4, true);
+	setVertexAttrib(4, reinterpret_cast<const unsigned char *>(arrays.smoothness.data()),
+	                arrays.smoothness.size(), 1, true);
 
 	optimize();
 	return indicesCount() / 3;
@@ -227,174 +216,91 @@ int Surface::Block::update(void) {
 
 // Given a grid cell, calculate the triangular faces required to represent the surface through the
 // cell. Fill indices and attributes arrays, and return the number of faces generated.
-int Surface::Block::polygonizeCell(const int3 &c, std::vector<vec3> &vertices,
-                                   std::vector<int84> &normals, std::vector<int84> &ambient,
-                                   std::vector<int84> &diffuse, std::vector<int8_t> &smooth,
-                                   std::vector<index_t> &indices) {
-	vec3 center = vec3(float(mPos.x * Size + c.x), float(mPos.y * Size + c.y),
-	                   float(mPos.z * Size + c.z)); // cell center
 
-	vec3 p[8]; // grid vertices
-	p[0] = center + vec3(-.5f, -.5f, -.5f);
-	p[1] = center + vec3(.5f, -.5f, -.5f);
-	p[2] = center + vec3(.5f, .5f, -.5f);
-	p[3] = center + vec3(-.5f, .5f, -.5f);
-	p[4] = center + vec3(-.5f, -.5f, .5f);
-	p[5] = center + vec3(.5f, -.5f, .5f);
-	p[6] = center + vec3(.5f, .5f, .5f);
-	p[7] = center + vec3(-.5f, .5f, .5f);
+int Surface::Block::polygonizeCell(const int3 &c, GeometryArrays &arrays) {
+	// Vertex offset given index
+	static const int3 offset[8] = {{-1, -1, -1}, {0, -1, -1}, {0, 0, -1}, {-1, 0, -1},
+	                               {-1, -1, 0},  {0, -1, 0},  {0, 0, 0},  {-1, 0, 0}};
 
-	value v[8]; // grid values
-	v[0] = getValue(int3(c.x - 1, c.y - 1, c.z - 1));
-	v[1] = getValue(int3(c.x, c.y - 1, c.z - 1));
-	v[2] = getValue(int3(c.x, c.y, c.z - 1));
-	v[3] = getValue(int3(c.x - 1, c.y, c.z - 1));
-	v[4] = getValue(int3(c.x - 1, c.y - 1, c.z));
-	v[5] = getValue(int3(c.x, c.y - 1, c.z));
-	v[6] = getValue(int3(c.x, c.y, c.z));
-	v[7] = getValue(int3(c.x - 1, c.y, c.z));
+	// Indexes of vertices for each edge
+	static const int vertices[12][2] = {{0, 1}, {1, 2}, {3, 2}, {0, 3}, {5, 4}, {5, 6},
+	                                    {7, 6}, {4, 7}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
 
-	int84 g[8]; // grid gradients
-	g[0] = getGradient(int3(c.x - 1, c.y - 1, c.z - 1));
-	g[1] = getGradient(int3(c.x, c.y - 1, c.z - 1));
-	g[2] = getGradient(int3(c.x, c.y, c.z - 1));
-	g[3] = getGradient(int3(c.x - 1, c.y, c.z - 1));
-	g[4] = getGradient(int3(c.x - 1, c.y - 1, c.z));
-	g[5] = getGradient(int3(c.x, c.y - 1, c.z));
-	g[6] = getGradient(int3(c.x, c.y, c.z));
-	g[7] = getGradient(int3(c.x - 1, c.y, c.z));
+	// Get values
+	value vals[8];
+	for (int i = 0; i < 8; ++i)
+		vals[i] = getValue(c + offset[i]);
 
-	// Determine the index into the edge table
+	// Compute the index into the edge table
 	unsigned index = 0;
-	if (v[0].weight == 0)
-		index |= 0x01;
-	if (v[1].weight == 0)
-		index |= 0x02;
-	if (v[2].weight == 0)
-		index |= 0x04;
-	if (v[3].weight == 0)
-		index |= 0x08;
-	if (v[4].weight == 0)
-		index |= 0x10;
-	if (v[5].weight == 0)
-		index |= 0x20;
-	if (v[6].weight == 0)
-		index |= 0x40;
-	if (v[7].weight == 0)
-		index |= 0x80;
-
-	unsigned edge = EdgeTable[index];
-
-	// Cube is entirely in/out of the surface
-	if (edge == 0)
-		return 0;
-
-	// Find the vertices, gradients and materials where the surface intersects the cube
-	vec3 vert[12];
-	int84 grad[12];
-	int84 amb[12];
-	int84 dif[12];
-	int8_t smo[12];
-
-	if (edge & 0x001)
-		vert[0] = interpolate(p[0], p[1], g[0], g[1], v[0], v[1], grad[0], amb[0], dif[0], smo[0]);
-	if (edge & 0x002)
-		vert[1] = interpolate(p[1], p[2], g[1], g[2], v[1], v[2], grad[1], amb[1], dif[1], smo[1]);
-	if (edge & 0x004)
-		vert[2] = interpolate(p[2], p[3], g[2], g[3], v[2], v[3], grad[2], amb[2], dif[2], smo[2]);
-	if (edge & 0x008)
-		vert[3] = interpolate(p[3], p[0], g[3], g[0], v[3], v[0], grad[3], amb[3], dif[3], smo[3]);
-	if (edge & 0x010)
-		vert[4] = interpolate(p[4], p[5], g[4], g[5], v[4], v[5], grad[4], amb[4], dif[4], smo[4]);
-	if (edge & 0x020)
-		vert[5] = interpolate(p[5], p[6], g[5], g[6], v[5], v[6], grad[5], amb[5], dif[5], smo[5]);
-	if (edge & 0x040)
-		vert[6] = interpolate(p[6], p[7], g[6], g[7], v[6], v[7], grad[6], amb[6], dif[6], smo[6]);
-	if (edge & 0x080)
-		vert[7] = interpolate(p[7], p[4], g[7], g[4], v[7], v[4], grad[7], amb[7], dif[7], smo[7]);
-	if (edge & 0x100)
-		vert[8] = interpolate(p[0], p[4], g[0], g[4], v[0], v[4], grad[8], amb[8], dif[8], smo[8]);
-	if (edge & 0x200)
-		vert[9] = interpolate(p[1], p[5], g[1], g[5], v[1], v[5], grad[9], amb[9], dif[9], smo[9]);
-	if (edge & 0x400)
-		vert[10] =
-		    interpolate(p[2], p[6], g[2], g[6], v[2], v[6], grad[10], amb[10], dif[10], smo[10]);
-	if (edge & 0x800)
-		vert[11] =
-		    interpolate(p[3], p[7], g[3], g[7], v[3], v[7], grad[11], amb[11], dif[11], smo[11]);
-
-	// Create the triangles
-	int n = 0;
-	std::map<int, index_t> mapping;
-	for (int i = 0; TriTable[index][i] >= 0; i += 3) // for each triangle
-	{
-		for (int j = 0; j < 3; ++j) // for each vertex
-		{
-			int vi = TriTable[index][i + j];
-			auto it = mapping.find(vi);
-			if (it == mapping.end()) {
-				index_t mi = index_t(vertices.size());
-				vertices.push_back(vert[vi]);
-				normals.push_back(-grad[vi].normalize());
-				ambient.push_back(amb[vi]);
-				diffuse.push_back(dif[vi]);
-				smooth.push_back(smo[vi]);
-				indices.push_back(mi);
-				mapping[vi] = mi;
-			} else {
-				indices.push_back(it->second);
-			}
-		}
-
-		++n;
+	for (int i = 0; i < 8; ++i) {
+		uint8_t b = vals[i].weight;
+		b |= (b >> 1);
+		b |= (b >> 2);
+		b |= (b >> 4);
+		index |= (~b & 1) << i; // set the bit if weight == 0
 	}
 
-	return n;
+	const unsigned edge = EdgeTable[index];
+	if (!edge)
+		return 0; // entirely in or out of the surface
+
+	// Get the rest
+	Attribs attribs[8];
+	const vec3 cv = vec3(mPos * Size + c) + vec3(0.5f, 0.5f, 0.5f);
+	for (int i = 0; i < 8; ++i) {
+		const auto &v = vals[i];
+		auto &a = attribs[i];
+		a.vert = cv + vec3(offset[i]);
+		a.grad = getGradient(c + offset[i]);
+		a.mat = MaterialTable[v.type < 4 ? v.type : 0];
+	}
+
+	// Interpolate surface vertices on edges
+	Attribs interpolated[12];
+	for (int i = 0; i < 12; ++i) {
+		if (edge & (1 << i)) {
+			const auto *v = vertices[i];
+			interpolated[i] =
+			    interpolateAttribs(attribs[v[0]], attribs[v[1]], vals[v[0]], vals[v[1]]);
+		}
+	}
+
+	// Create the triangles
+	const auto *table = TriangleTable[index];
+	std::map<int, index_t> mapping;
+	int n = 0;
+	while (true) {
+		int vi = table[n++];
+		if (vi < 0)
+			break;
+
+		auto it = mapping.find(vi);
+		if (it != mapping.end()) {
+			arrays.indices.push_back(it->second);
+			continue;
+		}
+
+		index_t mi = arrays.vertices.size();
+		arrays.indices.push_back(mi);
+		mapping[vi] = mi;
+
+		const auto &a = interpolated[vi];
+		arrays.vertices.push_back(a.vert);
+		arrays.normals.push_back(-a.grad.normalize());
+		arrays.ambient.push_back(a.mat.ambient);
+		arrays.diffuse.push_back(a.mat.diffuse);
+		arrays.smoothness.push_back(a.mat.smoothness);
+	}
+	return (n - 1) / 3;
 }
 
 // Linearly interpolate position, gradient, and material where the surface intersects an edge.
-vec3 Surface::Block::interpolate(vec3 p1, vec3 p2, int84 g1, int84 g2, value v1, value v2,
-                                 int84 &grad, int84 &amb, int84 &dif, int8_t &smooth) {
-	static auto comp = [](const vec3 &a, const vec3 &b) {
-		if (a.x < b.y)
-			return true;
-		else if (a.x > b.x)
-			return false;
-		if (a.y < b.y)
-			return true;
-		else if (a.y > b.y)
-			return false;
-		if (a.z < b.z)
-			return true;
-		else
-			return false;
-	};
-
-	if (comp(p1, p2)) {
-		std::swap(p1, p2);
-		std::swap(g1, g2);
-		std::swap(v1, v2);
-	}
-
-	float mu = v1.weight == 0 ? 1.f - v2.w() : v1.w();
-
-	vec4 grad1(g1);
-	vec4 grad2(g2);
-	grad = int84(grad1 + (grad2 - grad1) * mu);
-
-	vec4 amb1 = (v1.type < 4 ? MaterialAmbientTable[v1.type] * 255.f : vec4(0.f, 0.f, 0.f, 0.f));
-	vec4 amb2 = (v2.type < 4 ? MaterialAmbientTable[v2.type] * 255.f : vec4(0.f, 0.f, 0.f, 0.f));
-	amb = int84(amb1 + (amb2 - amb1) * mu);
-
-	vec4 dif1 = (v1.type < 4 ? MaterialDiffuseTable[v1.type] * 255.f : vec4(0.f, 0.f, 0.f, 0.f));
-	vec4 dif2 = (v2.type < 4 ? MaterialDiffuseTable[v2.type] * 255.f : vec4(0.f, 0.f, 0.f, 0.f));
-	dif = int84(dif1 + (dif2 - dif1) * mu);
-
-	float smooth1 = (v1.type < 4 ? MaterialSmoothnessTable[v1.type] * 255.f : 0.f);
-	float smooth2 = (v2.type < 4 ? MaterialSmoothnessTable[v2.type] * 255.f : 0.f);
-	smooth = int8_t(smooth1 + (smooth2 - smooth1) * mu);
-
-	return p1 + (p2 - p1) * mu;
+Surface::Block::Attribs Surface::Block::interpolateAttribs(const Attribs &a, const Attribs &b,
+                                                           const value &va, const value &vb) {
+	// One and only one of va.weight and vb.weight is zero
+	const float t = va.weight == 0 ? 1.f - vb.w() : va.w();
+	return interpolate(a, b, t);
 }
 
 int84 Surface::Block::computeGradient(const int3 &p) {
@@ -404,33 +310,51 @@ int84 Surface::Block::computeGradient(const int3 &p) {
 	    (getValue(int3(p.x, p.y, p.z + 1)).weight - getValue(int3(p.x, p.y, p.z - 1)).weight) / 2);
 }
 
-// Vertices order is:
-// {0.0, 0.0, 0.0},{1.0, 0.0, 0.0},{1.0, 1.0, 0.0},{0.0, 1.0, 0.0},
-// {0.0, 0.0, 1.0},{1.0, 0.0, 1.0},{1.0, 1.0, 1.0},{0.0, 1.0, 1.0}
+Surface::Material Surface::Material::operator+(const Material &m) const {
+	return {ambient + m.ambient, diffuse + m.diffuse, uint8_t(smoothness + m.smoothness)};
+}
+
+Surface::Material Surface::Material::operator*(float f) const {
+	return {ambient * f, diffuse * f, uint8_t(std::floor(float(smoothness) * f))};
+}
+
+Surface::Block::Attribs Surface::Block::Attribs::operator+(const Attribs &a) const {
+	return {vert + a.vert, grad + a.grad, mat + a.mat};
+}
+
+Surface::Block::Attribs Surface::Block::Attribs::operator*(float f) const {
+	return {vert * f, grad * f, mat * f};
+}
+
+Surface::Material Surface::MaterialTable[4] = {
+    {{5, 5, 5, 255}, {50, 50, 50, 255}, 0}, // ambient, diffuse, smoothness
+    {{5, 15, 5, 255}, {50, 128, 50, 255}, 200},
+    {{15, 15, 5, 255}, {150, 150, 25, 255}, 250},
+    {{128, 128, 0, 255}, {200, 200, 0, 255}, 128}};
 
 uint16_t Surface::Block::EdgeTable[256] = {
-    0x0,   0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c, 0x80c, 0x905, 0xa0f, 0xb06, 0xc0a,
-    0xd03, 0xe09, 0xf00, 0x190, 0x99,  0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c, 0x99c, 0x895,
-    0xb9f, 0xa96, 0xd9a, 0xc93, 0xf99, 0xe90, 0x230, 0x339, 0x33,  0x13a, 0x636, 0x73f, 0x435,
-    0x53c, 0xa3c, 0xb35, 0x83f, 0x936, 0xe3a, 0xf33, 0xc39, 0xd30, 0x3a0, 0x2a9, 0x1a3, 0xaa,
-    0x7a6, 0x6af, 0x5a5, 0x4ac, 0xbac, 0xaa5, 0x9af, 0x8a6, 0xfaa, 0xea3, 0xda9, 0xca0, 0x460,
-    0x569, 0x663, 0x76a, 0x66,  0x16f, 0x265, 0x36c, 0xc6c, 0xd65, 0xe6f, 0xf66, 0x86a, 0x963,
-    0xa69, 0xb60, 0x5f0, 0x4f9, 0x7f3, 0x6fa, 0x1f6, 0xff,  0x3f5, 0x2fc, 0xdfc, 0xcf5, 0xfff,
-    0xef6, 0x9fa, 0x8f3, 0xbf9, 0xaf0, 0x650, 0x759, 0x453, 0x55a, 0x256, 0x35f, 0x55,  0x15c,
-    0xe5c, 0xf55, 0xc5f, 0xd56, 0xa5a, 0xb53, 0x859, 0x950, 0x7c0, 0x6c9, 0x5c3, 0x4ca, 0x3c6,
-    0x2cf, 0x1c5, 0xcc,  0xfcc, 0xec5, 0xdcf, 0xcc6, 0xbca, 0xac3, 0x9c9, 0x8c0, 0x8c0, 0x9c9,
-    0xac3, 0xbca, 0xcc6, 0xdcf, 0xec5, 0xfcc, 0xcc,  0x1c5, 0x2cf, 0x3c6, 0x4ca, 0x5c3, 0x6c9,
-    0x7c0, 0x950, 0x859, 0xb53, 0xa5a, 0xd56, 0xc5f, 0xf55, 0xe5c, 0x15c, 0x55,  0x35f, 0x256,
-    0x55a, 0x453, 0x759, 0x650, 0xaf0, 0xbf9, 0x8f3, 0x9fa, 0xef6, 0xfff, 0xcf5, 0xdfc, 0x2fc,
-    0x3f5, 0xff,  0x1f6, 0x6fa, 0x7f3, 0x4f9, 0x5f0, 0xb60, 0xa69, 0x963, 0x86a, 0xf66, 0xe6f,
-    0xd65, 0xc6c, 0x36c, 0x265, 0x16f, 0x66,  0x76a, 0x663, 0x569, 0x460, 0xca0, 0xda9, 0xea3,
-    0xfaa, 0x8a6, 0x9af, 0xaa5, 0xbac, 0x4ac, 0x5a5, 0x6af, 0x7a6, 0xaa,  0x1a3, 0x2a9, 0x3a0,
-    0xd30, 0xc39, 0xf33, 0xe3a, 0x936, 0x83f, 0xb35, 0xa3c, 0x53c, 0x435, 0x73f, 0x636, 0x13a,
-    0x33,  0x339, 0x230, 0xe90, 0xf99, 0xc93, 0xd9a, 0xa96, 0xb9f, 0x895, 0x99c, 0x69c, 0x795,
-    0x49f, 0x596, 0x29a, 0x393, 0x99,  0x190, 0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905,
-    0x80c, 0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0};
+    0x000, 0x109, 0x203, 0x30A, 0x406, 0x50F, 0x605, 0x70C, 0x80C, 0x905, 0xA0F, 0xB06, 0xC0A,
+    0xD03, 0xE09, 0xF00, 0x190, 0x099, 0x393, 0x29A, 0x596, 0x49F, 0x795, 0x69C, 0x99C, 0x895,
+    0xB9F, 0xA96, 0xD9A, 0xC93, 0xF99, 0xE90, 0x230, 0x339, 0x033, 0x13A, 0x636, 0x73F, 0x435,
+    0x53C, 0xA3C, 0xB35, 0x83F, 0x936, 0xE3A, 0xF33, 0xC39, 0xD30, 0x3A0, 0x2A9, 0x1A3, 0x0AA,
+    0x7A6, 0x6AF, 0x5A5, 0x4AC, 0xBAC, 0xAA5, 0x9AF, 0x8A6, 0xFAA, 0xEA3, 0xDA9, 0xCA0, 0x460,
+    0x569, 0x663, 0x76A, 0x066, 0x16F, 0x265, 0x36C, 0xC6C, 0xD65, 0xE6F, 0xF66, 0x86A, 0x963,
+    0xA69, 0xB60, 0x5F0, 0x4F9, 0x7F3, 0x6FA, 0x1F6, 0x0FF, 0x3F5, 0x2FC, 0xDFC, 0xCF5, 0xFFF,
+    0xEF6, 0x9FA, 0x8F3, 0xBF9, 0xAF0, 0x650, 0x759, 0x453, 0x55A, 0x256, 0x35F, 0x055, 0x15C,
+    0xE5C, 0xF55, 0xC5F, 0xD56, 0xA5A, 0xB53, 0x859, 0x950, 0x7C0, 0x6C9, 0x5C3, 0x4CA, 0x3C6,
+    0x2CF, 0x1C5, 0x0CC, 0xFCC, 0xEC5, 0xDCF, 0xCC6, 0xBCA, 0xAC3, 0x9C9, 0x8C0, 0x8C0, 0x9C9,
+    0xAC3, 0xBCA, 0xCC6, 0xDCF, 0xEC5, 0xFCC, 0x0CC, 0x1C5, 0x2CF, 0x3C6, 0x4CA, 0x5C3, 0x6C9,
+    0x7C0, 0x950, 0x859, 0xB53, 0xA5A, 0xD56, 0xC5F, 0xF55, 0xE5C, 0x15C, 0x055, 0x35F, 0x256,
+    0x55A, 0x453, 0x759, 0x650, 0xAF0, 0xBF9, 0x8F3, 0x9FA, 0xEF6, 0xFFF, 0xCF5, 0xDFC, 0x2FC,
+    0x3F5, 0x0FF, 0x1F6, 0x6FA, 0x7F3, 0x4F9, 0x5F0, 0xB60, 0xA69, 0x963, 0x86A, 0xF66, 0xE6F,
+    0xD65, 0xC6C, 0x36C, 0x265, 0x16F, 0x066, 0x76A, 0x663, 0x569, 0x460, 0xCA0, 0xDA9, 0xEA3,
+    0xFAA, 0x8A6, 0x9AF, 0xAA5, 0xBAC, 0x4AC, 0x5A5, 0x6AF, 0x7A6, 0x0AA, 0x1A3, 0x2A9, 0x3A0,
+    0xD30, 0xC39, 0xF33, 0xE3A, 0x936, 0x83F, 0xB35, 0xA3C, 0x53C, 0x435, 0x73F, 0x636, 0x13A,
+    0x033, 0x339, 0x230, 0xE90, 0xF99, 0xC93, 0xD9A, 0xA96, 0xB9F, 0x895, 0x99C, 0x69C, 0x795,
+    0x49F, 0x596, 0x29A, 0x393, 0x099, 0x190, 0xF00, 0xE09, 0xD03, 0xC0A, 0xB06, 0xA0F, 0x905,
+    0x80C, 0x70C, 0x605, 0x50F, 0x406, 0x30A, 0x203, 0x109, 0x0};
 
-int8_t Surface::Block::TriTable[256][16] = {
+int8_t Surface::Block::TriangleTable[256][16] = {
     {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
     {0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
     {0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},

@@ -38,14 +38,6 @@ void Game::onInit(Engine *engine) {
 
 	mMessageBus = std::make_shared<MessageBus>();
 
-	/*
-	mLedger = std::make_shared<Ledger>(mMessageBus);
-	mMessageBus->registerTypeListener(Message::LedgerBlock, mLedger);
-	mMessageBus->registerTypeListener(Message::LedgerRequest, mLedger);
-	mMessageBus->registerTypeListener(Message::LedgerCurrent, mLedger);
-	mLedger->init();
-	*/
-
 	mNetworking = std::make_shared<Networking>(mMessageBus, url);
 	mMessageBus->registerTypeListener(Message::Description, mNetworking);
 
@@ -91,7 +83,7 @@ bool Game::onUpdate(Engine *engine, double time) {
 		vec3 position = localPlayer->getPosition();
 		vec3 front = localPlayer->getDirection();
 		vec3 intersection;
-		if (terrain->intersect(position, front * 10.f, 0.25f, &intersection) <= 1.f) {
+		if (terrain->intersect(position, front * 10.f, 0.5f, &intersection) <= 1.f) {
 			mAccumulator += 200.f * time;
 			int delta = int(mAccumulator);
 			if (delta) {
