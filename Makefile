@@ -1,8 +1,8 @@
 NAME=convergence
 
-CPPFLAGS=-g -O2 -fPIC -Wall -Wno-reorder -Wno-sign-compare -Wno-switch
+CPPFLAGS=-O2 -fPIC -Wall -Wno-reorder -Wno-sign-compare -Wno-switch
 CXXFLAGS=-std=c++17
-LDFLAGS=-g -O2
+LDFLAGS=-O2
 LDLIBS=-lGL -lglfw
 LOCALLIBS=
 BUNDLES=
@@ -15,16 +15,15 @@ OUTPUT:=$(BUILDDIR)/$(NAME)
 
 ifeq ($(notdir $(CXX)),em++)
 DIR=emscripten
-EMFLAGS=-s WASM=1 -s BINARYEN_METHOD=native-wasm -s TOTAL_MEMORY=256MB -s DISABLE_EXCEPTION_CATCHING=1 -s BINARYEN_TRAP_MODE=clamp -s USE_PTHREADS=0 -s USE_GLFW=3
-EMFLAGS+=-DUSE_OPENGL_ES
+EMFLAGS=-s WASM=1 -s BINARYEN_METHOD=native-wasm -s TOTAL_MEMORY=256MB -s DISABLE_EXCEPTION_CATCHING=1 -s BINARYEN_TRAP_MODE=clamp -s USE_PTHREADS=0 -s USE_GLFW=3 --closure 1 --pre-js emscripten/pre.js
 JSLIBS=$(shell printf "%s " emscripten/js/*.js)
 BUNDLEDIRS+=shader
-CPPFLAGS+=$(EMFLAGS)
+CPPFLAGS+=$(EMFLAGS) -DUSE_OPENGL_ES
 LDFLAGS+=$(EMFLAGS)
 LDFLAGS+=$(addprefix --js-library ,$(JSLIBS))
 LDFLAGS+=$(addprefix --preload-file ,$(BUNDLEDIRS))
-BUNDLES+=$(JSLIBS) $(shell printf "%s " $(addsuffix /*,$(BUNDLEDIRS)))
-OUTPUT:=$(OUTPUT).html
+BUNDLES+=emscripten/index.html emscripten/pre.js $(JSLIBS) $(shell printf "%s " $(addsuffix /*,$(BUNDLEDIRS)))
+OUTPUT:=$(OUTPUT).js
 else
 DIR=native
 INCLUDES+=-Ideps/libdatachannel/include -Ideps/libdatachannel/deps/plog/include
@@ -49,6 +48,9 @@ $(OBJDIR)/%.o: %.cpp
 
 $(OUTPUT): $(LOCALLIBS) $(OBJS) $(BUNDLES) | $(BUILDDIR)
 	$(CXX) $(LDFLAGS) -o $(OUTPUT) $(OBJS) $(LOCALLIBS) $(LDLIBS)
+ifeq ($(notdir $(CXX)),em++)
+	cp emscripten/index.html $(BUILDDIR)/index.html
+endif
 
 $(BUILDDIR):
 	mkdir -p $(BUILDDIR)

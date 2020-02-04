@@ -208,7 +208,7 @@
 					_free(pBuffer);
 				} else {
 					var byteArray = new Uint8Array(evt.data);
-					var size = bufferArray.length;
+					var size = byteArray.length;
 					var pBuffer = _malloc(size);
 					var heapBytes = new Uint8Array(Module.HEAPU8.buffer, pBuffer, size);
 					heapBytes.set(byteArray);
