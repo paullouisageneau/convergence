@@ -61,22 +61,22 @@
 			if (window.AbortController) {
 				controller = new AbortController();
 				request.signal = controller.signal;
-				request.abort = () => {
+				request.abort = function() {
 					controller.abort();
 					request.httpAbortCount+= 1;
 				};
 			} else {
-				request.abort = () => {
+				request.abort = function() {
 					request.httpAbortCount+= 1;
 				}
 			}
 			var userPointer = request.httpUserPointer || 0;
 			fetch(request.url, request)
-			.then((response) => {
+			.then(function(response) {
 				request.response = response;
 				return response.arrayBuffer();
 			})
-			.then((arrayBuffer) => {
+			.then(function(arrayBuffer) {
 				if(request.httpAbortCount > currentAbortCount) return;
 				var response = request.response;
 				var byteArray = new Uint8Array(arrayBuffer);
@@ -87,7 +87,7 @@
 				Module.dynCall_viiii(responseCallback, response.status, pBuffer, size, userPointer);
 				// WARNING: pBuffer is not freed here and therefore must be from C/C++ code
 			})
-			.catch((error) => {
+			.catch(function(error) {
 				console.error(error);
 				if(request.httpAbortCount > currentAbortCount) return;
 				Module.dynCall_vii(errorCallback, 0, userPointer);
