@@ -21,12 +21,21 @@
 #include "pla/engine.hpp"
 #include "pla/mediamanager.hpp"
 
+#ifndef __EMSCRIPTEN__
+#include <IL/il.h>
+#endif
+
 namespace pla {
 
 Engine::Engine(void) : mWindow(NULL), mHasFocus(false) {
 	// GLFW initialization
 	if (!glfwInit())
 		throw std::runtime_error("GLFW initialization failed");
+
+#ifndef __EMSCRIPTEN__
+	// DevIL initilization
+	ilInit();
+#endif
 
 	mResourceManager = std::make_shared<ResourceManager>();
 	mMediaManager = std::make_shared<MediaManager>(mResourceManager);
