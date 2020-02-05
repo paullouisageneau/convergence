@@ -23,6 +23,7 @@
 
 #include "src/include.hpp"
 #include "src/types.hpp"
+#include "src/volume.hpp"
 
 #include "pla/collidable.hpp"
 #include "pla/context.hpp"
@@ -62,16 +63,9 @@ public:
 	};
 #pragma pack(pop)
 
-	struct Material {
-		uint84 ambient;
-		uint84 diffuse;
-		uint8_t smoothness;
+	using Material = Volume::Material;
 
-		Material operator+(const Material &m) const;
-		Material operator*(float f) const;
-	};
-
-	class Block : public Mesh {
+	class Block : public Volume {
 	public:
 		static const int Size = 8;
 		static const int CellsCount = Size * Size * Size;
@@ -95,37 +89,10 @@ public:
 		int84 getGradient(const int3 &c);
 		int84 computeGradient(const int3 &c);
 
-		int update(void);
+		int prepare(void);
 
 	private:
-		template <typename T> static T interpolate(const T &a, const T &b, float t) {
-			return a * (1.f - t) + b * t;
-		}
-
-		static uint16_t EdgeTable[256];
-		static int8_t TriangleTable[256][16];
-
-		struct GeometryArrays {
-			std::vector<vec3> vertices;
-			std::vector<int84> normals;
-			std::vector<uint84> ambient;
-			std::vector<uint84> diffuse;
-			std::vector<uint8_t> smoothness;
-			std::vector<index_t> indices;
-		};
-
-		struct Attribs {
-			vec3 vert;
-			int84 grad;
-			Material mat;
-
-			Attribs operator+(const Attribs &m) const;
-			Attribs operator*(float f) const;
-		};
-
-		int polygonizeCell(const int3 &c, GeometryArrays &arrays);
-		Attribs interpolateAttribs(const Attribs &a, const Attribs &b, const value &va,
-		                           const value &vb);
+		void computeGradients(const uint8_t *weights, int84 *grads, const int3 &size) override;
 
 		std::function<shared_ptr<Block>(const int3 &b)> mRetrieveFunc;
 		int3 mPos;
