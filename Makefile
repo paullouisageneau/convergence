@@ -15,20 +15,20 @@ OUTPUT:=$(BUILDDIR)/$(NAME)
 
 ifeq ($(notdir $(CXX)),em++)
 DIR=emscripten
-EMFLAGS=-s WASM=1 -s BINARYEN_METHOD=native-wasm -s TOTAL_MEMORY=256MB -s DISABLE_EXCEPTION_CATCHING=1 -s BINARYEN_TRAP_MODE=clamp -s USE_PTHREADS=0 -s USE_GLFW=3 --closure 1 --pre-js emscripten/pre.js
+EMFLAGS=-s WASM=1 -s BINARYEN_METHOD=native-wasm -s TOTAL_MEMORY=256MB -s DISABLE_EXCEPTION_CATCHING=1 -s BINARYEN_TRAP_MODE=clamp -s USE_PTHREADS=0 -s USE_GLFW=3 -s USE_SDL_IMAGE=2
 JSLIBS=$(shell printf "%s " emscripten/js/*.js)
 BUNDLEDIRS+=shader
 CPPFLAGS+=$(EMFLAGS) -DUSE_OPENGL_ES
-LDFLAGS+=$(EMFLAGS)
-LDFLAGS+=$(addprefix --js-library ,$(JSLIBS))
-LDFLAGS+=$(addprefix --preload-file ,$(BUNDLEDIRS))
-BUNDLES+=emscripten/index.html emscripten/pre.js $(JSLIBS) $(shell printf "%s " $(addsuffix /*,$(BUNDLEDIRS)))
+LDFLAGS+=$(EMFLAGS) --closure 1
+LDFLAGS+=$(addprefix --js-library ,$(JSLIBS)) --pre-js emscripten/pre.js
+LDFLAGS+=$(addprefix --preload-file ,$(BUNDLEDIRS)) --use-preload-plugins
+BUNDLES+=emscripten/index.html $(JSLIBS) emscripten/pre.js $(shell printf "%s " $(addsuffix /*,$(BUNDLEDIRS)))
 OUTPUT:=$(OUTPUT).js
 else
 DIR=native
 INCLUDES+=-Ideps/libdatachannel/include -Ideps/libdatachannel/deps/plog/include
 LOCALLIBS+=$(BUILDDIR)/libdatachannel.a $(BUILDDIR)/libjuice.a $(BUILDDIR)/libusrsctp.a
-LDLIBS+=-lGLEW -lnettle -lhogweed -lgmp -lgnutls -largon2
+LDLIBS+=-lGLEW -lIL -lnettle -lhogweed -lgmp -lgnutls -largon2
 LDFLAGS+=-pthread
 endif
 
