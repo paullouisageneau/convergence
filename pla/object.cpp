@@ -22,11 +22,11 @@
 
 namespace pla {
 
-Object::Object(void) {}
+Object::Object(sptr<Mesh> mesh, sptr<Program> program) : mMesh(mesh) { setProgram(program, 0); }
 
 Object::Object(const index_t *indices, size_t nindices, const float *vertices, size_t nvertices,
                sptr<Program> program)
-    : Mesh(indices, nindices, vertices, nvertices) {
+    : mMesh(std::make_shared<Mesh>(indices, nindices, vertices, nvertices)) {
 	setProgram(program, 0);
 }
 
@@ -43,18 +43,16 @@ int Object::draw(const Context &context) {
 	auto it = mPrograms.begin();
 	while (it != mPrograms.end()) {
 		size_t first = it->first;
-		size_t last = indicesCount();
+		size_t last = mMesh->indicesCount();
 		auto program = it->second;
 
-		++it;
-		if (it != mPrograms.end())
+		if (++it != mPrograms.end())
 			last = it->first;
 
 		if (program) {
 			context.prepare(program);
-
 			program->bind();
-			count += drawElements(first, last - first);
+			count += mMesh->drawElements(first, last - first);
 			program->unbind();
 		}
 	}

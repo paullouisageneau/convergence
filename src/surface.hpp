@@ -27,7 +27,6 @@
 
 #include "pla/collidable.hpp"
 #include "pla/context.hpp"
-#include "pla/mesh.hpp"
 #include "pla/object.hpp"
 #include "pla/perlinnoise.hpp"
 #include "pla/program.hpp"
@@ -40,7 +39,6 @@
 using pla::Collidable;
 using pla::Context;
 using pla::FragmentShader;
-using pla::Mesh;
 using pla::Object;
 using pla::PerlinNoise;
 using pla::Program;
@@ -92,7 +90,7 @@ public:
 		int prepare(void);
 
 	private:
-		void computeGradients(const uint8_t *weights, int84 *grads, const int3 &size) override;
+		void computeGradients(const uint8_t *weights, int84 *grads) override;
 
 		std::function<shared_ptr<Block>(const int3 &b)> mRetrieveFunc;
 		int3 mPos;

@@ -1,8 +1,8 @@
 NAME=convergence
 
-CPPFLAGS=-O2 -fPIC -Wall -Wno-reorder -Wno-sign-compare -Wno-switch
+CPPFLAGS=-g -O0 -fPIC -Wall -Wno-reorder -Wno-sign-compare -Wno-switch
 CXXFLAGS=-std=c++17
-LDFLAGS=-O2
+LDFLAGS=
 LDLIBS=-lGL -lglfw
 LOCALLIBS=
 BUNDLES=

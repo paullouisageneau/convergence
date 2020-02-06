@@ -19,6 +19,7 @@
  ***************************************************************************/
 
 #include "src/world.hpp"
+#include "src/factory.hpp"
 
 namespace convergence {
 
@@ -37,6 +38,17 @@ World::World(sptr<MessageBus> messageBus) : mMessageBus(messageBus) {
 	mLocalPlayer = std::make_shared<LocalPlayer>(mMessageBus);
 	mMessageBus->registerListener(mLocalPlayer->id(), mLocalPlayer);
 	mPlayers[mLocalPlayer->id()] = mLocalPlayer;
+
+	auto program = std::make_shared<Program>(std::make_shared<VertexShader>("shader/color.vect"),
+	                                         std::make_shared<FragmentShader>("shader/color.frag"));
+
+	program->bindAttribLocation(0, "position");
+	program->bindAttribLocation(1, "normal");
+	program->bindAttribLocation(2, "color");
+	program->link();
+
+	Factory factory("res/pickaxe.png", 1.f / 32.f, program);
+	mObjects[identifier()] = factory.build();
 }
 
 World::~World(void) {}
@@ -52,16 +64,19 @@ void World::update(double time) {
 
 	mTerrain->update(time);
 
-	for (auto &p : mPlayers)
-		p.second->update(mTerrain, time);
+	for (auto &[id, player] : mPlayers)
+		player->update(mTerrain, time);
 }
 
 int World::draw(Context &context) {
 	int count = 0;
 	count += mTerrain->draw(context);
 
-	for (const auto &p : mPlayers)
-		count += p.second->draw(context);
+	for (const auto &[id, player] : mPlayers)
+		count += player->draw(context);
+
+	for (const auto &[id, object] : mObjects)
+		count += object->draw(context);
 
 	return count;
 }

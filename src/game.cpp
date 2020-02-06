@@ -25,7 +25,7 @@ namespace convergence {
 
 Game::Game(void) {
 	mYaw = 0.f;
-	mPitch = -Pi / 2;
+	mPitch = 0.f;
 	mAccumulator = 0.f;
 
 	mUpdateCount = 0;
@@ -93,6 +93,8 @@ bool Game::onUpdate(Engine *engine, double time) {
 			}
 		}
 	}
+
+	localPlayer->action(mAccumulator / 100.f);
 
 	++mUpdateCount;
 	return true;

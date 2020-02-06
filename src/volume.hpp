@@ -24,22 +24,16 @@
 #include "src/include.hpp"
 #include "src/types.hpp"
 
-#include "pla/collidable.hpp"
-#include "pla/context.hpp"
 #include "pla/mesh.hpp"
 
 #include <vector>
 
-using pla::Context;
 using pla::Mesh;
 
 namespace convergence {
 
 class Volume : public Mesh {
 public:
-	Volume();
-	virtual ~Volume();
-
 	struct Material {
 		uint84 ambient;
 		uint84 diffuse;
@@ -49,8 +43,13 @@ public:
 		Material operator*(float f) const;
 	};
 
-	int polygonize(const vec3 &position, const uint8_t *weights, const Material *materials,
-	               const int3 &size);
+	Volume(int3 size, float scale);
+	Volume(int3 size, float scale, const uint8_t *weights, const Material *mats,
+	       const vec3 &pos = vec3(0.f, 0.f, 0.f));
+	virtual ~Volume();
+
+	int polygonize(const uint8_t *weights, const Material *mats,
+	               const vec3 &pos = vec3(0.f, 0.f, 0.f));
 
 protected:
 	struct Attribs {
@@ -62,13 +61,13 @@ protected:
 		Attribs operator*(float f) const;
 	};
 
-	template <typename T> inline static T interpolate(const T &a, const T &b, float t) {
-		return a * (1.f - t) + b * t;
-	}
+	virtual void computeGradients(const uint8_t *weights, int84 *grads);
+	virtual Attribs interpolateAttribs(const Attribs &a, const Attribs &b, uint8_t wa, uint8_t wb);
 
-	inline static size_t getIndex(const int3 &pos, const int3 &size) {
-		return (pos.x * size.y + pos.y) * size.z + pos.z;
-	}
+	inline size_t getIndex(const int3 &pos) { return (pos.x * mSize.y + pos.y) * mSize.z + pos.z; }
+
+	int3 mSize;
+	float mScale;
 
 private:
 	struct GeometryArrays {
@@ -79,13 +78,12 @@ private:
 		std::vector<uint8_t> smoothness;
 		std::vector<index_t> indices;
 	};
+	int polygonizeCell(const int3 &c, const uint8_t *weights, const int84 *grads,
+	                   const Material *mats, const vec3 &pos, GeometryArrays &arrays);
 
-	virtual void computeGradients(const uint8_t *weights, int84 *grads, const int3 &size);
-	virtual Attribs interpolateAttribs(const Attribs &a, const Attribs &b, uint8_t wa, uint8_t wb);
-
-	int polygonizeCell(const int3 &c, const vec3 &position, const uint8_t *weights,
-	                   const int84 *grads, const Material *mats, const int3 &size,
-	                   GeometryArrays &arrays);
+	template <typename T> inline static T interpolate(const T &a, const T &b, float t) {
+		return a * (1.f - t) + b * t;
+	}
 
 	static uint16_t EdgeTable[256];
 	static int8_t TriangleTable[256][16];

@@ -28,9 +28,11 @@
 
 namespace pla {
 
-class Object : public Mesh {
+class Object {
 public:
-	Object(void);
+	using index_t = Mesh::index_t;
+
+	Object(sptr<Mesh> mesh, sptr<Program> program);
 	Object(const index_t *indices, size_t nindices, const float *vertices, size_t nvertices,
 	       sptr<Program> program);
 	virtual ~Object(void);
@@ -41,6 +43,7 @@ public:
 	virtual int draw(const Context &context);
 
 protected:
+	sptr<Mesh> mMesh;
 	std::map<size_t, sptr<Program>> mPrograms;
 };
 

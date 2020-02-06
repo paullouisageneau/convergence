@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2017-2018 by Paul-Louis Ageneau                         *
+ *   Copyright (C) 2017-2020 by Paul-Louis Ageneau                         *
  *   paul-louis (at) ageneau (dot) org                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -19,6 +19,7 @@
  ***************************************************************************/
 
 #include "src/player.hpp"
+#include "src/factory.hpp"
 
 #include "pla/binaryformatter.hpp"
 #include "pla/program.hpp"
@@ -33,9 +34,11 @@ using pla::VertexShader;
 
 Player::Player(sptr<MessageBus> messageBus, const identifier &id)
     : mMessageBus(messageBus), mId(id) {
-	mYaw = mPitch = 0.f;
+	mYaw = 0.f;
+	mPitch = 0.f;
 	mSpeed = 0.f;
 	mGravity = 0.f;
+	mAction = 0.f;
 	mIsOnGround = false;
 	mIsJumping = false;
 
@@ -46,7 +49,9 @@ Player::Player(sptr<MessageBus> messageBus, const identifier &id)
 
 	program->bindAttribLocation(0, "position");
 	program->bindAttribLocation(1, "normal");
-	program->bindAttribLocation(2, "color");
+	program->bindAttribLocation(2, "ambient");
+	program->bindAttribLocation(3, "diffuse");
+	program->bindAttribLocation(4, "smoothness");
 	program->link();
 
 	float cube_vertices[] = {
@@ -60,7 +65,9 @@ Player::Player(sptr<MessageBus> messageBus, const identifier &id)
 	};
 
 	mObject = std::make_shared<Object>(cube_indices, 12 * 3, cube_vertices, 8 * 3, program);
-	mObject->computeNormals(1);
+	mObject = std::make_shared<Object>(cube_indices, 12 * 3, cube_vertices, 8 * 3, program);
+
+	mTool = Factory("res/pickaxe.png", 1.f / 32.f, program).build();
 }
 
 Player::~Player(void) {}
@@ -104,6 +111,8 @@ void Player::jolt(float force) {
 		mGravity -= std::abs(force);
 }
 
+void Player::action(float t) { mAction = t; }
+
 void Player::update(sptr<Collidable> terrain, double time) {
 	Message message;
 	while (readMessage(message))
@@ -135,10 +144,22 @@ void Player::update(sptr<Collidable> terrain, double time) {
 }
 
 int Player::draw(const Context &context) {
-	// TODO
 	Context subContext = context;
-	subContext.setUniform("transform", context.transform() * getTransform());
-	return mObject->draw(subContext);
+
+	int count = 0;
+	// subContext.setUniform("transform", context.transform() * getTransform());
+	// count += mObject->draw(subContext);
+
+	float t = mAction < .9f ? mAction / .9f : 1.f - mAction / 0.1f;
+
+	mat4 toolTransform = glm::translate(mat4(1.0f), vec3(0.5f, -0.5f - mPitch * 0.1f, -1.f));
+	toolTransform = glm::rotate(toolTransform, Pi / 2, vec3(0, 1, 0));
+	toolTransform = glm::rotate(toolTransform, Pi, vec3(1, 0, 0));
+	toolTransform = glm::rotate(toolTransform, mPitch * 0.1f + (1.f - t) * Pi / 4, vec3(0, 0, 1));
+	subContext.setUniform("transform", context.transform() * getTransform() * toolTransform);
+	count += mTool->draw(subContext);
+
+	return count;
 }
 
 void Player::processMessage(const Message &message) {
