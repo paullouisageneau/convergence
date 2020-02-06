@@ -58,7 +58,7 @@ private:
 	sptr<World> mWorld;
 
 	float mYaw, mPitch;
-	float mAccumulator;
+	double mAccumulator;
 
 	unsigned mUpdateCount;
 };

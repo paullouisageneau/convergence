@@ -50,7 +50,7 @@ public:
 	void move(float speed);
 	void jump(void);
 	void jolt(float force);
-	void action(float t);
+	void action(double frame);
 
 	virtual void update(sptr<Collidable> terrain, double time);
 	virtual int draw(const Context &context);

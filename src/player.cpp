@@ -111,7 +111,7 @@ void Player::jolt(float force) {
 		mGravity -= std::abs(force);
 }
 
-void Player::action(float t) { mAction = t; }
+void Player::action(double frame) { mAction = frame; }
 
 void Player::update(sptr<Collidable> terrain, double time) {
 	Message message;
@@ -150,12 +150,15 @@ int Player::draw(const Context &context) {
 	// subContext.setUniform("transform", context.transform() * getTransform());
 	// count += mObject->draw(subContext);
 
-	float t = mAction < .9f ? mAction / .9f : 1.f - mAction / 0.1f;
+	float t = mAction >= 0. ? (mAction < .9 ? (1. + mAction) / 1.8 : 1. - (mAction - .9) / 0.10)
+	                        : (1. + mAction) / 1.8;
 
-	mat4 toolTransform = glm::translate(mat4(1.0f), vec3(0.5f, -0.5f - mPitch * 0.1f, -1.f));
+	mat4 toolTransform = glm::translate(mat4(1.0f), vec3(0.4f, -0.5f - mPitch * 0.1f, -1.f));
 	toolTransform = glm::rotate(toolTransform, Pi / 2, vec3(0, 1, 0));
 	toolTransform = glm::rotate(toolTransform, Pi, vec3(1, 0, 0));
-	toolTransform = glm::rotate(toolTransform, mPitch * 0.1f + (1.f - t) * Pi / 4, vec3(0, 0, 1));
+	toolTransform = glm::rotate(toolTransform, mPitch * 0.1f - Pi / 8, vec3(0, 0, 1));
+	toolTransform = glm::rotate(toolTransform, (1.f - t) * Pi / 2, vec3(.3f, -.3f, 1.f));
+	toolTransform = glm::translate(toolTransform, vec3(0.f, -0.3f, 0.f));
 	subContext.setUniform("transform", context.transform() * getTransform() * toolTransform);
 	count += mTool->draw(subContext);
 

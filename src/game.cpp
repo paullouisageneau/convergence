@@ -79,22 +79,26 @@ bool Game::onUpdate(Engine *engine, double time) {
 
 	if (engine->isMouseButtonDown(MOUSE_BUTTON_LEFT)) {
 		sptr<Terrain> terrain = mWorld->terrain();
-
 		vec3 position = localPlayer->getPosition();
 		vec3 front = localPlayer->getDirection();
 		vec3 intersection;
 		if (terrain->intersect(position, front * 4.f, 0.25f, &intersection) <= 1.f) {
-			mAccumulator += 100.f * time;
-			int delta = int(mAccumulator);
-			if (delta > 100) {
-				mAccumulator -= float(delta);
-				terrain->dig(intersection, delta, 2.f);
+			mAccumulator += 2. * time;
+			if (mAccumulator >= 1.) {
+				mAccumulator = -1.;
+				terrain->dig(intersection, 50, 2.f);
 				localPlayer->jolt(1.f);
 			}
 		}
+	} else if (mAccumulator > 0.) {
+		mAccumulator -= std::min(mAccumulator, 2. * time);
 	}
 
-	localPlayer->action(mAccumulator / 100.f);
+	if (mAccumulator < 0.) {
+		mAccumulator += std::min(-mAccumulator, 2. * time);
+	}
+
+	localPlayer->action(mAccumulator);
 
 	++mUpdateCount;
 	return true;
