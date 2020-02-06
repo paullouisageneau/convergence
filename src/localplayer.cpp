@@ -27,7 +27,8 @@ using pla::BinaryFormatter;
 namespace convergence {
 
 LocalPlayer::LocalPlayer(sptr<MessageBus> messageBus) : Player(messageBus, messageBus->localId()) {
-	mOldYaw = mOldPitch = 0.f;
+	mOldYaw = mYaw;
+	mOldPitch = mPitch;
 	mOldSpeed = 0.f;
 	mOldIsJumping = false;
 

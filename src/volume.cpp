@@ -22,14 +22,19 @@
 
 namespace convergence {
 
-Volume::Volume() {}
+Volume::Volume(int3 size, float scale) : mSize(std::move(size)), mScale(scale) {}
+
+Volume::Volume(int3 size, float scale, const uint8_t *weights, const Material *mats,
+               const vec3 &pos)
+    : mSize(std::move(size)), mScale(scale) {
+	polygonize(weights, mats, pos);
+}
 
 Volume::~Volume() {}
 
-int Volume::polygonize(const vec3 &position, const uint8_t *weights, const Material *mats,
-                       const int3 &size) {
-	std::vector<int84> grads(size.x * size.y * size.z);
-	computeGradients(weights, grads.data(), size);
+int Volume::polygonize(const uint8_t *weights, const Material *mats, const vec3 &pos) {
+	std::vector<int84> grads(mSize.x * mSize.y * mSize.z);
+	computeGradients(weights, grads.data());
 
 	const size_t reserved = 3 * 1024;
 	GeometryArrays arrays;
@@ -41,10 +46,10 @@ int Volume::polygonize(const vec3 &position, const uint8_t *weights, const Mater
 	arrays.indices.reserve(reserved);
 
 	// indexes start at 1
-	for (int x = 1; x < size.x; ++x)
-		for (int y = 1; y < size.y; ++y)
-			for (int z = 1; z < size.z; ++z)
-				polygonizeCell(int3(x, y, z), position, weights, grads.data(), mats, size, arrays);
+	for (int x = 1; x < mSize.x; ++x)
+		for (int y = 1; y < mSize.y; ++y)
+			for (int z = 1; z < mSize.z; ++z)
+				polygonizeCell(int3(x, y, z), weights, grads.data(), mats, pos, arrays);
 
 	setIndices(arrays.indices.data(), arrays.indices.size());
 	setVertexAttrib(0, glm::value_ptr(*arrays.vertices.data()), arrays.vertices.size() * 3, 3,
@@ -61,12 +66,12 @@ int Volume::polygonize(const vec3 &position, const uint8_t *weights, const Mater
 	return indicesCount() / 3;
 }
 
-void Volume::computeGradients(const uint8_t *weights, int84 *grads, const int3 &size) {
-	auto w = [&](const int3 &pos) -> int { return weights[getIndex(pos, size)]; };
-	for (int x = 0; x < size.x; ++x)
-		for (int y = 0; y < size.y; ++y)
-			for (int z = 0; z < size.z; ++z)
-				grads[getIndex({x, y, z}, size)] =
+void Volume::computeGradients(const uint8_t *weights, int84 *grads) {
+	auto w = [&](const int3 &pos) -> int { return weights[getIndex(pos)]; };
+	for (int x = 0; x < mSize.x; ++x)
+		for (int y = 0; y < mSize.y; ++y)
+			for (int z = 0; z < mSize.z; ++z)
+				grads[getIndex({x, y, z})] =
 				    int84((w(int3(x + 1, y, z)) - w(int3(x - 1, y, z))) / 2,
 				          (w(int3(x, y + 1, z)) - w(int3(x, y - 1, z))) / 2,
 				          (w(int3(x, y, z + 1)) - w(int3(x, y, z - 1))) / 2, 0);
@@ -84,9 +89,8 @@ Volume::Attribs Volume::interpolateAttribs(const Attribs &a, const Attribs &b, u
 // and return the number of faces generated.
 #pragma GCC push_options
 #pragma GCC optimize("unroll-loops")
-int Volume::polygonizeCell(const int3 &c, const vec3 &position, const uint8_t *weights,
-                           const int84 *grads, const Material *mats, const int3 &size,
-                           GeometryArrays &arrays) {
+int Volume::polygonizeCell(const int3 &c, const uint8_t *weights, const int84 *grads,
+                           const Material *mats, const vec3 &pos, GeometryArrays &arrays) {
 	// Vertex offset given index
 	static const int3 offsets[8] = {{-1, -1, -1}, {0, -1, -1}, {0, 0, -1}, {-1, 0, -1},
 	                                {-1, -1, 0},  {0, -1, 0},  {0, 0, 0},  {-1, 0, 0}};
@@ -98,7 +102,7 @@ int Volume::polygonizeCell(const int3 &c, const vec3 &position, const uint8_t *w
 	// Get weights
 	uint8_t w[8];
 	for (int i = 0; i < 8; ++i)
-		w[i] = weights[getIndex(c + offsets[i], size)];
+		w[i] = weights[getIndex(c + offsets[i])];
 
 	// Compute the index into the edge table
 	unsigned index = 0;
@@ -116,12 +120,11 @@ int Volume::polygonizeCell(const int3 &c, const vec3 &position, const uint8_t *w
 
 	// Get the rest
 	Attribs attribs[8];
-	vec3 base = position + vec3(0.5f, 0.5f, 0.5f);
 	for (int i = 0; i < 8; ++i) {
 		auto &a = attribs[i];
 		int3 p = c + offsets[i];
-		a.vert = base + vec3(p);
-		const size_t j = getIndex(p, size);
+		a.vert = pos + (vec3(p) - vec3(mSize) * 0.5f) * mScale;
+		const size_t j = getIndex(p);
 		a.grad = grads[j];
 		a.mat = mats[j];
 	}

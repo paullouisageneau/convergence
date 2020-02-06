@@ -24,7 +24,7 @@ void main()
 	fragLight = normalize(position - lightPosition);
 	fragAmbient = ambient;
 	fragDiffuse = diffuse;
-	fragSmoothness =smoothness;
+	fragSmoothness = smoothness;
 	gl_Position = transform*vec4(position, 1.0);
 }
 

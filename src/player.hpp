@@ -50,6 +50,7 @@ public:
 	void move(float speed);
 	void jump(void);
 	void jolt(float force);
+	void action(float t);
 
 	virtual void update(sptr<Collidable> terrain, double time);
 	virtual int draw(const Context &context);
@@ -63,10 +64,11 @@ protected:
 	float mYaw, mPitch;
 	float mSpeed;
 	float mGravity;
+	float mAction;
 	bool mIsOnGround;
 	bool mIsJumping;
 
-	sptr<Object> mObject;
+	sptr<Object> mObject, mTool;
 };
 
 } // namespace convergence

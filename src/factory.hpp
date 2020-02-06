@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2017-2018 by Paul-Louis Ageneau                         *
+ *   Copyright (C) 2015-2020 by Paul-Louis Ageneau                         *
  *   paul-louis (at) ageneau (dot) org                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -18,48 +18,34 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef CONVERGENCE_WORLD_H
-#define CONVERGENCE_WORLD_H
+#ifndef CONVERGENCE_FACTORY_H
+#define CONVERGENCE_FACTORY_H
 
 #include "src/include.hpp"
-#include "src/localplayer.hpp"
-#include "src/messagebus.hpp"
-#include "src/player.hpp"
-#include "src/store.hpp"
-#include "src/terrain.hpp"
+#include "src/types.hpp"
 
-#include "pla/context.hpp"
+#include "pla/mesh.hpp"
 #include "pla/object.hpp"
-
-#include <map>
+#include "pla/program.hpp"
 
 namespace convergence {
 
-using pla::Context;
+using pla::Mesh;
 using pla::Object;
+using pla::Program;
 
-class World final : public MessageBus::AsyncListener {
+class Factory {
 public:
-	World(shared_ptr<MessageBus> messageBus);
-	~World(void);
+	Factory(const string &filename, float scale, shared_ptr<Program> program);
+	virtual ~Factory();
 
-	sptr<Player> localPlayer(void) const;
-	sptr<Terrain> terrain(void) const;
-
-	void update(double time);
-	int draw(Context &context);
+	shared_ptr<Object> build() const;
 
 private:
-	void processMessage(const Message &message);
-	shared_ptr<Player> createPlayer(const identifier &id);
-
-	sptr<MessageBus> mMessageBus;
-	sptr<Store> mStore;
-	sptr<Terrain> mTerrain;
-	sptr<LocalPlayer> mLocalPlayer;
-	std::map<identifier, sptr<Player>> mPlayers;
-	std::map<identifier, sptr<Object>> mObjects;
+	shared_ptr<Program> mProgram;
+	shared_ptr<Mesh> mMesh;
 };
+
 } // namespace convergence
 
 #endif

@@ -149,7 +149,7 @@ int3 Surface::Block::cellCoord(const int3 &p) {
 int3 Surface::Block::fullCoord(const int3 &b, const int3 &c) { return b * Block::Size + c; }
 
 Surface::Block::Block(const int3 &b, std::function<shared_ptr<Block>(const int3 &b)> retrieveFunc)
-    : mPos(b), mRetrieveFunc(retrieveFunc) {}
+    : Volume({Size + 1, Size + 1, Size + 1}, 1.f), mPos(b), mRetrieveFunc(retrieveFunc) {}
 
 Surface::Block::~Block(void) {}
 
@@ -187,14 +187,14 @@ int Surface::Block::prepare(void) {
 				mats[i] = MaterialTable[v.type];
 				++i;
 			}
-	return polygonize(vec3(mPos * Size), weights, mats, {Size + 1, Size + 1, Size + 1});
+	return polygonize(weights, mats, center());
 }
 
-void Surface::Block::computeGradients(const uint8_t *weights, int84 *grads, const int3 &size) {
-	for (int x = 0; x < size.x; ++x)
-		for (int y = 0; y < size.y; ++y)
-			for (int z = 0; z < size.z; ++z)
-				grads[getIndex({x, y, z}, size)] = int84(
+void Surface::Block::computeGradients(const uint8_t *weights, int84 *grads) {
+	for (int x = 0; x < Size + 1; ++x)
+		for (int y = 0; y < Size + 1; ++y)
+			for (int z = 0; z < Size + 1; ++z)
+				grads[getIndex({x, y, z})] = int84(
 				    (getValue(int3(x + 1, y, z)).weight - getValue(int3(x - 1, y, z)).weight) / 2,
 				    (getValue(int3(x, y + 1, z)).weight - getValue(int3(x, y - 1, z)).weight) / 2,
 				    (getValue(int3(x, y, z + 1)).weight - getValue(int3(x, y, z - 1)).weight) / 2,
