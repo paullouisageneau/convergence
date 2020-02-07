@@ -17,7 +17,7 @@ ifeq ($(notdir $(CXX)),em++)
 DIR=emscripten
 EMFLAGS=-s WASM=1 -s BINARYEN_METHOD=native-wasm -s TOTAL_MEMORY=256MB -s DISABLE_EXCEPTION_CATCHING=1 -s BINARYEN_TRAP_MODE=clamp -s USE_PTHREADS=0 -s USE_GLFW=3 -s USE_SDL_IMAGE=2
 JSLIBS=$(shell printf "%s " emscripten/js/*.js)
-BUNDLEDIRS+=shader
+BUNDLEDIRS+=shader res
 CPPFLAGS+=$(EMFLAGS) -DUSE_OPENGL_ES
 LDFLAGS+=$(EMFLAGS) --closure 1
 LDFLAGS+=$(addprefix --js-library ,$(JSLIBS)) --pre-js emscripten/pre.js
