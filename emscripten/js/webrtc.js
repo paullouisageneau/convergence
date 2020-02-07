@@ -78,7 +78,7 @@
 				});
 			}
 			var config = {
-				iceServers,
+				iceServers: iceServers,
 			};
 			return WEBRTC.registerPeerConnection(new RTCPeerConnection(config));
 		},
