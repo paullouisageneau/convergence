@@ -40,7 +40,7 @@ public:
 	Engine(void);
 	~Engine(void);
 
-	void openWindow(int width, int height, const string &title = "");
+	void openWindow(const string &title = "", int width = -1, int height = -1);
 	void closeWindow(void);
 	void setWindowTitle(const string &title);
 	void setWindowSize(int width, int height);
