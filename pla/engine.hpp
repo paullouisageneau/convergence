@@ -47,6 +47,7 @@ public:
 	void getWindowSize(int *width, int *height) const;
 
 	void clear(const vec4 &color);
+	void clearDepth(void);
 
 	bool isKeyDown(int key);
 	bool isMouseButtonDown(int button);

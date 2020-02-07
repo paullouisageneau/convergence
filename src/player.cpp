@@ -144,11 +144,6 @@ void Player::update(sptr<Collidable> terrain, double time) {
 }
 
 int Player::draw(const Context &context) {
-	Context subContext = context;
-
-	int count = 0;
-	// subContext.setUniform("transform", context.transform() * getTransform());
-	// count += mObject->draw(subContext);
 
 	float t = mAction >= 0. ? (mAction < .9 ? (1. + mAction) / 1.8 : 1. - (mAction - .9) / 0.10)
 	                        : (1. + mAction) / 1.8;
@@ -159,9 +154,12 @@ int Player::draw(const Context &context) {
 	toolTransform = glm::rotate(toolTransform, mPitch * 0.1f - Pi / 8, vec3(0, 0, 1));
 	toolTransform = glm::rotate(toolTransform, (1.f - t) * Pi / 2, vec3(.3f, -.3f, 1.f));
 	toolTransform = glm::translate(toolTransform, vec3(0.f, -0.3f, 0.f));
-	subContext.setUniform("transform", context.transform() * getTransform() * toolTransform);
-	count += mTool->draw(subContext);
 
+	int count = 0;
+	// count += mObject->draw(subContext);
+
+	Context subContext = context.transform(getTransform() * toolTransform);
+	count += mTool->draw(subContext);
 	return count;
 }
 

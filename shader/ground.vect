@@ -1,7 +1,8 @@
 #version 110
 
 uniform mat4 transform;
-uniform mat4 modelview;
+uniform mat4 view;
+uniform mat4 model;
 uniform vec3 lightPosition;
 
 attribute vec3 position;

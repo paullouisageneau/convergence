@@ -77,7 +77,7 @@ bool Game::onUpdate(Engine *engine, double time) {
 
 	mWorld->update(time);
 
-	if (engine->isMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+	if (engine->isMouseButtonDown(MOUSE_BUTTON_LEFT) || mAccumulator >= 0.5) {
 		sptr<Terrain> terrain = mWorld->terrain();
 		vec3 position = localPlayer->getPosition();
 		vec3 front = localPlayer->getDirection();
@@ -120,6 +120,8 @@ int Game::onDraw(Engine *engine) {
 
 	count += mWorld->draw(context);
 
+	engine->clearDepth();
+	mWorld->localPlayer()->draw(context);
 	return count;
 }
 

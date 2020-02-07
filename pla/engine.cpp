@@ -103,6 +103,8 @@ void Engine::clear(const vec4 &color) {
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 
+void Engine::clearDepth(void) { glClear(GL_DEPTH_BUFFER_BIT); }
+
 void Engine::changeState(sptr<State> state) {
 	popState();
 	pushState(state);
