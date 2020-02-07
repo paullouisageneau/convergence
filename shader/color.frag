@@ -15,6 +15,6 @@ void main()
 	float z = gl_FragCoord.z/gl_FragCoord.w;
 	float fog = min((exp2(0.2*z) - 1.0)*0.02, 1.0);
 
-	gl_FragColor = vec4(fragAmbient + fragDiffuse * (1.0 + light * fog)*0.5, 1.0);
+	gl_FragColor = vec4((fragAmbient + fragDiffuse * light) * (1.0 - fog), 1.0);
 }
 

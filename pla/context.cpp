@@ -23,11 +23,12 @@
 namespace pla {
 
 Context::Context(const mat4 &projection, const mat4 &camera)
-    : mProjection(projection), mModelview(glm::inverse(camera)),
-      mTransform(mProjection * mModelview), mCameraPosition(camera * vec4(0.f, 0.f, 0.f, 1.f)),
-      mFrustum(mTransform) {
+    : mProjection(projection), mView(glm::inverse(camera)), mModel(mat4(1.f)),
+      mTransform(mProjection * mView * mModel), mCameraPosition(camera * vec4(0.f, 0.f, 0.f, 1.f)),
+      mFrustum(mTransform), mDepthTestEnabled(true) {
 	setUniform("projection", mProjection);
-	setUniform("modelview", mModelview);
+	setUniform("view", mView);
+	setUniform("model", mModel);
 	setUniform("transform", mTransform);
 }
 
@@ -35,7 +36,9 @@ Context::~Context(void) {}
 
 const mat4 &Context::projection(void) const { return mProjection; }
 
-const mat4 &Context::modelview(void) const { return mModelview; }
+const mat4 &Context::view(void) const { return mView; }
+
+const mat4 &Context::model(void) const { return mModel; }
 
 const mat4 &Context::transform(void) const { return mTransform; }
 
@@ -43,10 +46,26 @@ const vec3 &Context::cameraPosition(void) const { return mCameraPosition; }
 
 const Frustum &Context::frustum(void) const { return mFrustum; }
 
+void Context::enableDepthTest(bool enabled) { mDepthTestEnabled = enabled; }
+
 void Context::prepare(sptr<Program> program) const {
 	for (auto p : mUniforms)
 		if (program->hasUniform(p.first))
 			p.second->apply(p.first, program);
+
+	if (mDepthTestEnabled)
+		glEnable(GL_DEPTH_TEST);
+	else
+		glDisable(GL_DEPTH_TEST);
+}
+
+Context Context::transform(const mat4 &matrix) const {
+	Context sub = *this;
+	sub.mModel *= matrix;
+	sub.mTransform *= matrix;
+	sub.setUniform("model", sub.mModel);
+	sub.setUniform("transform", sub.mTransform);
+	return sub;
 }
 
 } // namespace pla

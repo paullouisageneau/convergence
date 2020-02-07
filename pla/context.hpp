@@ -35,18 +35,24 @@ public:
 	~Context(void);
 
 	const mat4 &projection(void) const;
-	const mat4 &modelview(void) const;
+	const mat4 &view(void) const;
+	const mat4 &model(void) const;
 	const mat4 &transform(void) const;
 	const vec3 &cameraPosition(void) const;
 	const Frustum &frustum(void) const;
 	void prepare(sptr<Program> program) const; // set uniforms in program
 
+	void enableDepthTest(bool enabled);
+
+	Context transform(const mat4 &matrix) const;
+
 	template <typename T> void setUniform(const string &name, const T &value);
 
 private:
-	mat4 mProjection, mModelview, mTransform;
+	mat4 mProjection, mView, mModel, mTransform;
 	vec3 mCameraPosition;
 	Frustum mFrustum;
+	bool mDepthTestEnabled;
 
 	class UniformContainer {
 	public:
