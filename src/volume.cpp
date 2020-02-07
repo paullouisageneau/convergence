@@ -123,7 +123,7 @@ int Volume::polygonizeCell(const int3 &c, const uint8_t *weights, const int84 *g
 	for (int i = 0; i < 8; ++i) {
 		auto &a = attribs[i];
 		int3 p = c + offsets[i];
-		a.vert = pos + (vec3(p) - vec3(mSize) * 0.5f) * mScale;
+		a.vert = pos + (vec3(p) - vec3(mSize) * 0.5f + vec3(0.5f)) * mScale;
 		const size_t j = getIndex(p);
 		a.grad = grads[j];
 		a.mat = mats[j];
