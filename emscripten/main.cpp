@@ -14,7 +14,7 @@ pla::Engine engine;
 int main() {
 	try {
 		std::cout << "Started..." << std::endl;
-		engine.openWindow(640, 480);
+		engine.openWindow("Convergence", 640, 480);
 		engine.pushState(std::make_shared<convergence::Game>());
 	} catch (const std::exception &e) {
 		std::cout << "Error: " << e.what() << std::endl;

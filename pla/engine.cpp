@@ -53,14 +53,27 @@ Engine::~Engine(void) {
 	glfwTerminate();
 }
 
-void Engine::openWindow(int width, int height, const string &title) {
+void Engine::openWindow(const string &title, int width, int height) {
+	bool fullscreen = false;
+	if (width <= 0 || height <= 0) {
+		fullscreen = true;
+		width = 640;
+		height = 480;
+	}
+
 	// Create window and OpenGL context
 	mWindow = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
 	if (!mWindow)
 		throw std::runtime_error("Window creation failed");
 
+	if (fullscreen) {
+		GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+		const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+		glfwSetWindowMonitor(mWindow, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+		glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	}
+
 	glfwSetWindowUserPointer(mWindow, this);
-	// glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	glfwSetKeyCallback(mWindow, KeyCallback);
 	glfwSetMouseButtonCallback(mWindow, MouseButtonCallback);
