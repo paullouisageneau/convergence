@@ -28,27 +28,26 @@
 #include "pla/resource.hpp"
 #include "pla/shader.hpp"
 #include "pla/string.hpp"
+#include "pla/texture.hpp"
 
 namespace pla {
 
 class Program final : public Resource {
 public:
-	Program(void);
+	Program();
 	Program(sptr<Shader> vertexShader, sptr<Shader> fragmentShader, bool mustLink = false);
-	~Program(void);
+	~Program();
 
 	void attachShader(sptr<Shader> shader);
 	void detachShader(sptr<Shader> shader);
 	void bindAttribLocation(unsigned index, const string &name);
-	void link(void);
-	void bind(void);
-	void unbind(void);
+	void link();
 
-	bool hasUniform(const string &name);
-	bool hasVertexAttrib(const string &name);
+	void bind() const;
+	void unbind() const;
 
-	int getUniformLocation(const string &name);
-	int getAttribLocation(const string &name);
+	bool hasUniform(const string &name) const;
+	bool hasVertexAttrib(const string &name) const;
 
 	void setUniform(const string &name, float value);
 	void setUniform(const string &name, int value);
@@ -57,18 +56,28 @@ public:
 	void setUniform(const string &name, const vec3 &value);
 	void setUniform(const string &name, const vec4 &value);
 	void setUniform(const string &name, const mat4 &value);
+	void setUniform(const string &name, shared_ptr<Texture> texture);
 
 	void setVertexAttrib(const string &name, float value);
 	void setVertexAttrib(const string &name, const float *values);
 	void setVertexAttrib(const string &name, const vec3 &value);
 	void setVertexAttrib(const string &name, const vec4 &value);
 
+	int nextTextureUnit() const; // next available texture unit
+
 private:
+	int getUniformLocation(const string &name) const;
+	int getAttribLocation(const string &name) const;
+
 	GLuint mProgram;
 
 	std::set<sptr<Shader>> mShaders;
-	std::map<string, int> mUniformLocations; // Cache
-	std::map<string, int> mAttribLocations;  // Cache
+	std::map<int, shared_ptr<Texture>> mTextures;
+	std::map<string, int> mTextureUnits;
+
+	// Cache
+	mutable std::map<string, int> mUniformLocations;
+	mutable std::map<string, int> mAttribLocations;
 };
 } // namespace pla
 

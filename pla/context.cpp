@@ -49,9 +49,10 @@ const Frustum &Context::frustum(void) const { return mFrustum; }
 void Context::enableDepthTest(bool enabled) { mDepthTestEnabled = enabled; }
 
 void Context::prepare(sptr<Program> program) const {
+	int unit = program->nextTextureUnit();
 	for (auto p : mUniforms)
 		if (program->hasUniform(p.first))
-			p.second->apply(p.first, program);
+			p.second->apply(p.first, program, unit); // may increment unit
 
 	if (mDepthTestEnabled)
 		glEnable(GL_DEPTH_TEST);

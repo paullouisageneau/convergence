@@ -19,8 +19,13 @@
  ***************************************************************************/
 
 #include "src/surface.hpp"
+#include "pla/perlinnoise.hpp"
 
 namespace convergence {
+
+using pla::bounds;
+using pla::PerlinNoise;
+using pla::Texture;
 
 Surface::Surface(std::function<shared_ptr<Block>(const int3 &b)> retrieveFunc)
     : mRetrieveFunc(retrieveFunc) {
@@ -33,6 +38,26 @@ Surface::Surface(std::function<shared_ptr<Block>(const int3 &b)> retrieveFunc)
 	mProgram->bindAttribLocation(3, "diffuse");
 	mProgram->bindAttribLocation(4, "smoothness");
 	mProgram->link();
+
+	auto data = new uint8_t[256 * 256 * 256 * 4];
+	int i = 0;
+	PerlinNoise perlin(666, 256 / 16);
+	for (int x = 0; x < 256; ++x)
+		for (int y = 0; y < 256; ++y)
+			for (int z = 0; z < 256; ++z) {
+				double n = perlin.generate(dvec3(x, y, z) / 16., 3);
+				uint8_t v = bounds(int(n * 255.), 0, 255);
+				data[i++] = v;
+				data[i++] = v;
+				data[i++] = v;
+				data[i++] = 1;
+			}
+
+	auto texture = std::make_shared<Texture>(GL_TEXTURE_3D);
+	texture->setImage(data, 256, 256, 256);
+	delete[] data;
+
+	mProgram->setUniform("detail", texture);
 }
 
 Surface::~Surface(void) {}

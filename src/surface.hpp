@@ -28,7 +28,6 @@
 #include "pla/collidable.hpp"
 #include "pla/context.hpp"
 #include "pla/object.hpp"
-#include "pla/perlinnoise.hpp"
 #include "pla/program.hpp"
 #include "pla/shader.hpp"
 
@@ -40,7 +39,6 @@ using pla::Collidable;
 using pla::Context;
 using pla::FragmentShader;
 using pla::Object;
-using pla::PerlinNoise;
 using pla::Program;
 using pla::VertexShader;
 

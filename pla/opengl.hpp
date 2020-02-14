@@ -18,6 +18,9 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
+#ifndef PLA_OPENGL_H
+#define PLA_OPENGL_H
+
 #ifdef USE_OPENGL_ES
 #define GLFW_INCLUDE_ES2
 #else
@@ -25,3 +28,21 @@
 #endif
 
 #include <GLFW/glfw3.h>
+
+#include <memory>
+
+namespace pla {
+
+template <typename T> class bind_guard {
+public:
+	bind_guard(const T *bound) : mBound(bound) { mBound->bind(); }
+	bind_guard(std::shared_ptr<T> bound) : bind_guard(bound.get()) {}
+	~bind_guard() { mBound->unbind(); }
+
+private:
+	const T *mBound;
+};
+
+} // namespace pla
+
+#endif // PLA_OPENGL_H

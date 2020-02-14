@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2006-2016 by Paul-Louis Ageneau                         *
+ *   Copyright (C) 2006-2020 by Paul-Louis Ageneau                         *
  *   paul-louis (at) ageneau (dot) org                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -18,30 +18,41 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/norm.hpp>
+#ifndef PLA_TEXTURE_H
+#define PLA_TEXTURE_H
+
+#include "pla/image.hpp"
+#include "pla/include.hpp"
+#include "pla/linalg.hpp"
+#include "pla/opengl.hpp"
+
+#include <string>
 
 namespace pla {
 
-using glm::mat2;
-using glm::mat3;
-using glm::mat4;
-using glm::vec2;
-using glm::vec3;
-using glm::vec4;
+class Texture {
+public:
+	Texture(GLenum type = GL_TEXTURE_2D);
+	Texture(shared_ptr<Image> img, GLenum type = GL_TEXTURE_2D);
+	Texture(const std::string &filename, GLenum type = GL_TEXTURE_2D);
+	virtual ~Texture();
 
-using glm::dmat2;
-using glm::dmat3;
-using glm::dmat4;
-using glm::dvec2;
-using glm::dvec3;
-using glm::dvec4;
+	void activate(int unit) const;
+	void deactivate(int unit) const;
 
-extern const float Pi;
-extern const float Sqrt2;
-extern const float Epsilon;
+	void bind() const;
+	void unbind() const;
+
+	void setImage(shared_ptr<Image> img);
+	void setImage(const uint8_t *data, size_t width);
+	void setImage(const uint8_t *data, size_t width, size_t height);
+	void setImage(const uint8_t *data, size_t width, size_t height, size_t depth);
+
+private:
+	GLuint mTexture;
+	GLenum mType;
+};
 
 } // namespace pla
+
+#endif // PLA_TEXTURE_H
