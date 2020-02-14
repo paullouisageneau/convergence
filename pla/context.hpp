@@ -25,6 +25,7 @@
 #include "pla/include.hpp"
 #include "pla/linalg.hpp"
 #include "pla/program.hpp"
+#include "pla/texture.hpp"
 
 namespace pla {
 
@@ -56,27 +57,44 @@ private:
 
 	class UniformContainer {
 	public:
-		virtual void apply(const string &name, sptr<Program> program) const = 0;
+		virtual void apply(const string &name, sptr<Program> program, int &unit) const = 0;
 	};
 
-	template <typename T> class UniformContainerImpl final : public UniformContainer {
-	public:
-		UniformContainerImpl(const T &v) { value = v; }
-		void apply(const string &name, sptr<Program> program) const {
-			program->setUniform(name, value);
-		}
-
-	private:
-		T value;
-	};
+	template <typename T> class UniformContainerImpl;
 
 	std::map<string, sptr<UniformContainer>> mUniforms;
+};
+
+template <typename T> class Context::UniformContainerImpl final : public Context::UniformContainer {
+public:
+	UniformContainerImpl(const T &v) { value = v; }
+	void apply(const string &name, sptr<Program> program, int &unit) const {
+		program->setUniform(name, value);
+	}
+
+private:
+	T value;
+};
+
+template <>
+class Context::UniformContainerImpl<shared_ptr<Texture>> final : public Context::UniformContainer {
+public:
+	UniformContainerImpl(shared_ptr<Texture> t) { texture = t; }
+	void apply(const string &name, sptr<Program> program, int &unit) const {
+		texture->activate(unit);
+		program->setUniform(name, unit);
+		++unit;
+	}
+
+private:
+	shared_ptr<Texture> texture;
 };
 
 template <typename T> void Context::setUniform(const string &name, const T &value) {
 	auto p = std::make_shared<UniformContainerImpl<T>>(value);
 	mUniforms[name] = p;
 }
+
 } // namespace pla
 
 #endif

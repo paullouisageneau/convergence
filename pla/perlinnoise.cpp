@@ -26,27 +26,39 @@
 
 namespace pla {
 
-PerlinNoise::PerlinNoise(unsigned int seed) {
-	// Compute permutation vector from seed
-	const unsigned int m = 2147483648;
-	const unsigned int a = 1103515245;
-	const unsigned int c = 12345;
-	p.resize(256);
-	std::iota(p.begin(), p.end(), 0);
-	for (unsigned int i = 255; i > 0; --i) {
-		seed = (seed * a + c) % m;
-		unsigned int r = seed / (m / (i + 1) + 1);
-		std::swap(p[i], p[r]);
-	}
+using pla::bounds;
+using std::pow;
 
+// Compute permutation vector from seed
+std::vector<int> make_perm(unsigned int seed, int period) {
+	std::vector<int> p(period);
+	std::iota(p.begin(), p.end(), 0);
+	std::shuffle(p.begin(), p.end(), std::mt19937(seed));
 	p.insert(p.end(), p.begin(), p.end());
+	return p;
 }
 
-double PerlinNoise::noise(double x, double y, double z) const {
+PerlinNoise::PerlinNoise(unsigned int seed, int period)
+    : mPeriod(period), mPerm(make_perm(seed, period)) {}
+
+double PerlinNoise::generate(const dvec3 &v, int octaves) const {
+	int pw = 1;
+	double value = 0.;
+	double norm = 0.;
+	for (int i = 0; i < octaves; ++i) {
+		const double n = 0.5 / pw;
+		value += n * noise(v.x * pw, v.y * pw, v.z * pw, mPeriod * pw);
+		pw *= 2;
+		norm += n;
+	}
+	return norm > 0. ? value / norm : 0.;
+}
+
+double PerlinNoise::noise(double x, double y, double z, int m) const {
 	// Find the unit cube that contains the point
-	int X = int(floor(x)) & 0xFF;
-	int Y = int(floor(y)) & 0xFF;
-	int Z = int(floor(z)) & 0xFF;
+	int X = floor(x);
+	int Y = floor(y);
+	int Z = floor(z);
 
 	// Find relative x, y, z of point in cube
 	x -= floor(x);
@@ -59,32 +71,39 @@ double PerlinNoise::noise(double x, double y, double z) const {
 	double w = fade(z);
 
 	// Hash coordinates of the 8 cube corners
-	int A = p[X] + Y;
-	int AA = p[A] + Z;
-	int AB = p[A + 1] + Z;
-	int B = p[X + 1] + Y;
-	int BA = p[B] + Z;
-	int BB = p[B + 1] + Z;
+	int A = hash(X) + Y;
+	int AA = hash(A) + Z;
+	int AB = hash(A + 1) + Z;
+	int B = hash(X + 1) + Y;
+	int BA = hash(B) + Z;
+	int BB = hash(B + 1) + Z;
 
 	// Add blended results from 8 corners of cube
 	double res =
 	    lerp(w,
-	         lerp(v, lerp(u, grad(p[AA], x, y, z), grad(p[BA], x - 1, y, z)),
-	              lerp(u, grad(p[AB], x, y - 1, z), grad(p[BB], x - 1, y - 1, z))),
-	         lerp(v, lerp(u, grad(p[AA + 1], x, y, z - 1), grad(p[BA + 1], x - 1, y, z - 1)),
-	              lerp(u, grad(p[AB + 1], x, y - 1, z - 1), grad(p[BB + 1], x - 1, y - 1, z - 1))));
-	return (res + 1.0) / 2.0;
+	         lerp(v, lerp(u, grad(hash(AA), x, y, z), grad(hash(BA), x - 1, y, z)),
+	              lerp(u, grad(hash(AB), x, y - 1, z), grad(hash(BB), x - 1, y - 1, z))),
+	         lerp(v, lerp(u, grad(hash(AA + 1), x, y, z - 1), grad(hash(BA + 1), x - 1, y, z - 1)),
+	              lerp(u, grad(hash(AB + 1), x, y - 1, z - 1),
+	                   grad(hash(BB + 1), x - 1, y - 1, z - 1))));
+	return (res + 1.) / 2.;
 }
 
 double PerlinNoise::fade(double t) const { return t * t * t * (t * (t * 6 - 15) + 10); }
 
 double PerlinNoise::lerp(double t, double a, double b) const { return a + t * (b - a); }
 
-double PerlinNoise::grad(int hash, double x, double y, double z) const {
-	int h = hash & 15;
+double PerlinNoise::grad(int h, double x, double y, double z) const {
+	h = h & 15;
 	// Convert lower 4 bits of hash into 12 gradient directions
 	double u = h < 8 ? x : y, v = h < 4 ? y : h == 12 || h == 14 ? x : z;
 	return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
+}
+
+int PerlinNoise::hash(int i) const {
+	// Circumvent modulo implementation for negative values with an offset
+	const unsigned offset = 0x80000000;
+	return mPerm[unsigned(offset + i) % mPeriod];
 }
 
 } // namespace pla

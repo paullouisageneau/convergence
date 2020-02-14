@@ -22,17 +22,14 @@
 
 namespace pla {
 
-Program::Program(void) {
+Program::Program() {
 	mProgram = glCreateProgram();
 	if (!mProgram)
 		throw std::runtime_error("Unable to create shader program");
 }
 
-Program::Program(sptr<Shader> vertexShader, sptr<Shader> fragmentShader, bool mustLink) {
-	mProgram = glCreateProgram();
-	if (!mProgram)
-		throw std::runtime_error("Unable to create shader program");
-
+Program::Program(sptr<Shader> vertexShader, sptr<Shader> fragmentShader, bool mustLink)
+    : Program() {
 	vertexShader->compile();
 	fragmentShader->compile();
 
@@ -43,7 +40,7 @@ Program::Program(sptr<Shader> vertexShader, sptr<Shader> fragmentShader, bool mu
 		link();
 }
 
-Program::~Program(void) {
+Program::~Program() {
 	glDeleteProgram(mProgram);
 	mShaders.clear();
 }
@@ -62,7 +59,7 @@ void Program::bindAttribLocation(unsigned index, const string &name) {
 	glBindAttribLocation(mProgram, index, name.c_str());
 }
 
-void Program::link(void) {
+void Program::link() {
 	mUniformLocations.clear();
 	mAttribLocations.clear();
 
@@ -75,36 +72,34 @@ void Program::link(void) {
 		glGetProgramiv(mProgram, GL_INFO_LOG_LENGTH, &logsize);
 		char *log = new char[logsize + 1];
 		glGetProgramInfoLog(mProgram, logsize, &logsize, log);
-		throw std::runtime_error("Unable to link shader: \n" + string(log));
+		string strlog(log);
+		delete[] log;
+		throw std::runtime_error("Unable to link shader: \n" + strlog);
 	}
 }
 
-void Program::bind(void) { glUseProgram(mProgram); }
+void Program::bind() const {
+	for (const auto &[unit, texture] : mTextures)
+		texture->activate(unit);
 
-void Program::unbind(void) { glUseProgram(0); }
-
-bool Program::hasUniform(const string &name) { return (getUniformLocation(name) != -1); }
-
-bool Program::hasVertexAttrib(const string &name) { return (getAttribLocation(name) != -1); }
-
-int Program::getUniformLocation(const string &name) {
-	auto it = mUniformLocations.find(name);
-	if (it != mUniformLocations.end())
-		return it->second;
-
-	int location = glGetUniformLocation(mProgram, name.c_str());
-	mUniformLocations[name] = GLuint(location);
-	return location;
+	glUseProgram(mProgram);
 }
 
-int Program::getAttribLocation(const string &name) {
-	auto it = mAttribLocations.find(name);
-	if (it != mAttribLocations.end())
-		return it->second;
+void Program::unbind() const {
+	for (const auto &[unit, texture] : mTextures)
+		texture->deactivate(unit);
 
-	int location = glGetAttribLocation(mProgram, name.c_str());
-	mUniformLocations[name] = location;
-	return location;
+	glUseProgram(0);
+}
+
+bool Program::hasUniform(const string &name) const {
+	bind();
+	return getUniformLocation(name) != -1;
+}
+
+bool Program::hasVertexAttrib(const string &name) const {
+	bind();
+	return getAttribLocation(name) != -1;
 }
 
 void Program::setUniform(const string &name, float value) {
@@ -142,6 +137,18 @@ void Program::setUniform(const string &name, const mat4 &value) {
 	glUniformMatrix4fv(getUniformLocation(name.c_str()), 1, GL_FALSE, glm::value_ptr(value));
 }
 
+void Program::setUniform(const string &name, shared_ptr<Texture> texture) {
+	int unit;
+	if (auto it = mTextureUnits.find(name); it != mTextureUnits.end()) {
+		unit = it->second;
+	} else {
+		unit = nextTextureUnit();
+		mTextureUnits[name] = unit;
+	}
+	mTextures[unit] = texture;
+	setUniform(name, unit);
+}
+
 void Program::setVertexAttrib(const string &name, float value) {
 	bind();
 	glVertexAttrib1f(getAttribLocation(name.c_str()), value);
@@ -160,6 +167,30 @@ void Program::setVertexAttrib(const string &name, const vec3 &value) {
 void Program::setVertexAttrib(const string &name, const vec4 &value) {
 	bind();
 	glVertexAttrib4fv(getAttribLocation(name.c_str()), glm::value_ptr(value));
+}
+
+int Program::nextTextureUnit() const { return !mTextures.empty() ? mTextures.rbegin()->first : 0; }
+
+int Program::getUniformLocation(const string &name) const {
+	if (auto it = mUniformLocations.find(name); it != mUniformLocations.end())
+		return it->second;
+
+	int location = glGetUniformLocation(mProgram, name.c_str());
+	if (location == -1)
+		std::cerr << "Warning: no uniform \"" << name << "\" in program" << std::endl;
+	mUniformLocations[name] = GLuint(location);
+	return location;
+}
+
+int Program::getAttribLocation(const string &name) const {
+	if (auto it = mAttribLocations.find(name); it != mAttribLocations.end())
+		return it->second;
+
+	int location = glGetAttribLocation(mProgram, name.c_str());
+	if (location == -1)
+		std::cerr << "Warning: no attribute \"" << name << "\" in program" << std::endl;
+	mUniformLocations[name] = location;
+	return location;
 }
 
 } // namespace pla

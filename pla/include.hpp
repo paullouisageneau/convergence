@@ -80,6 +80,7 @@
 #include <stack>
 #include <string>
 #include <thread>
+#include <type_traits>
 #include <vector>
 
 #include <dirent.h>
@@ -194,8 +195,13 @@ using milliseconds = std::chrono::duration<double, std::milli>;
 using microseconds = std::chrono::duration<double, std::micro>;
 using nanoseconds = std::chrono::duration<double, std::nano>;
 
-template <typename T> using sptr = std::shared_ptr<T>;
-template <typename T> using wptr = std::weak_ptr<T>;
+using std::shared_ptr;
+using std::unique_ptr;
+using std::weak_ptr;
+
+template <typename T> using sptr = shared_ptr<T>;
+template <typename T> using wptr = weak_ptr<T>;
+template <typename T> using uptr = unique_ptr<T>;
 
 // Hacks
 #ifdef WINDOWS

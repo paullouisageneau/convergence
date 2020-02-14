@@ -31,7 +31,7 @@ using pla::BinaryFormatter;
 using namespace std::placeholders;
 
 Terrain::Terrain(shared_ptr<MessageBus> messageBus, shared_ptr<Store> store, int seed)
-    : Merkle(store), mMessageBus(messageBus), mPerlin(seed),
+    : Merkle(store), mMessageBus(messageBus), mNoise(seed),
       mSurface(std::bind(&Terrain::getBlock, this, _1)) {}
 
 Terrain::~Terrain(void) {}
@@ -191,24 +191,24 @@ bool Terrain::propagateData(const int3 &pos, const binary &data) {
 
 void Terrain::populateBlock(shared_ptr<Block> block) {
 	static const auto Size = Block::Size;
-	const float tune = 0.7f;
-	const float f1 = 0.1517f;
-	const float f2 = 0.0269f;
-	const float f3 = 0.0612f;
+	const double tune = 0.5;
+	const double f1 = 0.1517;
+	const double f2 = 0.0269;
+	const double f3 = 0.0612;
+	const dvec3 offset(1000.);
 	for (int x = 0; x < Size; ++x) {
 		for (int y = 0; y < Size; ++y) {
 			bool inside = false;
 			for (int z = -1; z < Size; ++z) {
 				int3 pos = block->position();
-				const float ax = float(pos.x * Size + x);
-				const float ay = float(pos.y * Size + y);
-				const float az = float(pos.z * Size + z);
-				const float d2 = ax * ax + ay * ay + az * az;
-				const float noise1 = mPerlin.noise(ax * f1, ay * f1, az * f1 * 0.10f);
-				const float noise2 = mPerlin.noise(ax * f2, ay * f2, az * f2 * 4.f + 1000.f);
-				const float noise =
-				    noise1 * noise1 + (noise2 - (0.4f + tune * 0.1f)) * 2.f - 10.f / d2;
-				uint8_t weight = uint8_t(pla::bounds(int(noise * 5000.f), 0, 255));
+				const double ax = pos.x * Size + x;
+				const double ay = pos.y * Size + y;
+				const double az = pos.z * Size + z;
+				const double d2 = ax * ax + ay * ay + az * az;
+				const double n1 = mNoise.generate(dvec3(ax, ay, az * 0.1) * f1, 2);
+				const double n2 = mNoise.generate(dvec3(ax, ay, az * 4.0) * f2 + offset, 1);
+				const double noise = n1 * n1 + (n2 - (0.4 + tune * 0.1)) * 2. - 10. / d2;
+				uint8_t weight = uint8_t(pla::bounds(int(noise * 5000.), 0, 255));
 
 				if (z >= 0)
 					block->writeValue(int3(x, y, z), Surface::value(0, weight), false);
@@ -219,8 +219,8 @@ void Terrain::populateBlock(shared_ptr<Block> block) {
 				} else if (inside) {
 					inside = false;
 					if (z >= 0) {
-						const float noise = mPerlin.noise(ax * f3, ay * f3, az * f3 + 2000.f);
-						uint8_t type = noise > 0.333f ? (noise > 0.666f ? 2 : 1) : 0;
+						const double n3 = mNoise.generate(dvec3(ax, ay, az) * f3 + offset * 2., 1);
+						uint8_t type = n3 > 0.333 ? (n3 > 0.666 ? 2 : 1) : 0;
 						block->writeType(int3(x, y, z), type, false);
 						setType(int3(ax, ay, az - 1), type);
 					}
@@ -228,7 +228,6 @@ void Terrain::populateBlock(shared_ptr<Block> block) {
 			}
 		}
 	}
-
 	block->markChanged();
 }
 
@@ -396,7 +395,7 @@ int3 Terrain::TerrainIndex::position(void) const {
 		values.pop_back();
 	}
 	const unsigned offset = 0x80000000;
-	return int3(int(x - offset), int(y - offset), int(z - offset));
+	return int3(int(x) - offset, int(y) - offset, int(z) - offset);
 }
 
 } // namespace convergence

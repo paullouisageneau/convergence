@@ -21,21 +21,27 @@
 #ifndef PLA_PERLIN_H
 #define PLA_PERLIN_H
 
+#include "pla/include.hpp"
+#include "pla/linalg.hpp"
+
 #include <vector>
 
 namespace pla {
 
 class PerlinNoise {
 public:
-	PerlinNoise(unsigned int seed);
-	double noise(double x, double y, double z) const;
+	PerlinNoise(unsigned int seed, int period = 256);
+	double generate(const dvec3 &v, int octaves = 1) const;
 
 private:
+	double noise(double x, double y, double z, int m) const;
 	double fade(double t) const;
 	double lerp(double t, double a, double b) const;
 	double grad(int hash, double x, double y, double z) const;
+	int hash(int i) const;
 
-	std::vector<int> p; // permutation
+	const int mPeriod;
+	const std::vector<int> mPerm;
 };
 
 } // namespace pla

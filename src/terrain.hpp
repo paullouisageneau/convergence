@@ -28,8 +28,11 @@
 #include "surface.hpp"
 
 #include "pla/context.hpp"
+#include "pla/perlinnoise.hpp"
 
 namespace convergence {
+
+using pla::PerlinNoise;
 
 class Terrain : public Merkle, public MessageBus::Listener, public Collidable {
 public:
@@ -107,7 +110,7 @@ private:
 	std::unordered_map<int3, shared_ptr<Block>, int3::hash> mBlocks;
 
 	shared_ptr<MessageBus> mMessageBus;
-	PerlinNoise mPerlin;
+	PerlinNoise mNoise;
 	Surface mSurface;
 };
 } // namespace convergence

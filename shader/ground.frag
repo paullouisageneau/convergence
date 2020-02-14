@@ -1,6 +1,7 @@
 #version 110
 
 uniform vec3 lightPosition;
+uniform sampler3D detail;
 
 varying vec3 fragPosition;
 varying vec3 fragNormal;
@@ -112,7 +113,8 @@ void main()
 
 	float z = gl_FragCoord.z/gl_FragCoord.w;
 	float fog = min((exp2(0.2 * z) - 1.0) * 0.02, 1.0);
-	vec3 color = vec3(fragAmbient + fragDiffuse * light) * (1.0 - fog);
+	vec3 texcoord = fragPosition;
+	vec3 color = vec3(fragAmbient + fragDiffuse * light) * (vec3(0.5)+vec3(texture3D(detail, texcoord))*0.5) * (1.0 - fog);
 	gl_FragColor = vec4(color, 1.0);
 }
 
