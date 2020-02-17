@@ -183,7 +183,7 @@ typedef Sha3_256 Sha3; // SHA3 defaults to SHA3-256
 
 class Cipher : public Stream {
 public:
-	Cipher(Stream *stream, bool mustDelete = false);
+	Cipher(Stream *stream, bool ownership = false);
 	virtual ~Cipher(void);
 
 	virtual void setEncryptionKey(const binary &key) = 0;
@@ -204,13 +204,13 @@ protected:
 private:
 	Stream *mStream;
 	binary mReadBlock, mWriteBlock;
-	bool mMustDelete;
+	bool mOwnership;
 };
 
 // AES256-GCM implementation
 class AesGcm256 : public Cipher {
 public:
-	AesGcm256(Stream *stream, bool mustDelete = false);
+	AesGcm256(Stream *stream, bool ownership = false);
 	~AesGcm256(void);
 
 	void setEncryptionKey(const binary &key);

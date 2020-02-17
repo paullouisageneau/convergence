@@ -44,7 +44,8 @@ Image::Image(const std::string &filename) {
 
 	mWidth = converted->w;
 	mHeight = converted->h;
-	mData = new uint8_t[mWidth * mHeight * 4];
+	const size_t size = mWidth * mHeight * 4;
+	mData = new uint8_t[size];
 	const uint8_t *data = reinterpret_cast<uint8_t *>(converted->pixels);
 	for (size_t i = 0; i < converted->h; ++i) {
 		std::copy(data, data + converted->w, mData);
@@ -61,12 +62,24 @@ Image::Image(const std::string &filename) {
 
 	mWidth = ilGetInteger(IL_IMAGE_WIDTH);
 	mHeight = ilGetInteger(IL_IMAGE_HEIGHT);
-	mData = new uint8_t[mWidth * mHeight * 4];
+	const size_t size = mWidth * mHeight * 4;
+	mData = new uint8_t[size];
 	ilCopyPixels(0, 0, 0, mWidth, mHeight, 1, IL_RGBA, IL_UNSIGNED_BYTE, mData);
 
 	ilBindImage(0);
 	ilDeleteImage(id);
 #endif
+}
+
+Image::Image(uint8_t *data, size_t width, size_t height, bool ownership)
+    : mWidth(width), mHeight(height) {
+	if (ownership) {
+		mData = data;
+	} else {
+		const size_t size = mWidth * mHeight * 4;
+		mData = new uint8_t[size];
+		std::copy(data, data + size, mData);
+	}
 }
 
 Image::~Image() { delete[] mData; }

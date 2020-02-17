@@ -86,7 +86,7 @@ public:
 	virtual ~SecureTransport(void);
 
 	void addCredentials(Credentials *creds,
-	                    bool mustDelete = false); // creds will be deleted if mustDelete == true
+	                    bool ownership = false); // creds will be deleted if ownership == true
 	void setHostname(const string &hostname);     // remote hostname for client
 
 	void handshake(void);

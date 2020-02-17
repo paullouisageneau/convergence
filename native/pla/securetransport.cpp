@@ -81,11 +81,11 @@ SecureTransport::~SecureTransport(void) {
 		delete c;
 }
 
-void SecureTransport::addCredentials(Credentials *creds, bool mustDelete) {
+void SecureTransport::addCredentials(Credentials *creds, bool ownership) {
 	// Install credentials
 	creds->install(this);
 
-	if (mustDelete)
+	if (ownership)
 		mCredsToDelete.push_back(creds);
 }
 

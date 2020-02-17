@@ -18,30 +18,35 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef PLA_IMAGE_H
-#define PLA_IMAGE_H
+#ifndef PLA_FONT_H
+#define PLA_FONT_H
 
+#include "pla/image.hpp"
 #include "pla/include.hpp"
+#include "pla/linalg.hpp"
 
 #include <string>
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 namespace pla {
 
-class Image {
+class Font {
 public:
-	Image(const std::string &filename);
-	Image(uint8_t *data, size_t width, size_t height, bool ownership = false);
-	virtual ~Image();
+	Font(const std::string &filename);
+	virtual ~Font();
 
-	size_t width() const;
-	size_t height() const;
-	const uint8_t *data() const;
+	shared_ptr<Image> draw(const std::string &text, const vec3 &color);
 
 private:
-	size_t mWidth, mHeight;
-	uint8_t *mData;
+	static void blit(const FT_Bitmap &bitmap, FT_Int left, FT_Int top, const uint8_t *rgb,
+	                 uint8_t *dest, size_t width, size_t height);
+
+	FT_Library mLibrary;
+	FT_Face mFace;
 };
 
 } // namespace pla
 
-#endif // PLA_RESOURCE_H
+#endif // PLA_FONT_H

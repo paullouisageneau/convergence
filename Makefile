@@ -28,8 +28,10 @@ else
 DIR=native
 INCLUDES+=-Ideps/libdatachannel/include -Ideps/libdatachannel/deps/plog/include
 LOCALLIBS+=$(BUILDDIR)/libdatachannel.a $(BUILDDIR)/libjuice.a $(BUILDDIR)/libusrsctp.a
-LDLIBS+=-lGLEW -lIL -lnettle -lhogweed -lgmp -lgnutls -largon2
+CPPFLAGS+= $(shell pkg-config freetype2 --cflags)
 LDFLAGS+=-pthread
+LDLIBS+=-lGLEW -lIL -lnettle -lhogweed -lgmp -lgnutls -largon2
+LDLIBS+= $(shell pkg-config freetype2 --libs)
 endif
 
 INCLUDES+=-I$(DIR)

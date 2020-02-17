@@ -18,30 +18,30 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef PLA_IMAGE_H
-#define PLA_IMAGE_H
+#ifndef PLA_TEXT_H
+#define PLA_TEXT_H
 
+#include "pla/font.hpp"
 #include "pla/include.hpp"
+#include "pla/texture.hpp"
 
 #include <string>
 
 namespace pla {
 
-class Image {
+class Text {
 public:
-	Image(const std::string &filename);
-	Image(uint8_t *data, size_t width, size_t height, bool ownership = false);
-	virtual ~Image();
+	Text(shared_ptr<Font> font, std::string content = "");
+	virtual ~Text();
 
-	size_t width() const;
-	size_t height() const;
-	const uint8_t *data() const;
+	std::string content() const;
+
+	void setContent(std::string content);
 
 private:
-	size_t mWidth, mHeight;
-	uint8_t *mData;
+	std::string mContent;
 };
 
 } // namespace pla
 
-#endif // PLA_RESOURCE_H
+#endif // PLA_TEXT_H
