@@ -236,12 +236,12 @@ void Sha3_512::mac(const binary &message, const binary &key, binary &digest) {
 	finalize(digest);
 }
 
-Cipher::Cipher(Stream *stream, bool mustDelete) : mStream(stream), mMustDelete(mustDelete) {
+Cipher::Cipher(Stream *stream, bool ownership) : mStream(stream), mOwnership(ownership) {
 	Assert(mStream);
 }
 
 Cipher::~Cipher(void) {
-	if (mMustDelete)
+	if (mOwnership)
 		delete mStream;
 }
 
@@ -289,7 +289,7 @@ void Cipher::close(void) {
 	mStream->close();
 }
 
-AesGcm256::AesGcm256(Stream *stream, bool mustDelete) : Cipher(stream, mustDelete) {}
+AesGcm256::AesGcm256(Stream *stream, bool ownership) : Cipher(stream, ownership) {}
 
 AesGcm256::~AesGcm256(void) {
 	close(); // must be called here and not in Cipher

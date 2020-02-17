@@ -199,6 +199,8 @@ using std::shared_ptr;
 using std::unique_ptr;
 using std::weak_ptr;
 
+using std::string_view;
+
 template <typename T> using sptr = shared_ptr<T>;
 template <typename T> using wptr = weak_ptr<T>;
 template <typename T> using uptr = unique_ptr<T>;
