@@ -46,7 +46,7 @@ Surface::Surface(std::function<shared_ptr<Block>(const int3 &b)> retrieveFunc)
 		for (int y = 0; y < 256; ++y)
 			for (int z = 0; z < 256; ++z) {
 				double n = perlin.generate(dvec3(x, y, z) / 16., 3);
-				uint8_t v = bounds(int(n * 255.), 0, 255);
+				uint8_t v = bounds(int((0.5 + n * 0.5) * 255.), 0, 255);
 				data[i++] = v;
 				data[i++] = v;
 				data[i++] = v;
