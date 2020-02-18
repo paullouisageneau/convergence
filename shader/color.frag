@@ -1,12 +1,15 @@
-#version 110
+#version 330
+precision highp float;
 
 uniform vec3 lightPosition;
 
-varying vec3 fragNormal;
-varying vec3 fragLight;
-varying vec3 fragAmbient;
-varying vec3 fragDiffuse;
-varying vec3 fragSmoothness;
+in vec3 fragNormal;
+in vec3 fragLight;
+in vec3 fragAmbient;
+in vec3 fragDiffuse;
+in vec3 fragSmoothness;
+
+out vec4 fragColor;
 
 void main()
 {
@@ -15,6 +18,6 @@ void main()
 	float z = gl_FragCoord.z/gl_FragCoord.w;
 	float fog = min((exp2(0.2*z) - 1.0)*0.02, 1.0);
 
-	gl_FragColor = vec4((fragAmbient + fragDiffuse * light) * (1.0 - fog), 1.0);
+	fragColor = vec4((fragAmbient + fragDiffuse * light) * (1.0 - fog), 1.0);
 }
 

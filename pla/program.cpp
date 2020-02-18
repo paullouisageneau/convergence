@@ -28,7 +28,7 @@ Program::Program() {
 		throw std::runtime_error("Unable to create shader program");
 }
 
-Program::Program(sptr<Shader> vertexShader, sptr<Shader> fragmentShader, bool mustLink)
+Program::Program(sptr<Shader> vertexShader, sptr<Shader> fragmentShader, bool nolinking)
     : Program() {
 	vertexShader->compile();
 	fragmentShader->compile();
@@ -36,7 +36,7 @@ Program::Program(sptr<Shader> vertexShader, sptr<Shader> fragmentShader, bool mu
 	attachShader(vertexShader);
 	attachShader(fragmentShader);
 
-	if (mustLink)
+	if (!nolinking)
 		link();
 }
 

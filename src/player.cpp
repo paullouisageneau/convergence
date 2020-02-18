@@ -47,13 +47,6 @@ Player::Player(sptr<MessageBus> messageBus, const identifier &id)
 	auto program = std::make_shared<Program>(std::make_shared<VertexShader>("shader/color.vect"),
 	                                         std::make_shared<FragmentShader>("shader/color.frag"));
 
-	program->bindAttribLocation(0, "position");
-	program->bindAttribLocation(1, "normal");
-	program->bindAttribLocation(2, "ambient");
-	program->bindAttribLocation(3, "diffuse");
-	program->bindAttribLocation(4, "smoothness");
-	program->link();
-
 	float cube_vertices[] = {
 	    -1.0, -1.0, 1.0,  1.0, -1.0, 1.0,  1.0, 1.0, 1.0,  -1.0, 1.0, 1.0,
 	    -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, -1.0,
