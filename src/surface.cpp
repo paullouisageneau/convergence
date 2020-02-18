@@ -32,13 +32,6 @@ Surface::Surface(std::function<shared_ptr<Block>(const int3 &b)> retrieveFunc)
 	mProgram = std::make_shared<Program>(std::make_shared<VertexShader>("shader/ground.vect"),
 	                                     std::make_shared<FragmentShader>("shader/ground.frag"));
 
-	mProgram->bindAttribLocation(0, "position");
-	mProgram->bindAttribLocation(1, "normal");
-	mProgram->bindAttribLocation(2, "ambient");
-	mProgram->bindAttribLocation(3, "diffuse");
-	mProgram->bindAttribLocation(4, "smoothness");
-	mProgram->link();
-
 	auto data = new uint8_t[256 * 256 * 256 * 4];
 	int i = 0;
 	PerlinNoise perlin(666, 256 / 16);

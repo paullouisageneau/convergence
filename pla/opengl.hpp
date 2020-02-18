@@ -22,7 +22,7 @@
 #define PLA_OPENGL_H
 
 #ifdef USE_OPENGL_ES
-#define GLFW_INCLUDE_ES2
+#define GLFW_INCLUDE_ES3
 #else
 #include <GL/glew.h>
 #endif

@@ -38,6 +38,8 @@ void Shader::setSource(const std::string &source) {
 
 void Shader::loadFile(const std::string &filename) {
 	try {
+		std::cout << "Loading shader " << filename << std::endl;
+
 		std::ifstream file(filename.c_str());
 		if (!file.is_open())
 			throw std::runtime_error("Unable to open file: " + filename);
@@ -46,15 +48,12 @@ void Shader::loadFile(const std::string &filename) {
 		while (file.good()) {
 			std::string line;
 			getline(file, line);
-
 #ifdef USE_OPENGL_ES
 			if (line.substr(0, 8) == "#version") {
-				source += "#version 100\n";
-				source += "precision highp float;\n";
+				source += "#version 300 es\n";
 				continue;
 			}
 #endif
-
 			source += line + '\n';
 		}
 

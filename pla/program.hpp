@@ -35,7 +35,7 @@ namespace pla {
 class Program final : public Resource {
 public:
 	Program();
-	Program(sptr<Shader> vertexShader, sptr<Shader> fragmentShader, bool mustLink = false);
+	Program(sptr<Shader> vertexShader, sptr<Shader> fragmentShader, bool nolinking = false);
 	~Program();
 
 	void attachShader(sptr<Shader> shader);

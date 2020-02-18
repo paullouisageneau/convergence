@@ -1,22 +1,23 @@
-#version 110
+#version 330
+precision highp float;
 
 uniform mat4 transform;
 uniform mat4 view;
 uniform mat4 model;
 uniform vec3 lightPosition;
 
-attribute vec3 position;
-attribute vec3 normal;
-attribute vec4 ambient;
-attribute vec4 diffuse;
-attribute float smoothness;
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec3 normal;
+layout(location = 2) in vec4 ambient;
+layout(location = 3) in vec4 diffuse;
+layout(location = 4) in float smoothness;
 
-varying vec3 fragPosition;
-varying vec3 fragNormal;
-varying vec3 fragLight;
-varying vec4 fragAmbient;
-varying vec4 fragDiffuse;
-varying float fragSmoothness;
+out vec3 fragPosition;
+out vec3 fragNormal;
+out vec3 fragLight;
+out vec4 fragAmbient;
+out vec4 fragDiffuse;
+out float fragSmoothness;
 
 void main()
 {

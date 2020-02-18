@@ -1,0 +1,21 @@
+#version 330
+precision highp float;
+
+uniform mat4 transform;
+uniform mat4 view;
+uniform mat4 model;
+
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec2 texCoord;
+
+out vec3 fragPosition;
+out vec2 fragTexCoord;
+
+void main()
+{
+	vec4 pos = vec4(position, 1.0);
+	vec3 fragPosition = (model*pos).xyz;
+	fragTexCoord = texCoord;
+	gl_Position = transform * pos;
+}
+
