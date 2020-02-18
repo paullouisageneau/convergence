@@ -33,8 +33,16 @@ using std::pow;
 std::vector<int> make_perm(unsigned int seed, int period) {
 	std::vector<int> p(period);
 	std::iota(p.begin(), p.end(), 0);
-	std::shuffle(p.begin(), p.end(), std::mt19937(seed));
-	p.insert(p.end(), p.begin(), p.end());
+
+	// Compute permutation from seed
+	const unsigned int m = 2147483648;
+	const unsigned int a = 1103515245;
+	const unsigned int c = 12345;
+	for (unsigned int i = period - 1; i > 0; --i) {
+		seed = (seed * a + c) % m;
+		unsigned int r = seed / (m / (i + 1) + 1);
+		std::swap(p[i], p[r]);
+	}
 	return p;
 }
 
