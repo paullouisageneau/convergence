@@ -84,13 +84,13 @@
 				var pBuffer = size ? _malloc(size) : 0;
 				var heapBytes = new Uint8Array(Module.HEAPU8.buffer, pBuffer, size);
 				heapBytes.set(byteArray);
-				Module.dynCall_viiii(responseCallback, response.status, pBuffer, size, userPointer);
+				Module['dynCall_viiii'](responseCallback, response.status, pBuffer, size, userPointer);
 				// WARNING: pBuffer is not freed here and therefore must be from C/C++ code
 			})
 			.catch(function(error) {
 				console.error(error);
 				if(request.httpAbortCount > currentAbortCount) return;
-				Module.dynCall_vii(errorCallback, 0, userPointer);
+				Module['dynCall_vii'](errorCallback, 0, userPointer);
 			});
 		},
 

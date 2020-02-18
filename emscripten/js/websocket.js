@@ -41,7 +41,7 @@
 			var cb = function() {
 				if(webSocket.rtcUserDeleted) return;
 				var userPointer = webSocket.rtcUserPointer || 0;
-				Module.dynCall_vi(openCallback, userPointer);
+				Module['dynCall_vi'](openCallback, userPointer);
 			};
 			webSocket.onopen = cb;
 			if(webSocket.readyState == 1) setTimeout(cb, 0);
@@ -52,7 +52,7 @@
 			var cb = function() {
 				if(webSocket.rtcUserDeleted) return;
 				var userPointer = webSocket.rtcUserPointer || 0;
-				Module.dynCall_vii(errorCallback, 0, userPointer);
+				Module['dynCall_vii'](errorCallback, 0, userPointer);
 			};
 			webSocket.onerror = cb;
 		},
@@ -68,13 +68,13 @@
 				var heapBytes = new Uint8Array(Module.HEAPU8.buffer, pBuffer, size);
 				heapBytes.set(byteArray);
 				var userPointer = webSocket.rtcUserPointer || 0;
-				Module.dynCall_viii(messageCallback, pBuffer, size, userPointer);
+				Module['dynCall_viii'](messageCallback, pBuffer, size, userPointer);
 				_free(pBuffer);
 			};
 			webSocket.onclose = function() {
 				if(webSocket.rtcUserDeleted) return;
 				var userPointer = webSocket.rtcUserPointer || 0;
-				Module.dynCall_viii(messageCallback, 0, 0, userPointer);
+				Module['dynCall_viii'](messageCallback, 0, 0, userPointer);
 			};
 		},
 
