@@ -32,15 +32,16 @@ class Object {
 public:
 	using index_t = Mesh::index_t;
 
-	Object(sptr<Mesh> mesh, sptr<Program> program);
+	Object(sptr<Mesh> mesh = nullptr, sptr<Program> program = nullptr);
 	Object(const index_t *indices, size_t nindices, const float *vertices, size_t nvertices,
-	       sptr<Program> program);
-	virtual ~Object(void);
+	       sptr<Program> program = nullptr);
+	virtual ~Object();
 
+	void setMesh(sptr<Mesh> mesh);
 	void setProgram(sptr<Program> program, size_t firstIndex = 0);
 	void unsetProgram(size_t firstIndex = 0);
 
-	virtual int draw(const Context &context);
+	virtual int draw(const Context &context) const;
 
 protected:
 	sptr<Mesh> mMesh;

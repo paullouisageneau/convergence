@@ -25,7 +25,7 @@ namespace pla {
 Context::Context(const mat4 &projection, const mat4 &camera)
     : mProjection(projection), mView(glm::inverse(camera)), mModel(mat4(1.f)),
       mTransform(mProjection * mView * mModel), mCameraPosition(camera * vec4(0.f, 0.f, 0.f, 1.f)),
-      mFrustum(mTransform), mDepthTestEnabled(true) {
+      mFrustum(mTransform), mDepthTestEnabled(true), mBlendingEnabled(false) {
 	setUniform("projection", mProjection);
 	setUniform("view", mView);
 	setUniform("model", mModel);
@@ -48,16 +48,27 @@ const Frustum &Context::frustum(void) const { return mFrustum; }
 
 void Context::enableDepthTest(bool enabled) { mDepthTestEnabled = enabled; }
 
+void Context::enableBlending(bool enabled) { mBlendingEnabled = enabled; }
+
 void Context::prepare(sptr<Program> program) const {
 	int unit = program->nextTextureUnit();
 	for (auto p : mUniforms)
 		if (program->hasUniform(p.first))
 			p.second->apply(p.first, program, unit); // may increment unit
 
-	if (mDepthTestEnabled)
+	if (mDepthTestEnabled) {
 		glEnable(GL_DEPTH_TEST);
-	else
+	} else {
 		glDisable(GL_DEPTH_TEST);
+	}
+
+	if (mBlendingEnabled) {
+		glEnable(GL_BLEND);
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	} else {
+		glDisable(GL_BLEND);
+	}
 }
 
 Context Context::transform(const mat4 &matrix) const {

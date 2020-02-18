@@ -23,22 +23,33 @@
 
 #include "pla/font.hpp"
 #include "pla/include.hpp"
+#include "pla/object.hpp"
+#include "pla/program.hpp"
 #include "pla/texture.hpp"
 
 #include <string>
 
 namespace pla {
 
-class Text {
+class Text : Object {
 public:
-	Text(shared_ptr<Font> font, std::string content = "");
+	static const size_t DefaultResolution = 32;
+
+	Text(shared_ptr<Font> font, shared_ptr<Program> program, std::string content = "",
+	     size_t resolution = DefaultResolution);
 	virtual ~Text();
 
 	std::string content() const;
+	void setContent(std::string content, size_t resolution = DefaultResolution);
 
-	void setContent(std::string content);
+	virtual int draw(const Context &context) const;
 
 private:
+	void generate(size_t resolution);
+
+	const shared_ptr<Font> mFont;
+	const shared_ptr<Program> mProgram;
+	shared_ptr<Texture> mTexture;
 	std::string mContent;
 };
 
