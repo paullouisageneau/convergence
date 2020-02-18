@@ -22,41 +22,51 @@
 
 namespace pla {
 
-Object::Object(sptr<Mesh> mesh, sptr<Program> program) : mMesh(mesh) { setProgram(program, 0); }
+Object::Object(sptr<Mesh> mesh, sptr<Program> program) : mMesh(mesh) {
+	if (program)
+		setProgram(program, 0);
+}
 
 Object::Object(const index_t *indices, size_t nindices, const float *vertices, size_t nvertices,
                sptr<Program> program)
     : mMesh(std::make_shared<Mesh>(indices, nindices, vertices, nvertices)) {
-	setProgram(program, 0);
+	if (program)
+		setProgram(program, 0);
 }
 
 Object::~Object(void) {}
 
+void Object::setMesh(sptr<Mesh> mesh) { mMesh = mesh; }
+
 void Object::setProgram(sptr<Program> program, size_t firstIndex) {
-	mPrograms.insert(std::make_pair(firstIndex, program));
+	if (program)
+		mPrograms.insert(std::make_pair(firstIndex, program));
+	else
+		mPrograms.erase(firstIndex);
 }
 
 void Object::unsetProgram(size_t firstIndex) { mPrograms.erase(firstIndex); }
 
-int Object::draw(const Context &context) {
+int Object::draw(const Context &context) const {
 	int count = 0;
-	auto it = mPrograms.begin();
-	while (it != mPrograms.end()) {
-		size_t first = it->first;
-		size_t last = mMesh->indicesCount();
-		auto program = it->second;
+	if (mMesh) {
+		auto it = mPrograms.begin();
+		while (it != mPrograms.end()) {
+			size_t first = it->first;
+			size_t last = mMesh->indicesCount();
+			auto program = it->second;
 
-		if (++it != mPrograms.end())
-			last = it->first;
+			if (++it != mPrograms.end())
+				last = it->first;
 
-		if (program) {
-			context.prepare(program);
-			program->bind();
-			count += mMesh->drawElements(first, last - first);
-			program->unbind();
+			if (program) {
+				context.prepare(program);
+				program->bind();
+				count += mMesh->drawElements(first, last - first);
+				program->unbind();
+			}
 		}
 	}
-
 	return count;
 }
 

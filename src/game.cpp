@@ -43,6 +43,12 @@ void Game::onInit(Engine *engine) {
 
 	mWorld = std::make_shared<World>(mMessageBus);
 	mMessageBus->registerTypeListener(Message::PlayerPosition, mWorld);
+
+	auto program = std::make_shared<Program>(std::make_shared<VertexShader>("shader/font.vect"),
+	                                         std::make_shared<FragmentShader>("shader/font.frag"));
+
+	auto font = std::make_shared<Font>("res/ttf/DejaVuSansMono.ttf");
+	mText = std::make_shared<Text>(font, program, "Coucou");
 }
 
 void Game::onCleanup(Engine *engine) {
@@ -122,6 +128,8 @@ int Game::onDraw(Engine *engine) {
 
 	engine->clearDepth();
 	mWorld->localPlayer()->draw(context);
+
+	mText->draw(context);
 	return count;
 }
 

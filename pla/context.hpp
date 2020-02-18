@@ -44,6 +44,7 @@ public:
 	void prepare(sptr<Program> program) const; // set uniforms in program
 
 	void enableDepthTest(bool enabled);
+	void enableBlending(bool enabled);
 
 	Context transform(const mat4 &matrix) const;
 
@@ -54,6 +55,7 @@ private:
 	vec3 mCameraPosition;
 	Frustum mFrustum;
 	bool mDepthTestEnabled;
+	bool mBlendingEnabled;
 
 	class UniformContainer {
 	public:

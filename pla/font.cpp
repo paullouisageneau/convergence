@@ -28,9 +28,6 @@ Font::Font(const std::string &filename) {
 
 	if (FT_New_Face(mLibrary, filename.c_str(), 0, &mFace) != 0)
 		throw std::runtime_error("Font loading failed: " + filename);
-
-	if (FT_Set_Pixel_Sizes(mFace, 0, 64) != 0)
-		throw std::runtime_error("FreeType set size failed");
 }
 
 Font::~Font() {
@@ -38,11 +35,13 @@ Font::~Font() {
 	FT_Done_FreeType(mLibrary);
 }
 
-shared_ptr<Image> Font::draw(const std::string &text, const vec3 &color) {
-	FT_GlyphSlot slot = mFace->glyph;
+shared_ptr<Image> Font::render(const std::string &text, size_t size, const vec3 &color) {
+	if (FT_Set_Pixel_Sizes(mFace, 0, size) != 0)
+		throw std::runtime_error("FreeType set size failed");
+
 	size_t width = 0;
 	size_t height = 0;
-
+	FT_GlyphSlot slot = mFace->glyph;
 	FT_Vector pen;
 	pen.x = 0;
 	pen.y = 0;
@@ -58,9 +57,9 @@ shared_ptr<Image> Font::draw(const std::string &text, const vec3 &color) {
 	}
 
 	const uint8_t rgb[3] = {uint8_t(color.x * 255), uint8_t(color.y * 255), uint8_t(color.z * 255)};
-	const size_t size = width * height * 4;
-	auto *data = new uint8_t[size];
-	std::fill(data, data + size, 0);
+	const size_t length = width * height * 4;
+	auto *data = new uint8_t[length];
+	std::fill(data, data + length, 0);
 	pen.x = 0;
 	pen.y = 0;
 	for (size_t i = 0; i < text.size(); ++i) {
@@ -84,13 +83,13 @@ void Font::blit(const FT_Bitmap &bitmap, FT_Int left, FT_Int top, const uint8_t 
 	for (size_t i = 0; i < bitmap.width; ++i)
 		for (size_t j = 0; j < bitmap.rows; ++j) {
 			size_t u = left + i;
-			size_t v = top + j;
+			size_t v = top - j;
 			if (u < width && v < height) {
 				size_t p = (v * width + u) * 4;
 				dest[p + 0] = rgb[0];
 				dest[p + 1] = rgb[1];
 				dest[p + 2] = rgb[2];
-				dest[p + 3] = bitmap.buffer[j * width + i];
+				dest[p + 3] = bitmap.buffer[j * bitmap.width + i];
 			}
 		}
 }

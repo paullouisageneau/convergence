@@ -22,8 +22,10 @@
 
 namespace pla {
 
-Texture::Texture(GLenum type) : mType(type) {
+Texture::Texture(GLenum type) : mType(type), mClampingEnabled(false) {
+#ifndef USE_OPENGL_ES
 	glEnable(mType);
+#endif
 	glGenTextures(1, &mTexture);
 }
 
@@ -48,21 +50,24 @@ void Texture::bind() const {
 	glBindTexture(mType, mTexture);
 	glTexParameteri(mType, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(mType, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(mType, GL_TEXTURE_WRAP_R, GL_REPEAT);
-	glTexParameteri(mType, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(mType, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	if (mClampingEnabled) {
+		glTexParameteri(mType, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		glTexParameteri(mType, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(mType, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	} else {
+		glTexParameteri(mType, GL_TEXTURE_WRAP_R, GL_REPEAT);
+		glTexParameteri(mType, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(mType, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	}
 }
 
 void Texture::unbind() const { glBindTexture(mType, 0); }
 
+void Texture::enableClamping(bool enabled) { mClampingEnabled = enabled; }
+
 void Texture::setImage(shared_ptr<Image> img) {
 	setImage(img->data(), img->width(), img->height());
-}
-
-void Texture::setImage(const uint8_t *data, size_t width) {
-	bind_guard guard(this);
-	glTexImage1D(mType, 0, GL_RGBA, width, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-	glGenerateMipmap(mType);
 }
 
 void Texture::setImage(const uint8_t *data, size_t width, size_t height) {

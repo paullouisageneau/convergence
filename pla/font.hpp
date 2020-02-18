@@ -37,7 +37,7 @@ public:
 	Font(const std::string &filename);
 	virtual ~Font();
 
-	shared_ptr<Image> draw(const std::string &text, const vec3 &color);
+	shared_ptr<Image> render(const std::string &text, size_t size, const vec3 &color);
 
 private:
 	static void blit(const FT_Bitmap &bitmap, FT_Int left, FT_Int top, const uint8_t *rgb,

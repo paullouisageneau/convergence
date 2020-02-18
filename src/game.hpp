@@ -28,6 +28,8 @@
 
 #include "pla/context.hpp"
 #include "pla/engine.hpp"
+#include "pla/font.hpp"
+#include "pla/text.hpp"
 
 #include <map>
 
@@ -35,7 +37,8 @@ namespace convergence {
 
 using pla::Context;
 using pla::Engine;
-using pla::string;
+using pla::Font;
+using pla::Text;
 
 class Game final : public Engine::State {
 public:
@@ -56,6 +59,8 @@ private:
 	sptr<MessageBus> mMessageBus;
 	sptr<Networking> mNetworking;
 	sptr<World> mWorld;
+
+	sptr<Text> mText;
 
 	float mYaw, mPitch;
 	double mAccumulator;

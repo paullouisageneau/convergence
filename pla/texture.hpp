@@ -43,14 +43,16 @@ public:
 	void bind() const;
 	void unbind() const;
 
+	void enableClamping(bool enabled);
+
 	void setImage(shared_ptr<Image> img);
-	void setImage(const uint8_t *data, size_t width);
 	void setImage(const uint8_t *data, size_t width, size_t height);
 	void setImage(const uint8_t *data, size_t width, size_t height, size_t depth);
 
 private:
 	GLuint mTexture;
 	GLenum mType;
+	bool mClampingEnabled;
 };
 
 } // namespace pla
