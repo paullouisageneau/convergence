@@ -34,7 +34,8 @@ Image::Image(const std::string &filename) {
 	if (!image)
 		throw std::runtime_error("Failed to load image: " + filename);
 
-	SDL_PixelFormat *format = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
+	// Pixel format is reversed because of endianess
+	SDL_PixelFormat *format = SDL_AllocFormat(SDL_PIXELFORMAT_ABGR8888);
 	SDL_Surface *converted = SDL_ConvertSurface(image, format, 0);
 	SDL_FreeFormat(format);
 	SDL_FreeSurface(image);
@@ -46,10 +47,12 @@ Image::Image(const std::string &filename) {
 	mHeight = converted->h;
 	const size_t size = mWidth * mHeight * 4;
 	mData = new uint8_t[size];
-	const uint8_t *data = reinterpret_cast<uint8_t *>(converted->pixels);
-	for (size_t i = 0; i < converted->h; ++i) {
-		std::copy(data, data + converted->w, mData);
-		data += converted->pitch;
+	uint8_t *dest = mData;
+	const uint8_t *src = reinterpret_cast<uint8_t *>(converted->pixels);
+	for (size_t i = 0; i < mHeight; ++i) {
+		std::copy(src, src + mWidth * 4, dest);
+		dest += mWidth * 4;
+		src += converted->pitch;
 	}
 	SDL_FreeSurface(converted);
 #else

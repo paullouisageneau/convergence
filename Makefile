@@ -1,6 +1,6 @@
 NAME=convergence
 
-CPPFLAGS=-g -O0 -fPIC -Wall -Wno-reorder -Wno-sign-compare -Wno-switch
+CPPFLAGS=-g -O2 -fPIC -Wall -Wno-reorder -Wno-sign-compare -Wno-switch
 CXXFLAGS=-std=c++17
 LDFLAGS=
 LDLIBS=-lGL -lglfw
