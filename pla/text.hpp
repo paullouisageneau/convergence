@@ -39,8 +39,11 @@ public:
 	     size_t resolution = DefaultResolution);
 	virtual ~Text();
 
-	std::string content() const;
 	void setContent(std::string content, size_t resolution = DefaultResolution);
+	void setCentered(bool centered = true);
+	std::string content() const;
+	float width() const;
+	float height() const;
 
 	virtual int draw(const Context &context) const;
 
@@ -51,6 +54,9 @@ private:
 	const shared_ptr<Program> mProgram;
 	shared_ptr<Texture> mTexture;
 	std::string mContent;
+	float mWidth = 0.f;
+	float mHeight = 0.f;
+	bool mCentered = false;
 };
 
 } // namespace pla

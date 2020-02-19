@@ -19,6 +19,7 @@
  ***************************************************************************/
 
 #include "src/game.hpp"
+#include "glm/ext/matrix_transform.hpp"
 #include "src/player.hpp"
 
 namespace convergence {
@@ -48,7 +49,7 @@ void Game::onInit(Engine *engine) {
 	                                         std::make_shared<FragmentShader>("shader/font.frag"));
 
 	auto font = std::make_shared<Font>("res/ttf/DejaVuSansMono.ttf");
-	mText = std::make_shared<Text>(font, program, "Coucou");
+	mMessages.push_back(std::make_shared<Text>(font, program, "Hello world"));
 }
 
 void Game::onCleanup(Engine *engine) {
@@ -118,10 +119,9 @@ int Game::onDraw(Engine *engine) {
 	int width, height;
 	engine->getWindowSize(&width, &height);
 
-	mat4 projection =
-	    glm::perspective(glm::radians(45.0f), float(width) / float(height), 0.01f, 40.0f);
-
-	Context context(projection, mWorld->localPlayer()->getTransform());
+	float ratio = float(width) / float(height);
+	mat4 proj = glm::perspective(glm::radians(45.0f), ratio, 0.01f, 40.0f);
+	Context context(proj, mWorld->localPlayer()->getTransform());
 	context.setUniform("lightPosition", mWorld->localPlayer()->getPosition());
 
 	count += mWorld->draw(context);
@@ -129,7 +129,12 @@ int Game::onDraw(Engine *engine) {
 	engine->clearDepth();
 	mWorld->localPlayer()->draw(context);
 
-	mText->draw(context);
+	const float size = 20.f; // em
+	mat4 hudProj = glm::ortho(-size * ratio, size * ratio, -size, size, -size, size);
+	Context hudContext(hudProj, glm::translate(glm::mat4(1.f), glm::vec3(size * ratio, size, 0.f)));
+	for (auto text : mMessages) {
+		text->draw(hudContext.transform(glm::translate(glm::mat4(1.f), glm::vec3(0.5f, 1.f, 0.f))));
+	}
 	return count;
 }
 

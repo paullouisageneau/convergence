@@ -31,8 +31,6 @@ Text::Text(shared_ptr<Font> font, shared_ptr<Program> program, std::string conte
 
 Text::~Text() {}
 
-std::string Text::content() const { return mContent; }
-
 void Text::setContent(std::string content, size_t resolution) {
 	if (content != mContent) {
 		mContent = std::move(content);
@@ -40,8 +38,15 @@ void Text::setContent(std::string content, size_t resolution) {
 	}
 }
 
+std::string Text::content() const { return mContent; }
+
+float Text::width() const { return mWidth; }
+
+float Text::height() const { return mHeight; }
+
 int Text::draw(const Context &context) const {
-	Context subContext = context;
+	Context subContext = context.transform(glm::translate(
+	    mat4(1.f), mCentered ? vec3(-mWidth * 0.5f, -mHeight * 0.5f, 0.f) : vec3(0.f)));
 	subContext.setUniform("color", mTexture);
 	subContext.enableBlending(true);
 	return Object::draw(subContext);
@@ -52,12 +57,10 @@ void Text::generate(size_t resolution) {
 	mTexture = std::make_shared<Texture>(image);
 	mTexture->enableClamping(true);
 
-	const float w = float(image->width()) / resolution;
-	const float h = float(image->height()) / resolution;
-	const vec3 vertices[4] = {{-w * 0.5f, -h * 0.5f, 0.f},
-	                          {w * 0.5f, -h * 0.5f, 0.f},
-	                          {w * 0.5f, h * 0.5f, 0.f},
-	                          {-w * 0.5f, h * 0.5f, 0.f}};
+	mWidth = float(image->width()) / resolution;
+	mHeight = float(image->height()) / resolution;
+	const vec3 vertices[4] = {
+	    {0.f, 0.f, 0.f}, {mWidth, 0.f, 0.f}, {mWidth, mHeight, 0.f}, {0.f, mHeight, 0.f}};
 	const vec2 texCoord[4] = {{0.f, 0.f}, {1.f, 0.f}, {1.f, 1.f}, {0.f, 1.f}};
 	const index_t indices[6] = {0, 1, 2, 0, 2, 3};
 
