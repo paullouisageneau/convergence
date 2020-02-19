@@ -121,10 +121,10 @@ int Volume::polygonizeCell(const int3 &c, const uint8_t *weights, const int84 *g
 	// Get the rest
 	Attribs attribs[8];
 	for (int i = 0; i < 8; ++i) {
-		auto &a = attribs[i];
-		int3 p = c + offsets[i];
-		a.vert = pos + (vec3(p) - vec3(mSize) * 0.5f + vec3(0.5f)) * mScale;
+		const int3 p = c + offsets[i];
 		const size_t j = getIndex(p);
+		auto &a = attribs[i];
+		a.vert = pos + (-vec3(mSize) * 0.5f + vec3(p) + vec3(0.5f)) * mScale;
 		a.grad = grads[j];
 		a.mat = mats[j];
 	}
@@ -143,7 +143,7 @@ int Volume::polygonizeCell(const int3 &c, const uint8_t *weights, const int84 *g
 	std::map<int, index_t> mapping;
 	int n = 0;
 	while (true) {
-		int vi = table[n++];
+		const int vi = table[n++];
 		if (vi < 0)
 			break;
 
@@ -153,7 +153,7 @@ int Volume::polygonizeCell(const int3 &c, const uint8_t *weights, const int84 *g
 			continue;
 		}
 
-		index_t mi = arrays.vertices.size();
+		const index_t mi = arrays.vertices.size();
 		arrays.indices.push_back(mi);
 		mapping[vi] = mi;
 

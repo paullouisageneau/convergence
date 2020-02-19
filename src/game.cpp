@@ -122,7 +122,7 @@ int Game::onDraw(Engine *engine) {
 	float ratio = float(width) / float(height);
 	mat4 proj = glm::perspective(glm::radians(45.0f), ratio, 0.01f, 40.0f);
 	Context context(proj, mWorld->localPlayer()->getTransform());
-	context.setUniform("lightPosition", mWorld->localPlayer()->getPosition());
+	context.setUniform("lightPosition", mWorld->localPlayer()->getPosition() + vec3(0.f, 0.f, 1.f));
 
 	count += mWorld->draw(context);
 
