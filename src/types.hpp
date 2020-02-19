@@ -103,6 +103,7 @@ template <typename T> struct integer4 {
 
 	operator integer3<T>() const;
 	operator vec4() const;
+	operator vec3() const;
 
 	integer4<T> normalize() const;
 };
@@ -219,6 +220,8 @@ template <typename T> integer4<T> integer4<T>::operator/(float f) const {
 template <typename T> integer4<T>::operator integer3<T>() const { return {x, y, z}; }
 
 template <typename T> integer4<T>::operator vec4() const { return vec4(x, y, z, w); }
+
+template <typename T> integer4<T>::operator vec3() const { return vec3(x, y, z); }
 
 template <typename T> integer4<T> integer4<T>::normalize() const {
 	const int ix(x);
