@@ -56,6 +56,9 @@ shared_ptr<Image> Font::render(const std::string &text, size_t size, const vec3 
 		pen.y += slot->advance.y;
 	}
 
+	width += width % 2 ? 1 : 2; // always increase to prevent clamping at the right
+	height += height % 2 ? 1 : 0;
+
 	const uint8_t rgb[3] = {uint8_t(color.x * 255), uint8_t(color.y * 255), uint8_t(color.z * 255)};
 	const size_t length = width * height * 4;
 	auto *data = new uint8_t[length];

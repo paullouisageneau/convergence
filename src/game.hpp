@@ -60,7 +60,7 @@ private:
 	sptr<Networking> mNetworking;
 	sptr<World> mWorld;
 
-	sptr<Text> mText;
+	std::list<sptr<Text>> mMessages;
 
 	float mYaw, mPitch;
 	double mAccumulator;
