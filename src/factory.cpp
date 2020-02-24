@@ -65,27 +65,19 @@ Factory::Factory(const string &filename, float scale, shared_ptr<Program> progra
 	for (int x = 0; x < size.x; ++x)
 		for (int y = 0; y < size.y; ++y)
 			for (int z = 0; z < size.z; ++z) {
-				std::list<int3> full;
-				for (int dx = -1; dx <= 1; ++dx)
-					for (int dy = -1; dy <= 1; ++dy)
-						for (int dz = -1; dz <= 1; ++dz) {
-							int3 p(bounds(x + dx, 0, size.x - 1), bounds(y + dy, 0, size.y - 1),
-							       bounds(z + dz, 0, size.z - 1));
-							int j = (p.x * size.y + p.y) * size.z + p.z;
-							if (weights[j] > 0)
-								full.emplace_back(std::move(p));
-						}
-				if (weights[i] == 0) {
-					unsigned w = 0;
-					float f = 1.f / (3 * 3 * 3);
-					for (const int3 &p : full) {
-						int j = (p.x * size.y + p.y) * size.z + p.z;
-						w += weights[j] * f;
-					}
-					// weights[i] = std::min(unsigned(255), w);
-
+				if (!weights[i]) {
+					std::list<int3> full;
+					for (int dx = -1; dx <= 1; ++dx)
+						for (int dy = -1; dy <= 1; ++dy)
+							for (int dz = -1; dz <= 1; ++dz) {
+								int3 p(bounds(x + dx, 0, size.x - 1), bounds(y + dy, 0, size.y - 1),
+								       bounds(z + dz, 0, size.z - 1));
+								int j = (p.x * size.y + p.y) * size.z + p.z;
+								if (weights[j])
+									full.emplace_back(std::move(p));
+							}
 					materials[i] = {uint84(0, 0, 0), uint84(0, 0, 0), 0};
-					f = 1.f / full.size();
+					const float f = 1.f / full.size();
 					for (const int3 &p : full) {
 						int j = (p.x * size.y + p.y) * size.z + p.z;
 						materials[i] = materials[i] + materials[j] * f;
