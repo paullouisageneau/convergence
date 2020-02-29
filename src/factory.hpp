@@ -24,6 +24,7 @@
 #include "src/include.hpp"
 #include "src/types.hpp"
 
+#include "pla/image.hpp"
 #include "pla/mesh.hpp"
 #include "pla/object.hpp"
 #include "pla/program.hpp"
@@ -42,8 +43,39 @@ public:
 	shared_ptr<Object> build() const;
 
 private:
+	template <typename T> class Plane {
+	public:
+		Plane() : mWidth(0), mHeight(0), mValues(nullptr) {}
+		Plane(Plane &&p) : Plane() { *this = std::move(p); }
+		Plane(size_t width, size_t height)
+		    : mWidth(width), mHeight(height), mValues(new T[width * height]) {}
+		Plane(size_t width, size_t height, const T &value) : Plane(width, height) {
+			std::fill(mValues, mValues + width * height, value);
+		}
+		~Plane() { delete[] mValues; }
+
+		size_t width() const { return mWidth; }
+		size_t height() const { return mHeight; }
+
+		T &operator()(size_t x, size_t y) { return mValues[x * mHeight + y]; }
+		const T &operator()(size_t x, size_t y) const { return mValues[y * mHeight + y]; }
+
+		Plane &operator=(Plane &&p) {
+			std::swap(mWidth, p.mWidth), std::swap(mHeight, p.mHeight);
+			std::swap(mValues, p.mValues);
+			return *this;
+		}
+
+	private:
+		size_t mWidth, mHeight;
+		T *mValues;
+	};
+
+	static Plane<uint84> createImagePlane(shared_ptr<pla::Image> img);
+
 	shared_ptr<Program> mProgram;
 	shared_ptr<Mesh> mMesh;
+	int3 mSize;
 };
 
 } // namespace convergence

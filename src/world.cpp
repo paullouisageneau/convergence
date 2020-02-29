@@ -42,7 +42,7 @@ World::World(sptr<MessageBus> messageBus) : mMessageBus(messageBus) {
 	auto program = std::make_shared<Program>(std::make_shared<VertexShader>("shader/color.vect"),
 	                                         std::make_shared<FragmentShader>("shader/color.frag"));
 
-	Factory factory("res/pickaxe.png", 1.f / 32.f, program);
+	Factory factory("pickaxe", 1.f / 32.f, program);
 	mObjects[identifier()] = factory.build();
 }
 
