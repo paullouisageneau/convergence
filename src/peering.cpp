@@ -38,17 +38,17 @@ const string DataChannelName = "data";
 
 Peering::Peering(const identifier &id, shared_ptr<MessageBus> messageBus)
     : mId(id), mMessageBus(messageBus) {
-	net::Configuration config;
+	rtc::Configuration config;
 	config.iceServers.emplace_back("stun:stun.ageneau.net:3478");
-	mPeerConnection = std::make_shared<net::PeerConnection>(config);
+	mPeerConnection = std::make_shared<rtc::PeerConnection>(config);
 
-	mPeerConnection->onDataChannel([this](shared_ptr<net::DataChannel> dataChannel) {
+	mPeerConnection->onDataChannel([this](shared_ptr<rtc::DataChannel> dataChannel) {
 		std::cout << "Data channel received" << std::endl;
 		if (dataChannel->label() == DataChannelName)
 			setDataChannel(dataChannel);
 	});
 
-	mPeerConnection->onLocalDescription([this](const net::Description &description) {
+	mPeerConnection->onLocalDescription([this](const rtc::Description &description) {
 		std::cout << "Local description: " << description << std::endl;
 		vector<string> fields;
 		fields.push_back(description.typeString());
@@ -56,7 +56,7 @@ Peering::Peering(const identifier &id, shared_ptr<MessageBus> messageBus)
 		sendSignaling(Message::Description, pack_strings(fields));
 	});
 
-	mPeerConnection->onLocalCandidate([this](const net::Candidate &candidate) {
+	mPeerConnection->onLocalCandidate([this](const rtc::Candidate &candidate) {
 		std::cout << "Local candidate: " << candidate << std::endl;
 		vector<string> fields;
 		fields.push_back(candidate.mid());
@@ -90,7 +90,7 @@ void Peering::onMessage(const Message &message) {
 	}
 }
 
-void Peering::setDataChannel(shared_ptr<net::DataChannel> dataChannel) {
+void Peering::setDataChannel(shared_ptr<rtc::DataChannel> dataChannel) {
 	mDataChannel = dataChannel;
 
 	auto openCallback = [this]() {
@@ -121,7 +121,7 @@ void Peering::processSignaling(Message::Type type, const binary &payload) {
 
 	case Message::Description: {
 		vector<string> fields(unpack_strings(payload));
-		net::Description description(fields[1], fields[0]);
+		rtc::Description description(fields[1], fields[0]);
 		std::cout << "Remote description: " << description << std::endl;
 		mPeerConnection->setRemoteDescription(description);
 		break;
@@ -129,7 +129,7 @@ void Peering::processSignaling(Message::Type type, const binary &payload) {
 
 	case Message::Candidate: {
 		vector<string> fields(unpack_strings(payload));
-		net::Candidate candidate(fields[1], fields[0]);
+		rtc::Candidate candidate(fields[1], fields[0]);
 		std::cout << "Remote candidate: " << candidate << std::endl;
 		mPeerConnection->addRemoteCandidate(candidate);
 		break;

@@ -1,6 +1,7 @@
 [submodule "glm"]
 	path = deps/glm
 	url = https://github.com/g-truc/glm.git
-[submodule "native/libdatachannel"]
-	path = deps/libdatachannel
-	url = https://github.com/paullouisageneau/libdatachannel.git
+
+[submodule "deps/datachannels"]
+	path = deps/datachannels
+	url = https://github.com/paullouisageneau/datachannels.git
