@@ -24,7 +24,7 @@
 #include "src/include.hpp"
 #include "src/messagebus.hpp"
 
-#include "net/webrtc.hpp"
+#include "webrtc.hpp"
 
 #include <functional>
 
@@ -45,14 +45,14 @@ protected:
 	void onMessage(const Message &message);
 
 private:
-	void setDataChannel(shared_ptr<net::DataChannel> dataChannel);
+	void setDataChannel(shared_ptr<rtc::DataChannel> dataChannel);
 	void processSignaling(Message::Type type, const binary &payload);
 	void sendSignaling(Message::Type type, const binary &payload);
 
 	identifier mId;
 	shared_ptr<MessageBus> mMessageBus;
-	shared_ptr<net::PeerConnection> mPeerConnection;
-	shared_ptr<net::DataChannel> mDataChannel;
+	shared_ptr<rtc::PeerConnection> mPeerConnection;
+	shared_ptr<rtc::DataChannel> mDataChannel;
 };
 
 } // namespace convergence

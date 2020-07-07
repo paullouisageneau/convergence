@@ -24,7 +24,7 @@
 #include "src/include.hpp"
 #include "src/message.hpp"
 
-#include "net/channel.hpp"
+#include "webrtc.hpp" // for rtc::Channel
 
 #include <map>
 #include <memory>
@@ -33,7 +33,7 @@
 
 namespace convergence {
 
-using net::Channel;
+using rtc::Channel;
 
 class MessageBus {
 public:

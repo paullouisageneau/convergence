@@ -20,12 +20,12 @@
 
 #include "src/networking.hpp"
 
-#include "net/websocket.hpp"
+#include "websocket.hpp"
 
 namespace convergence {
 
-using net::WebSocket;
 using pla::to_hex;
+using rtc::WebSocket;
 
 Networking::Networking(shared_ptr<MessageBus> messageBus, const string &url)
     : mMessageBus(messageBus) {
@@ -47,7 +47,7 @@ void Networking::onMessage(const Message &message) {
 }
 
 void Networking::connectWebSocket(const string &url) {
-	auto webSocket = std::make_shared<WebSocket>(url);
+	auto webSocket = std::make_shared<WebSocket>();
 	webSocket->onOpen([this, webSocket]() {
 		std::cout << "WebSocket opened" << std::endl;
 		mMessageBus->addChannel(webSocket, MessageBus::Priority::Default);
@@ -60,6 +60,8 @@ void Networking::connectWebSocket(const string &url) {
 		std::cerr << "WebSocket closed" << std::endl;
 		mMessageBus->removeChannel(webSocket);
 	});
+
+	webSocket->open(url);
 }
 
 shared_ptr<Peering> Networking::createPeering(const identifier &id) {
