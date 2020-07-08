@@ -6,31 +6,53 @@ project(convergence
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 
-file(GLOB_RECURSE SOURCES_CONVERGENCE ${PROJECT_SOURCE_DIR}/src/*.cpp)
-file(GLOB_RECURSE SOURCES_PLATFORM ${PROJECT_SOURCE_DIR}/pla/*.cpp)
+file(GLOB_RECURSE SOURCES_CONVERGENCE ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
+file(GLOB_RECURSE SOURCES_PLATFORM ${CMAKE_CURRENT_SOURCE_DIR}/pla/*.cpp)
 
 add_executable(convergence ${SOURCES_PLATFORM} ${SOURCES_CONVERGENCE})
-set_target_properties(convergence PROPERTIES
-	VERSION ${PROJECT_VERSION}
-	CXX_STANDARD 17)
+set_target_properties(convergence PROPERTIES CXX_STANDARD 17)
 
-target_include_directories(convergence PRIVATE ${PROJECT_SOURCE_DIR}/)
+target_include_directories(convergence PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/)
 
-cmake_policy(SET CMP0072 NEW)
-find_package(OpenGL REQUIRED)
-find_package(GLEW REQUIRED)
-find_package(GLFW REQUIRED)
-find_package(DevIL REQUIRED)
-if(NOT TARGET DevIL::IL)
-	add_library(DevIL::IL UNKNOWN IMPORTED)
-	set_target_properties(DevIL::IL PROPERTIES
-		IMPORTED_LOCATION "${IL_LIBRARIES}"
-		INTERFACE_INCLUDE_DIRECTORIES "${IL_INCLUDE_DIR}"
-		IMPORTED_LINK_INTERFACE_LANGUAGES C)
+if(CMAKE_SYSTEM_NAME MATCHES "Emscripten")
+	set(WASM_OPTS
+		"SHELL:-s WASM=1"
+		"SHELL:-s BINARYEN_METHOD=native-wasm"
+		"SHELL:-s TOTAL_MEMORY=256MB"
+		"SHELL:-s DISABLE_EXCEPTION_CATCHING=0"
+		"SHELL:-s USE_PTHREADS=0"
+		"SHELL:-s USE_WEBGL2=1"
+		"SHELL:-s USE_GLFW=3"
+		"SHELL:-s USE_SDL_IMAGE=2"
+		"SHELL:-s USE_FREETYPE=1")
+
+	target_compile_options(convergence PRIVATE ${WASM_OPTS} -DUSE_OPENGL_ES)
+	target_link_options(convergence PRIVATE ${WASM_OPTS}
+		"SHELL:--shell-file ${CMAKE_CURRENT_SOURCE_DIR}/html/index.html"
+		"SHELL:--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/shader"
+		"SHELL:--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/res"
+		--use-preload-plugins
+		--closure 1)
+
+	set_target_properties(convergence PROPERTIES OUTPUT_NAME "convergence")
+	set_target_properties(convergence PROPERTIES SUFFIX ".html")
+else()
+	cmake_policy(SET CMP0072 NEW)
+	find_package(OpenGL REQUIRED)
+	find_package(GLEW REQUIRED)
+	find_package(GLFW REQUIRED)
+	find_package(DevIL REQUIRED)
+	if(NOT TARGET DevIL::IL)
+		add_library(DevIL::IL UNKNOWN IMPORTED)
+		set_target_properties(DevIL::IL PROPERTIES
+			IMPORTED_LOCATION "${IL_LIBRARIES}"
+			INTERFACE_INCLUDE_DIRECTORIES "${IL_INCLUDE_DIR}"
+			IMPORTED_LINK_INTERFACE_LANGUAGES C)
+	endif()
+	target_link_libraries(convergence OpenGL::GL GLEW::GLEW GLFW::GLFW DevIL::IL)
 endif()
 
-target_link_libraries(convergence OpenGL::GL GLEW::GLEW GLFW::GLFW DevIL::IL)
-
+option(BUILD_SHARED_LIBS "Build shared library" OFF)
 add_subdirectory(deps/glm EXCLUDE_FROM_ALL)
 target_link_libraries(convergence glm)
 
