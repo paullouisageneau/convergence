@@ -24,7 +24,7 @@
 #include "src/include.hpp"
 #include "src/message.hpp"
 
-#include "webrtc.hpp" // for rtc::Channel
+#include "rtc/channel.hpp"
 
 #include <map>
 #include <memory>

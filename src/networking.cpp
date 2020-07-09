@@ -20,7 +20,7 @@
 
 #include "src/networking.hpp"
 
-#include "websocket.hpp"
+#include "rtc/websocket.hpp"
 
 namespace convergence {
 

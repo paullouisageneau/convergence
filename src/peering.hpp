@@ -24,7 +24,7 @@
 #include "src/include.hpp"
 #include "src/messagebus.hpp"
 
-#include "webrtc.hpp"
+#include "rtc/rtc.hpp"
 
 #include <functional>
 
