@@ -29,8 +29,8 @@ if(CMAKE_SYSTEM_NAME MATCHES "Emscripten")
 	target_compile_options(convergence PRIVATE ${WASM_OPTS} -DUSE_OPENGL_ES)
 	target_link_options(convergence PRIVATE ${WASM_OPTS}
 		"SHELL:--shell-file ${CMAKE_CURRENT_SOURCE_DIR}/html/index.html"
-		"SHELL:--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/shader"
-		"SHELL:--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/res"
+		"SHELL:--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/shader@shader"
+		"SHELL:--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/res@res"
 		--use-preload-plugins
 		--closure 1)
 
