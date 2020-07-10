@@ -42,6 +42,7 @@ else()
 	find_package(GLEW REQUIRED)
 	find_package(GLFW REQUIRED)
 	find_package(DevIL REQUIRED)
+	find_package(Freetype REQUIRED)
 	if(NOT TARGET DevIL::IL)
 		add_library(DevIL::IL UNKNOWN IMPORTED)
 		set_target_properties(DevIL::IL PROPERTIES
@@ -49,7 +50,7 @@ else()
 			INTERFACE_INCLUDE_DIRECTORIES "${IL_INCLUDE_DIR}"
 			IMPORTED_LINK_INTERFACE_LANGUAGES C)
 	endif()
-	target_link_libraries(convergence OpenGL::GL GLEW::GLEW GLFW::GLFW DevIL::IL)
+	target_link_libraries(convergence OpenGL::GL GLEW::GLEW GLFW::GLFW DevIL::IL Freetype::Freetype)
 endif()
 
 option(BUILD_SHARED_LIBS "Build shared library" OFF)
