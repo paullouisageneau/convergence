@@ -57,6 +57,6 @@ option(BUILD_SHARED_LIBS "Build shared library" OFF)
 add_subdirectory(deps/glm EXCLUDE_FROM_ALL)
 target_link_libraries(convergence glm)
 
-add_subdirectory(deps/datachannels EXCLUDE_FROM_ALL)
-target_link_libraries(convergence datachannels)
+add_subdirectory(deps/datachannel-wasm EXCLUDE_FROM_ALL)
+target_link_libraries(convergence datachannel-wasm)
 
