@@ -62,6 +62,16 @@ void Engine::openWindow(const string &title, int width, int height) {
 	}
 
 	// Create window and OpenGL context
+#ifdef USE_OPENGL_ES
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+#else
+	// We need OpenGL 3.3+
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 1);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#endif
 	mWindow = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
 	if (!mWindow)
 		throw std::runtime_error("Window creation failed");
@@ -73,6 +83,18 @@ void Engine::openWindow(const string &title, int width, int height) {
 		glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	}
 
+	glfwMakeContextCurrent(mWindow);
+
+	auto glVendor = reinterpret_cast<const char *>(glGetString(GL_VENDOR));
+	auto glRenderer = reinterpret_cast<const char *>(glGetString(GL_RENDERER));
+	auto glVersion = reinterpret_cast<const char *>(glGetString(GL_VERSION));
+	auto glslVersion = reinterpret_cast<const char *>(glGetString(GL_SHADING_LANGUAGE_VERSION));
+
+	std::cout << "OpenGL vendor: " << (glVendor ? glVendor : "(null)") << std::endl;
+	std::cout << "OpenGL renderer: " << (glRenderer ? glRenderer : "(null)") << std::endl;
+	std::cout << "OpenGL version: " << (glVersion ? glVersion : "(null)") << std::endl;
+	std::cout << "OpenGL GLSL version: " << (glslVersion ? glslVersion : "(null)") << std::endl;
+
 	glfwSetWindowUserPointer(mWindow, this);
 
 	glfwSetKeyCallback(mWindow, KeyCallback);
@@ -80,11 +102,10 @@ void Engine::openWindow(const string &title, int width, int height) {
 	glfwSetCursorPosCallback(mWindow, CursorPosCallback);
 	glfwSetScrollCallback(mWindow, ScrollCallback);
 	glfwSetCursorEnterCallback(mWindow, CursorEnterCallback);
+
 	glfwSetCharCallback(mWindow, CharCallback);
 	glfwSetWindowSizeCallback(mWindow, WindowSizeCallback);
 	glfwSetWindowFocusCallback(mWindow, WindowFocusCallback);
-
-	glfwMakeContextCurrent(mWindow);
 
 #ifndef USE_OPENGL_ES
 	glewExperimental = GL_TRUE;
@@ -206,6 +227,9 @@ int Engine::display(void) {
 		mMesureFrames = 0;
 	}
 
+	if (auto err = glGetError(); err != GL_NO_ERROR) {
+		std::cout << "OpenGL error " << err << std::endl;
+	}
 	return count;
 }
 

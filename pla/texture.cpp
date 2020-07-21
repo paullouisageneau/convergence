@@ -23,9 +23,6 @@
 namespace pla {
 
 Texture::Texture(GLenum type) : mType(type), mClampingEnabled(false) {
-#ifndef USE_OPENGL_ES
-	glEnable(mType);
-#endif
 	glGenTextures(1, &mTexture);
 }
 

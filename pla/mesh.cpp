@@ -24,6 +24,8 @@
 namespace pla {
 
 Mesh::Mesh(void) {
+	glGenVertexArrays(1, &mVertexArray);
+
 	mIndexBuffer = std::make_shared<IndexBuffer>(new IndexBufferObject(true)); // readable
 }
 
@@ -34,7 +36,7 @@ Mesh::Mesh(const index_t *indices, size_t nindices, const float *vertices, size_
 	computeRadius();
 }
 
-Mesh::~Mesh(void) {}
+Mesh::~Mesh(void) { glDeleteVertexArrays(1, &mVertexArray); }
 
 void Mesh::setIndices(const index_t *indices, size_t count) {
 	if (indices) {
@@ -52,8 +54,7 @@ void Mesh::setVertexAttrib(unsigned layout, const float *attribs, size_t count, 
 	attrib->normalize = (normalize ? GL_TRUE : GL_FALSE);
 	attrib->fill(attribs, count);
 
-	if (layout == 0)
-		computeRadius();
+	updateVertexAttrib(layout, attrib);
 }
 
 void Mesh::setVertexAttrib(unsigned layout, const int *attribs, size_t count, int size,
@@ -63,6 +64,8 @@ void Mesh::setVertexAttrib(unsigned layout, const int *attribs, size_t count, in
 	attrib->type = GL_INT;
 	attrib->normalize = (normalize ? GL_TRUE : GL_FALSE);
 	attrib->fill(attribs, count);
+
+	updateVertexAttrib(layout, attrib);
 }
 
 void Mesh::setVertexAttrib(unsigned layout, const char *attribs, size_t count, int size,
@@ -72,6 +75,8 @@ void Mesh::setVertexAttrib(unsigned layout, const char *attribs, size_t count, i
 	attrib->type = GL_BYTE;
 	attrib->normalize = (normalize ? GL_TRUE : GL_FALSE);
 	attrib->fill(attribs, count);
+
+	updateVertexAttrib(layout, attrib);
 }
 
 void Mesh::setVertexAttrib(unsigned layout, const unsigned char *attribs, size_t count, int size,
@@ -81,9 +86,30 @@ void Mesh::setVertexAttrib(unsigned layout, const unsigned char *attribs, size_t
 	attrib->type = GL_UNSIGNED_BYTE;
 	attrib->normalize = (normalize ? GL_TRUE : GL_FALSE);
 	attrib->fill(attribs, count);
+
+	updateVertexAttrib(layout, attrib);
 }
 
-void Mesh::unsetVertexAttrib(unsigned layout) { mAttribBuffers.erase(layout); }
+void Mesh::updateVertexAttrib(unsigned layout, sptr<Attrib> attrib) {
+	glBindVertexArray(mVertexArray);
+	glEnableVertexAttribArray(layout);
+	attrib->bind();
+	glVertexAttribPointer(layout,            // layout
+	                      attrib->size,      // size
+	                      attrib->type,      // type
+	                      attrib->normalize, // normalize
+	                      0,                 // stride
+	                      NULL);
+	if (layout == 0)
+		computeRadius();
+}
+
+void Mesh::unsetVertexAttrib(unsigned layout) {
+	glBindVertexArray(mVertexArray);
+	glDisableVertexAttribArray(layout);
+
+	mAttribBuffers.erase(layout);
+}
 
 size_t Mesh::indicesCount(void) const { return mIndexBuffer->count(); }
 
@@ -200,10 +226,9 @@ float Mesh::getRadius(void) const { return mRadius; }
 int Mesh::drawElements(void) { return drawElements(0, mIndexBuffer->count()); }
 
 int Mesh::drawElements(index_t first, index_t count) const {
-	enableBuffers();
+	glBindVertexArray(mVertexArray);
 	mIndexBuffer->bind();
 	glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, mIndexBuffer->offset(first));
-	disableBuffers();
 	return count / 3;
 }
 
@@ -247,29 +272,6 @@ float Mesh::intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *int
 	if (intersection)
 		*intersection = nearestintersection;
 	return nearest;
-}
-
-void Mesh::enableBuffers(void) const {
-	for (auto &p : mAttribBuffers) {
-		unsigned layout = p.first;
-		glEnableVertexAttribArray(layout);
-
-		auto attrib = p.second;
-		attrib->bind();
-		glVertexAttribPointer(layout,            // layout
-		                      attrib->size,      // size
-		                      attrib->type,      // type
-		                      attrib->normalize, // normalize
-		                      0,                 // stride
-		                      NULL);
-	}
-}
-
-void Mesh::disableBuffers(void) const {
-	for (auto &p : mAttribBuffers) {
-		unsigned layout = p.first;
-		glDisableVertexAttribArray(layout);
-	}
 }
 
 } // namespace pla

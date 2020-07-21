@@ -67,9 +67,6 @@ public:
 	virtual float intersect(const vec3 &pos, const vec3 &move, float radius, vec3 *intersection);
 
 protected:
-	void enableBuffers(void) const;
-	void disableBuffers(void) const;
-
 	typedef Buffer<index_t> IndexBuffer;
 
 	class Attrib {
@@ -117,7 +114,9 @@ protected:
 		return attrib;
 	}
 
-	// Buffers
+	void updateVertexAttrib(unsigned layout, sptr<Attrib> attrib);
+
+	GLuint mVertexArray;
 	sptr<IndexBuffer> mIndexBuffer;
 	std::map<unsigned, sptr<Attrib>> mAttribBuffers;
 
