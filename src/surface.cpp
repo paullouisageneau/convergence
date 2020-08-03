@@ -31,26 +31,29 @@ Surface::Surface(std::function<shared_ptr<Block>(const int3 &b)> retrieveFunc)
     : mRetrieveFunc(retrieveFunc) {
 	mProgram = std::make_shared<Program>(std::make_shared<VertexShader>("shader/ground.vect"),
 	                                     std::make_shared<FragmentShader>("shader/ground.frag"));
+	mInkProgram = std::make_shared<Program>(std::make_shared<VertexShader>("shader/ink.vect"),
+	                                        std::make_shared<FragmentShader>("shader/ink.frag"));
 
-	auto data = new uint8_t[256 * 256 * 256 * 4];
-	int i = 0;
-	PerlinNoise perlin(666, 256 / 16);
-	for (int x = 0; x < 256; ++x)
-		for (int y = 0; y < 256; ++y)
-			for (int z = 0; z < 256; ++z) {
-				double n = perlin.generate(dvec3(x, y, z) / 16., 3);
-				uint8_t v = bounds(int((0.5 + n * 0.5) * 255.), 0, 255);
-				data[i++] = v;
-				data[i++] = v;
-				data[i++] = v;
-				data[i++] = 1;
-			}
+	/*
+	    auto data = new uint8_t[256 * 256 * 256 * 4];
+	    int i = 0;
+	    PerlinNoise perlin(666, 256 / 16);
+	    for (int x = 0; x < 256; ++x)
+	        for (int y = 0; y < 256; ++y)
+	            for (int z = 0; z < 256; ++z) {
+	                double n = perlin.generate(dvec3(x, y, z) / 16., 3);
+	                uint8_t v = bounds(int((0.5 + n * 0.5) * 255.), 0, 255);
+	                data[i++] = v;
+	                data[i++] = v;
+	                data[i++] = v;
+	                data[i++] = 1;
+	            }
 
-	auto texture = std::make_shared<Texture>(GL_TEXTURE_3D);
-	texture->setImage(data, 256, 256, 256);
-	delete[] data;
+	    auto texture = std::make_shared<Texture>(GL_TEXTURE_3D);
+	    texture->setImage(data, 256, 256, 256);
+	    delete[] data;
 
-	mProgram->setUniform("detail", texture);
+	    mProgram->setUniform("detail", texture);*/
 }
 
 Surface::~Surface(void) {}
@@ -70,17 +73,25 @@ int Surface::draw(const Context &context) {
 		return context.frustum().testSphere(p0, d);
 	});
 
-	context.prepare(mProgram);
-
-	mProgram->bind();
+	for (auto blk : blocks)
+		blk->prepare();
 
 	int count = 0;
-	for (auto blk : blocks) {
-		blk->prepare();
-		count += blk->drawElements();
-	}
 
+	context.prepare(mProgram);
+	mProgram->bind();
+	for (auto blk : blocks)
+	    count += blk->drawElements();
 	mProgram->unbind();
+
+	Context inkContext = context;
+	inkContext.enableReverseCulling(true);
+	inkContext.prepare(mInkProgram);
+	mInkProgram->bind();
+	for (auto blk : blocks)
+		count += blk->drawElements();
+	mInkProgram->unbind();
+
 	return count;
 }
 
@@ -228,9 +239,9 @@ Surface::Material Surface::Material::operator*(float f) const {
 }
 
 Surface::Material Surface::MaterialTable[4] = {
-	{{5, 5, 5, 255}, {50, 50, 50, 255}, 0}, // ambient, diffuse, smoothness
-	{{5, 15, 5, 255}, {50, 128, 50, 255}, 200},
-	{{15, 15, 5, 255}, {150, 150, 25, 255}, 230},
-	{{128, 128, 0, 255}, {200, 200, 0, 255}, 128}};
+    {{10, 10, 10, 255}, {50, 50, 50, 255}, 0}, // ambient, diffuse, smoothness
+    {{10, 30, 10, 255}, {50, 130, 50, 255}, 200},
+    {{30, 30, 5, 255}, {150, 150, 25, 255}, 230},
+    {{130, 130, 0, 255}, {200, 200, 0, 255}, 128}};
 
 } // namespace convergence

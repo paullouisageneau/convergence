@@ -107,6 +107,7 @@ protected:
 	                  std::function<bool(sptr<Block>)> check) const;
 
 	shared_ptr<Program> mProgram;
+	shared_ptr<Program> mInkProgram;
 	std::function<shared_ptr<Block>(const int3 &b)> mRetrieveFunc;
 
 private:

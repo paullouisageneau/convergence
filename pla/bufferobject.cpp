@@ -29,7 +29,7 @@ BufferObject::BufferObject(GLenum type, GLenum usage, bool readable)
 
 BufferObject::~BufferObject(void) {
 	glDeleteBuffers(1, &mBuffer);
-	delete mCache;
+	delete[] mCache;
 }
 
 size_t BufferObject::size(void) const { return mSize; }
@@ -49,7 +49,7 @@ void BufferObject::fill(const void *ptr, size_t size) {
 	glBufferData(mType, size, ptr, mUsage);
 
 	if (mReadable) {
-		delete mCache;
+		delete[] mCache;
 		mCache = new char[size];
 		std::memcpy(mCache, ptr, size);
 	}

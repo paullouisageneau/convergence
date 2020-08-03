@@ -22,6 +22,8 @@
 #include "glm/ext/matrix_transform.hpp"
 #include "src/player.hpp"
 
+#include <vector>
+
 namespace convergence {
 
 Game::Game(void) {
@@ -43,7 +45,7 @@ void Game::onInit(Engine *engine) {
 	mMessageBus->registerTypeListener(Message::Description, mNetworking);
 
 	mWorld = std::make_shared<World>(mMessageBus);
-	mMessageBus->registerTypeListener(Message::PlayerPosition, mWorld);
+	mMessageBus->registerTypeListener(Message::EntityTransform, mWorld);
 
 	auto program = std::make_shared<Program>(std::make_shared<VertexShader>("shader/font.vect"),
 	                                         std::make_shared<FragmentShader>("shader/font.frag"));
@@ -76,8 +78,8 @@ bool Game::onUpdate(Engine *engine, double time) {
 		speed -= walkSpeed;
 
 	sptr<Player> localPlayer = mWorld->localPlayer();
-	localPlayer->rotate(mYaw, mPitch);
-	localPlayer->move(speed);
+	localPlayer->pivot(mYaw, mPitch);
+	localPlayer->walk(speed);
 
 	if (engine->isKeyDown(KEY_SPACE))
 		localPlayer->jump();
@@ -122,7 +124,20 @@ int Game::onDraw(Engine *engine) {
 	float ratio = float(width) / float(height);
 	mat4 proj = glm::perspective(glm::radians(45.0f), ratio, 0.01f, 40.0f);
 	Context context(proj, mWorld->localPlayer()->getTransform());
-	context.setUniform("lightPosition", mWorld->localPlayer()->getPosition() + vec3(0.f, 0.f, 1.f));
+	context.setUniform("border", 0.02f);
+
+	static float a = 0.f;
+	a += 0.2f;
+
+	std::vector<vec3> lightsPositions = {vec3(0.f, std::sin(a) * 0.2f, 0.f),
+	                                     vec3(20.f, std::sin(a * 0.7f) * 0.15f, 0.f)};
+	std::vector<vec4> lightsColors = {vec4(1.f, 0.8f, 0.5f, 1.f), vec4(1.f, 0.9f, 0.6f, 1.f)};
+	std::vector<float> lightsPowers = {4.f, 8.f};
+
+	context.setUniform("lightsCount", 2);
+	context.setUniform("lightsPositions", std::move(lightsPositions));
+	context.setUniform("lightsColors", std::move(lightsColors));
+	context.setUniform("lightsPowers", std::move(lightsPowers));
 
 	count += mWorld->draw(context);
 

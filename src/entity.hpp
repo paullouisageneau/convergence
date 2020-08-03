@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2006-2016 by Paul-Louis Ageneau                         *
+ *   Copyright (C) 2017-2020 by Paul-Louis Ageneau                         *
  *   paul-louis (at) ageneau (dot) org                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -18,34 +18,56 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/norm.hpp>
-#include <glm/gtx/transform.hpp>
+#ifndef CONVERGENCE_ENTITY_H
+#define CONVERGENCE_ENTITY_H
 
-namespace pla {
+#include "src/include.hpp"
+#include "src/messagebus.hpp"
 
-using glm::mat2;
-using glm::mat3;
-using glm::mat4;
-using glm::vec2;
-using glm::vec3;
-using glm::vec4;
+#include "pla/collidable.hpp"
+#include "pla/context.hpp"
+#include "pla/object.hpp"
 
-using glm::dmat2;
-using glm::dmat3;
-using glm::dmat4;
-using glm::dvec2;
-using glm::dvec3;
-using glm::dvec4;
+namespace convergence {
 
-using glm::quat;
+using pla::Collidable;
+using pla::Context;
+using pla::Object;
 
-extern const float Pi;
-extern const float Sqrt2;
-extern const float Epsilon;
+class Entity : public MessageBus::AsyncListener {
+public:
+	Entity(sptr<MessageBus> messageBus, identifier id);
+	virtual ~Entity();
 
-} // namespace pla
+	identifier id() const;
+	vec3 getPosition() const;
+	vec3 getDirection() const;
+	mat4 getTransform() const;
+
+	void setTransform(mat4 m);
+	void transform(const mat4 &m);
+	void accelerate(const vec3 &v);
+
+	bool isOnGround(void) const;
+
+	virtual float getRadius() const;
+	virtual vec3 getSpeed() const;
+
+	virtual void update(sptr<Collidable> terrain, double time);
+	virtual int draw(const Context &context);
+
+protected:
+	virtual void handleCollision(const vec3 &normal);
+	virtual void processMessage(const Message &message);
+	void sendTransform() const;
+
+	sptr<MessageBus> mMessageBus;
+	identifier mId;
+	mat4 mTransform;
+	vec3 mSpeed;
+	bool mIsOnGround;
+};
+
+} // namespace convergence
+
+#endif

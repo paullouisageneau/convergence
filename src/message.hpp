@@ -41,9 +41,10 @@ public:
 		Candidate = 0x12,
 
 		// Player
-		PlayerReserved = 0x20,
-		PlayerPosition = 0x21,
-		PlayerControl = 0x22,
+		EntityReserved = 0x20,
+		EntityTransform = 0x21,
+		EntitySpeed = 0x22,
+		EntityControl = 0x23,
 
 		// Store
 		Store = 0x30,

@@ -21,51 +21,38 @@
 #ifndef CONVERGENCE_PLAYER_H
 #define CONVERGENCE_PLAYER_H
 
+#include "src/entity.hpp"
 #include "src/include.hpp"
-#include "src/messagebus.hpp"
-
-#include "pla/collidable.hpp"
-#include "pla/context.hpp"
-#include "pla/object.hpp"
 
 namespace convergence {
 
-using pla::Collidable;
-using pla::Context;
-using pla::Object;
-
-class Player : public MessageBus::AsyncListener {
+class Player : public Entity {
 public:
-	Player(sptr<MessageBus> messageBus, const identifier &id);
-	virtual ~Player(void);
+	Player(sptr<MessageBus> messageBus, identifier id);
+	virtual ~Player();
 
-	identifier id(void) const;
-	vec3 getPosition(void) const;
-	vec3 getDirection(void) const;
-	mat4 getTransform(void) const;
-	bool isOnGround(void) const;
-	bool isJumping(void) const;
+	bool isJumping() const;
 
-	void rotate(float yaw, float pitch);
-	void move(float speed);
-	void jump(void);
+	void pivot(float yaw, float pitch);
+	void walk(float speed);
+	void jump();
 	void jolt(float force);
 	void action(double frame);
+
+	virtual float getRadius() const;
+	virtual vec3 getSpeed() const;
 
 	virtual void update(sptr<Collidable> terrain, double time);
 	virtual int draw(const Context &context);
 
 protected:
+	virtual void handleCollision(const vec3 &normal);
 	virtual void processMessage(const Message &message);
+	void sendControl() const;
 
-	sptr<MessageBus> mMessageBus;
-	identifier mId;
-	vec3 mPosition;
 	float mYaw, mPitch;
-	float mSpeed;
-	float mGravity;
+	float mWalkSpeed;
 	float mAction;
-	bool mIsOnGround;
 	bool mIsJumping;
 
 	sptr<Object> mObject, mTool;

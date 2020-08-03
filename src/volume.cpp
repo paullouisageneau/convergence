@@ -68,9 +68,9 @@ int Volume::polygonize(const uint8_t *weights, const Material *mats, const vec3 
 
 void Volume::computeGradients(const uint8_t *weights, int84 *grads) {
 	auto w = [&](const int3 &pos) -> int { return weights[getIndex(pos)]; };
-	for (int x = 0; x < mSize.x; ++x)
-		for (int y = 0; y < mSize.y; ++y)
-			for (int z = 0; z < mSize.z; ++z)
+	for (int x = 1; x < mSize.x; ++x)
+		for (int y = 1; y < mSize.y; ++y)
+			for (int z = 1; z < mSize.z; ++z)
 				grads[getIndex({x, y, z})] =
 				    int84((w(int3(x + 1, y, z)) - w(int3(x - 1, y, z))) / 2,
 				          (w(int3(x, y + 1, z)) - w(int3(x, y - 1, z))) / 2,

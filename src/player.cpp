@@ -32,17 +32,9 @@ using pla::FragmentShader;
 using pla::Program;
 using pla::VertexShader;
 
-Player::Player(sptr<MessageBus> messageBus, const identifier &id)
-    : mMessageBus(messageBus), mId(id) {
-	mYaw = 0.f;
-	mPitch = 0.f;
-	mSpeed = 0.f;
-	mGravity = 0.f;
-	mAction = 0.f;
-	mIsOnGround = false;
-	mIsJumping = false;
-
-	mPosition = vec3(0.f, 0.f, 0.f);
+Player::Player(sptr<MessageBus> messageBus, identifier id)
+    : Entity(messageBus, std::move(id)), mYaw(0.f), mPitch(0.f), mWalkSpeed(0.f), mAction(0.f),
+      mIsJumping(false) {
 
 	auto program = std::make_shared<Program>(std::make_shared<VertexShader>("shader/color.vect"),
 	                                         std::make_shared<FragmentShader>("shader/color.frag"));
@@ -58,41 +50,24 @@ Player::Player(sptr<MessageBus> messageBus, const identifier &id)
 	};
 
 	mObject = std::make_shared<Object>(cube_indices, 12 * 3, cube_vertices, 8 * 3, program);
-	mObject = std::make_shared<Object>(cube_indices, 12 * 3, cube_vertices, 8 * 3, program);
-
 	mTool = Factory("pickaxe", 1.f / 32.f, program).build();
 }
 
 Player::~Player(void) {}
 
-identifier Player::id(void) const { return mId; }
-
-vec3 Player::getPosition(void) const { return mPosition; }
-
-vec3 Player::getDirection(void) const {
-	return vec3(std::sin(-mYaw), std::cos(-mYaw), 0.f) * std::cos(mPitch) +
-	       vec3(0.f, 0.f, std::sin(mPitch));
-}
-
-mat4 Player::getTransform(void) const {
-	mat4 matrix = mat4(1.0f);
-	matrix = glm::translate(matrix, mPosition);
-	matrix = glm::rotate(matrix, Pi / 2, vec3(1, 0, 0));
-	matrix = glm::rotate(matrix, mYaw, vec3(0, 1, 0));
-	matrix = glm::rotate(matrix, mPitch, vec3(1, 0, 0));
-	return matrix;
-}
-
-bool Player::isOnGround(void) const { return mIsOnGround; }
-
 bool Player::isJumping(void) const { return mIsJumping; }
 
-void Player::rotate(float yaw, float pitch) {
+void Player::pivot(float yaw, float pitch) {
 	mYaw = yaw;
 	mPitch = pitch;
+
+	mTransform = glm::translate(getPosition());
+	mTransform = glm::rotate(mTransform, Pi / 2.f, vec3(1.f, 0.f, 0.f));
+	mTransform = glm::rotate(mTransform, mYaw, vec3(0.f, 1.f, 0.f));
+	mTransform = glm::rotate(mTransform, mPitch, vec3(1.f, 0.f, 0.f));
 }
 
-void Player::move(float speed) { mSpeed = speed; }
+void Player::walk(float speed) { mWalkSpeed = speed; }
 
 void Player::jump(void) {
 	if (mIsOnGround)
@@ -100,44 +75,29 @@ void Player::jump(void) {
 }
 
 void Player::jolt(float force) {
-	if (mIsOnGround)
-		mGravity -= std::abs(force);
+	if (isOnGround())
+		accelerate(vec3(0.f, 0.f, std::abs(force)));
 }
 
 void Player::action(double frame) { mAction = frame; }
 
+float Player::getRadius() const { return 1.f; }
+
+vec3 Player::getSpeed() const {
+	return Entity::getSpeed() + vec3(std::sin(-mYaw), std::cos(-mYaw), 0.f) * mWalkSpeed;
+}
+
 void Player::update(sptr<Collidable> terrain, double time) {
-	Message message;
-	while (readMessage(message))
-		processMessage(message);
+	if (isOnGround() && mIsJumping)
+		accelerate(vec3(0.f, 0.f, 10.f));
 
-	vec3 move(0.f);
-	mGravity += 10.f * time;
-	if (mIsOnGround && mIsJumping)
-		mGravity -= 10.f;
-	move.z -= mGravity * time;
+	Entity::update(terrain, time);
 
-	vec3 dir = vec3(std::sin(-mYaw), std::cos(-mYaw), 0.f);
-	move += dir * float(time) * mSpeed;
-
-	mIsOnGround = false;
-	vec3 newmove, intersection, normal;
-	if (terrain->collide(mPosition - vec3(0.f, 0.5f, 0.f), move, 1.f, &newmove, &intersection,
-	                     &normal)) {
-		move = newmove;
-
-		if (normal.z > 0.f) {
-			mIsOnGround = true;
-			mIsJumping = false;
-			mGravity = 0.f;
-		}
-	}
-
-	mPosition += move;
+	if (isOnGround())
+		mIsJumping = false;
 }
 
 int Player::draw(const Context &context) {
-
 	float t = mAction >= 0. ? (mAction < .9 ? (1. + mAction) / 1.8 : 1. - (mAction - .9) / 0.10)
 	                        : (1. + mAction) / 1.8;
 
@@ -155,32 +115,21 @@ int Player::draw(const Context &context) {
 	return count;
 }
 
+void Player::handleCollision(const vec3 &normal) { mSpeed = vec3(0.f, 0.f, 0.f); }
+
 void Player::processMessage(const Message &message) {
 	BinaryFormatter formatter(message.payload);
 
 	switch (message.type) {
-	case Message::PlayerPosition: {
-		float32_t x = 0.f;
-		float32_t y = 0.f;
-		float32_t z = 0.f;
-		formatter >> x >> y >> z;
-		mPosition = vec3(x, y, z);
-		break;
-	}
-
-	case Message::PlayerControl: {
+	case Message::EntityControl: {
 		float32_t yaw = 0.f;
 		float32_t pitch = 0.f;
 		formatter >> yaw >> pitch;
-		rotate(yaw, pitch);
+		pivot(yaw, pitch);
 
 		float32_t speed = 0.f;
 		formatter >> speed;
-		move(speed);
-
-		float32_t gravity = 0.f;
-		formatter >> gravity;
-		mGravity = gravity;
+		mWalkSpeed = speed;
 
 		uint32_t flags = 0;
 		formatter >> flags;
@@ -188,9 +137,19 @@ void Player::processMessage(const Message &message) {
 	}
 
 	default:
-		// Ignore
+		Entity::processMessage(message);
 		break;
 	}
+}
+
+void Player::sendControl() const {
+	Message message(Message::EntityControl);
+	BinaryFormatter formatter;
+	formatter << float32_t(mYaw) << float32_t(mPitch);
+	formatter << float32_t(mWalkSpeed);
+	formatter << uint32_t(0); // flags
+	message.payload = formatter.data();
+	mMessageBus->send(message);
 }
 
 } // namespace convergence

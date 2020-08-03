@@ -137,6 +137,24 @@ void Program::setUniform(const string &name, const mat4 &value) {
 	glUniformMatrix4fv(getUniformLocation(name.c_str()), 1, GL_FALSE, glm::value_ptr(value));
 }
 
+void Program::setUniform(const string &name, const vec3 *value, int count) {
+	bind();
+	glUniform3fv(getUniformLocation(name.c_str()), count,
+	             count > 0 ? glm::value_ptr(value[0]) : nullptr);
+}
+
+void Program::setUniform(const string &name, const vec4 *value, int count) {
+	bind();
+	glUniform4fv(getUniformLocation(name.c_str()), count,
+	             count > 0 ? glm::value_ptr(value[0]) : nullptr);
+}
+
+void Program::setUniform(const string &name, const mat4 *value, int count) {
+	bind();
+	glUniformMatrix4fv(getUniformLocation(name.c_str()), count, GL_FALSE,
+	                   count ? glm::value_ptr(value[0]) : nullptr);
+}
+
 void Program::setUniform(const string &name, shared_ptr<Texture> texture) {
 	int unit;
 	if (auto it = mTextureUnits.find(name); it != mTextureUnits.end()) {

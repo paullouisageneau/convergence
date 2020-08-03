@@ -34,13 +34,10 @@ public:
 	void update(sptr<Collidable> terrain, double time);
 
 protected:
-	void sendPosition(void);
-	void sendControl(void);
 	void onMessage(const Message &message);
 
 private:
 	float mOldYaw, mOldPitch;
-	float mOldSpeed;
 	bool mOldIsJumping;
 
 	double mPositionUpdateCooldown;

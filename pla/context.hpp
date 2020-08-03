@@ -27,6 +27,8 @@
 #include "pla/program.hpp"
 #include "pla/texture.hpp"
 
+#include <vector>
+
 namespace pla {
 
 // Rendering context
@@ -45,10 +47,13 @@ public:
 
 	void enableDepthTest(bool enabled);
 	void enableBlending(bool enabled);
+	void enableReverseCulling(bool enabled);
 
 	Context transform(const mat4 &matrix) const;
 
 	template <typename T> void setUniform(const string &name, const T &value);
+	template <typename T> void setUniform(const string &name, const T *value, int count);
+	template <typename T> void setUniform(const string &name, std::vector<T> values);
 
 private:
 	mat4 mProjection, mView, mModel, mTransform;
@@ -56,6 +61,7 @@ private:
 	Frustum mFrustum;
 	bool mDepthTestEnabled;
 	bool mBlendingEnabled;
+	bool mReverseCullingEnabled;
 
 	class UniformContainer {
 	public:
@@ -69,13 +75,25 @@ private:
 
 template <typename T> class Context::UniformContainerImpl final : public Context::UniformContainer {
 public:
-	UniformContainerImpl(const T &v) { value = v; }
+	UniformContainerImpl(T v) { value = std::move(v); }
 	void apply(const string &name, sptr<Program> program, int &unit) const {
 		program->setUniform(name, value);
 	}
 
 private:
 	T value;
+};
+
+template <typename T>
+class Context::UniformContainerImpl<std::vector<T>> final : public Context::UniformContainer {
+public:
+	UniformContainerImpl(std::vector<T> v) { values = std::move(v); }
+	void apply(const string &name, sptr<Program> program, int &unit) const {
+		program->setUniform(name, values.data(), values.size());
+	}
+
+private:
+	std::vector<T> values;
 };
 
 template <>
@@ -94,6 +112,16 @@ private:
 
 template <typename T> void Context::setUniform(const string &name, const T &value) {
 	auto p = std::make_shared<UniformContainerImpl<T>>(value);
+	mUniforms[name] = p;
+}
+
+template <typename T> void Context::setUniform(const string &name, const T *value, int count) {
+	std::vector<T> v(value, value + count);
+	setUniform(name, std::move(v));
+}
+
+template <typename T> void Context::setUniform(const string &name, std::vector<T> values) {
+	auto p = std::make_shared<UniformContainerImpl<std::vector<T>>>(std::move(values));
 	mUniforms[name] = p;
 }
 

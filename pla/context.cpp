@@ -25,7 +25,9 @@ namespace pla {
 Context::Context(const mat4 &projection, const mat4 &camera)
     : mProjection(projection), mView(glm::inverse(camera)), mModel(mat4(1.f)),
       mTransform(mProjection * mView * mModel), mCameraPosition(camera * vec4(0.f, 0.f, 0.f, 1.f)),
-      mFrustum(mTransform), mDepthTestEnabled(true), mBlendingEnabled(false) {
+      mFrustum(mTransform), mDepthTestEnabled(true), mBlendingEnabled(false),
+      mReverseCullingEnabled(false) {
+
 	setUniform("projection", mProjection);
 	setUniform("view", mView);
 	setUniform("model", mModel);
@@ -50,6 +52,8 @@ void Context::enableDepthTest(bool enabled) { mDepthTestEnabled = enabled; }
 
 void Context::enableBlending(bool enabled) { mBlendingEnabled = enabled; }
 
+void Context::enableReverseCulling(bool enabled) { mReverseCullingEnabled = enabled; }
+
 void Context::prepare(sptr<Program> program) const {
 	int unit = program->nextTextureUnit();
 	for (auto p : mUniforms)
@@ -68,6 +72,14 @@ void Context::prepare(sptr<Program> program) const {
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	} else {
 		glDisable(GL_BLEND);
+	}
+
+	if (mReverseCullingEnabled) {
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_FRONT);
+	} else {
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_BACK);
 	}
 }
 

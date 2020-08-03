@@ -26,18 +26,21 @@
 #include "src/game.hpp"
 
 #include <iostream>
+#include <memory>
 
+using convergence::Engine;
 using convergence::Game;
 
-pla::Engine engine;
+std::unique_ptr<Engine> engine;
 
 void loop();
 
 int main() {
 	try {
 		std::cout << "Starting..." << std::endl;
-		engine.openWindow("Convergence", 640, 480);
-		engine.pushState(std::make_shared<Game>());
+		engine = std::make_unique<Engine>();
+		engine->openWindow("Convergence", 640, 480);
+		engine->pushState(std::make_shared<Game>());
 
 #ifdef __EMSCRIPTEN__
 		emscripten_set_main_loop(loop, 0, 1);
@@ -46,29 +49,31 @@ int main() {
 #endif
 	} catch (const std::exception &e) {
 		std::cout << "Error: " << e.what() << std::endl;
+		engine.reset();
 		return 1;
 	}
 
+	engine.reset();
 	return 0;
 }
 
 void loop() {
 #ifdef __EMSCRIPTEN__
 	try {
-		if (!engine.update()) {
+		if (!engine->update()) {
 			emscripten_cancel_main_loop();
 			return;
 		}
 
-		engine.display();
+		engine->display();
 
 	} catch (const std::exception &e) {
 		std::cout << "Error: " << e.what() << std::endl;
 		emscripten_cancel_main_loop();
 	}
 #else
-	while (engine.update())
-		engine.display();
+	while (engine->update())
+		engine->display();
 #endif
 }
 

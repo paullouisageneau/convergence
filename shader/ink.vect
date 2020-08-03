@@ -1,0 +1,21 @@
+#version 330
+precision highp float;
+
+uniform mat4 transform;
+uniform mat4 view;
+uniform mat4 model;
+uniform float border;
+
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec3 normal;
+
+out vec3 fragPosition;
+out vec3 fragNormal;
+
+void main()
+{
+	fragPosition = position + normal * border;
+	fragNormal = normal;
+	gl_Position = transform * vec4(fragPosition, 1.0);
+}
+

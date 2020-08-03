@@ -29,9 +29,7 @@ namespace convergence {
 LocalPlayer::LocalPlayer(sptr<MessageBus> messageBus) : Player(messageBus, messageBus->localId()) {
 	mOldYaw = mYaw;
 	mOldPitch = mPitch;
-	mOldSpeed = 0.f;
 	mOldIsJumping = false;
-
 	mPositionUpdateCooldown = 0.f;
 }
 
@@ -43,47 +41,25 @@ void LocalPlayer::update(sptr<Collidable> terrain, double time) {
 	mPositionUpdateCooldown += time;
 
 	if (mPositionUpdateCooldown > 0.5 || std::abs(mYaw - mOldYaw) > Epsilon ||
-	    std::abs(mPitch - mOldPitch) > Epsilon || std::abs(mSpeed - mOldSpeed) > Epsilon ||
+	    std::abs(mPitch - mOldPitch) > Epsilon /*|| std::abs(mSpeed - mOldSpeed) > Epsilon*/ ||
 	    mIsJumping != mOldIsJumping) {
 		mPositionUpdateCooldown = 0.;
 		mOldYaw = mYaw;
 		mOldPitch = mPitch;
-		mOldSpeed = mSpeed;
 		mOldIsJumping = mIsJumping;
 
-		sendPosition();
+		sendTransform();
 		sendControl();
 	}
 }
 
-void LocalPlayer::sendPosition(void) {
-	Message message(Message::PlayerPosition);
-	BinaryFormatter formatter;
-	formatter << float32_t(mPosition.x);
-	formatter << float32_t(mPosition.y);
-	formatter << float32_t(mPosition.z);
-	message.payload = formatter.data();
-	mMessageBus->send(message);
-}
-
-void LocalPlayer::sendControl(void) {
-	Message message(Message::PlayerControl);
-	BinaryFormatter formatter;
-	formatter << float32_t(mYaw) << float32_t(mPitch);
-	formatter << float32_t(mSpeed);
-	formatter << float32_t(mGravity);
-	formatter << uint32_t(mIsJumping ? 0x1 : 0x0);
-	message.payload = formatter.data();
-	mMessageBus->send(message);
-}
-
 void LocalPlayer::onMessage(const Message &message) {
 	switch (message.type) {
-	case Message::PlayerPosition:
+	case Message::EntityTransform:
 		// Ignore
 		break;
 
-	case Message::PlayerControl:
+	case Message::EntityControl:
 		// Ignore
 		break;
 
