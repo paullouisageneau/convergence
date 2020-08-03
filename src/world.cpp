@@ -19,7 +19,7 @@
  ***************************************************************************/
 
 #include "src/world.hpp"
-#include "src/factory.hpp"
+#include "src/firefly.hpp"
 
 namespace convergence {
 
@@ -39,8 +39,7 @@ World::World(sptr<MessageBus> messageBus) : mMessageBus(messageBus) {
 	mMessageBus->registerListener(mLocalPlayer->id(), mLocalPlayer);
 	mPlayers[mLocalPlayer->id()] = mLocalPlayer;
 
-	auto program = std::make_shared<Program>(std::make_shared<VertexShader>("shader/color.vect"),
-	                                         std::make_shared<FragmentShader>("shader/color.frag"));
+	mEntities[identifier()] = std::make_shared<Firefly>(mMessageBus, identifier());
 
 	// Factory factory("pickaxe", 1.f / 32.f, program);
 	// mObjects[identifier()] = factory.build();
@@ -52,6 +51,14 @@ sptr<Player> World::localPlayer(void) const { return mLocalPlayer; }
 
 sptr<Terrain> World::terrain(void) const { return mTerrain; }
 
+void World::collect(LightCollection &lights) {
+	for (auto &[id, player] : mPlayers)
+		player->collect(lights);
+
+	for (auto &[id, entity] : mEntities)
+		entity->collect(lights);
+}
+
 void World::update(double time) {
 	Message message;
 	while (readMessage(message))
@@ -61,6 +68,9 @@ void World::update(double time) {
 
 	for (auto &[id, player] : mPlayers)
 		player->update(mTerrain, time);
+
+	for (auto &[id, entity] : mEntities)
+		entity->update(mTerrain, time);
 }
 
 int World::draw(Context &context) {
@@ -70,8 +80,8 @@ int World::draw(Context &context) {
 	for (const auto &[id, player] : mPlayers)
 		count += player->draw(context);
 
-	for (const auto &[id, object] : mObjects)
-		count += object->draw(context);
+	for (const auto &[id, entity] : mEntities)
+		count += entity->draw(context);
 
 	return count;
 }

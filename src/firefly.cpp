@@ -18,58 +18,40 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef CONVERGENCE_ENTITY_H
-#define CONVERGENCE_ENTITY_H
+#include "src/firefly.hpp"
 
-#include "src/include.hpp"
-#include "src/light.hpp"
-#include "src/messagebus.hpp"
-
-#include "pla/collidable.hpp"
-#include "pla/context.hpp"
-#include "pla/object.hpp"
+#include "pla/program.hpp"
+#include "pla/shader.hpp"
 
 namespace convergence {
 
-using pla::Collidable;
-using pla::Context;
-using pla::Object;
+using pla::FragmentShader;
+using pla::Program;
+using pla::VertexShader;
 
-class Entity : public MessageBus::AsyncListener {
-public:
-	Entity(sptr<MessageBus> messageBus, identifier id);
-	virtual ~Entity();
+Firefly::Firefly(sptr<MessageBus> messageBus, identifier id) : Entity(messageBus, std::move(id)) {
 
-	identifier id() const;
-	vec3 getPosition() const;
-	vec3 getDirection() const;
-	mat4 getTransform() const;
+	auto program = std::make_shared<Program>(std::make_shared<VertexShader>("shader/color.vect"),
+	                                         std::make_shared<FragmentShader>("shader/color.frag"));
+}
 
-	void setTransform(mat4 m);
-	void transform(const mat4 &m);
-	void accelerate(const vec3 &v);
+Firefly::~Firefly(void) {}
 
-	bool isOnGround(void) const;
+float Firefly::getRadius() const { return 0.5f; }
 
-	virtual float getRadius() const;
-	virtual vec3 getSpeed() const;
+vec3 Firefly::getSpeed() const { return Entity::getSpeed(); }
 
-	virtual void collect(LightCollection &lights);
-	virtual void update(sptr<Collidable> terrain, double time);
-	virtual int draw(const Context &context);
+void Firefly::collect(LightCollection &lights) {
+	lights.add({getPosition(), vec4(1.f, 0.9f, 0.6f, 1.f), 8.f});
+}
 
-protected:
-	virtual void handleCollision(const vec3 &normal);
-	virtual void processMessage(const Message &message);
-	void sendTransform() const;
+void Firefly::update(sptr<Collidable> terrain, double time) { Entity::update(terrain, time); }
 
-	sptr<MessageBus> mMessageBus;
-	identifier mId;
-	mat4 mTransform;
-	vec3 mSpeed;
-	bool mIsOnGround;
-};
+int Firefly::draw(const Context &context) {
+	int count = 0;
+	Context subContext = context.transform(getTransform());
+	// count += mObject->draw(subContext);
+	return count;
+}
 
 } // namespace convergence
-
-#endif

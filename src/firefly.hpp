@@ -18,38 +18,18 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef CONVERGENCE_ENTITY_H
-#define CONVERGENCE_ENTITY_H
+#ifndef CONVERGENCE_FIREFLY_H
+#define CONVERGENCE_FIREFLY_H
 
+#include "src/entity.hpp"
 #include "src/include.hpp"
-#include "src/light.hpp"
-#include "src/messagebus.hpp"
-
-#include "pla/collidable.hpp"
-#include "pla/context.hpp"
-#include "pla/object.hpp"
 
 namespace convergence {
 
-using pla::Collidable;
-using pla::Context;
-using pla::Object;
-
-class Entity : public MessageBus::AsyncListener {
+class Firefly : public Entity {
 public:
-	Entity(sptr<MessageBus> messageBus, identifier id);
-	virtual ~Entity();
-
-	identifier id() const;
-	vec3 getPosition() const;
-	vec3 getDirection() const;
-	mat4 getTransform() const;
-
-	void setTransform(mat4 m);
-	void transform(const mat4 &m);
-	void accelerate(const vec3 &v);
-
-	bool isOnGround(void) const;
+	Firefly(sptr<MessageBus> messageBus, identifier id);
+	virtual ~Firefly();
 
 	virtual float getRadius() const;
 	virtual vec3 getSpeed() const;
@@ -59,15 +39,7 @@ public:
 	virtual int draw(const Context &context);
 
 protected:
-	virtual void handleCollision(const vec3 &normal);
-	virtual void processMessage(const Message &message);
-	void sendTransform() const;
-
-	sptr<MessageBus> mMessageBus;
-	identifier mId;
-	mat4 mTransform;
-	vec3 mSpeed;
-	bool mIsOnGround;
+	sptr<Object> mObject;
 };
 
 } // namespace convergence

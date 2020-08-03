@@ -22,6 +22,7 @@
 #define CONVERGENCE_WORLD_H
 
 #include "src/include.hpp"
+#include "src/light.hpp"
 #include "src/localplayer.hpp"
 #include "src/messagebus.hpp"
 #include "src/player.hpp"
@@ -46,6 +47,7 @@ public:
 	sptr<Player> localPlayer(void) const;
 	sptr<Terrain> terrain(void) const;
 
+	void collect(LightCollection &lights);
 	void update(double time);
 	int draw(Context &context);
 
@@ -58,7 +60,7 @@ private:
 	sptr<Terrain> mTerrain;
 	sptr<LocalPlayer> mLocalPlayer;
 	std::map<identifier, sptr<Player>> mPlayers;
-	std::map<identifier, sptr<Object>> mObjects;
+	std::map<identifier, sptr<Entity>> mEntities; // Non-player entities
 };
 } // namespace convergence
 

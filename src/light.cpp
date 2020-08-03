@@ -18,58 +18,44 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef CONVERGENCE_ENTITY_H
-#define CONVERGENCE_ENTITY_H
-
-#include "src/include.hpp"
 #include "src/light.hpp"
-#include "src/messagebus.hpp"
 
-#include "pla/collidable.hpp"
-#include "pla/context.hpp"
-#include "pla/object.hpp"
+#include <algorithm>
 
 namespace convergence {
 
-using pla::Collidable;
-using pla::Context;
-using pla::Object;
+using std::vector;
 
-class Entity : public MessageBus::AsyncListener {
-public:
-	Entity(sptr<MessageBus> messageBus, identifier id);
-	virtual ~Entity();
+const size_t MaxLightsCount = 16;
 
-	identifier id() const;
-	vec3 getPosition() const;
-	vec3 getDirection() const;
-	mat4 getTransform() const;
+LightCollection::LightCollection() { mLights.reserve(MaxLightsCount); }
 
-	void setTransform(mat4 m);
-	void transform(const mat4 &m);
-	void accelerate(const vec3 &v);
+int LightCollection::count() const { return int(mLights.size()); }
 
-	bool isOnGround(void) const;
+void LightCollection::add(Light light) {
+	if (mLights.size() < MaxLightsCount)
+		mLights.emplace_back(std::move(light));
+}
 
-	virtual float getRadius() const;
-	virtual vec3 getSpeed() const;
+vector<vec3> LightCollection::positions() const {
+	vector<vec3> result(mLights.size());
+	std::transform(mLights.begin(), mLights.end(), result.begin(),
+	               [](const auto &light) { return light.position; });
+	return result;
+}
 
-	virtual void collect(LightCollection &lights);
-	virtual void update(sptr<Collidable> terrain, double time);
-	virtual int draw(const Context &context);
+vector<vec4> LightCollection::colors() const {
+	vector<vec4> result(mLights.size());
+	std::transform(mLights.begin(), mLights.end(), result.begin(),
+	               [](const auto &light) { return light.color; });
+	return result;
+}
 
-protected:
-	virtual void handleCollision(const vec3 &normal);
-	virtual void processMessage(const Message &message);
-	void sendTransform() const;
-
-	sptr<MessageBus> mMessageBus;
-	identifier mId;
-	mat4 mTransform;
-	vec3 mSpeed;
-	bool mIsOnGround;
-};
+vector<float> LightCollection::powers() const {
+	vector<float> result(mLights.size());
+	std::transform(mLights.begin(), mLights.end(), result.begin(),
+	               [](const auto &light) { return light.power; });
+	return result;
+}
 
 } // namespace convergence
-
-#endif

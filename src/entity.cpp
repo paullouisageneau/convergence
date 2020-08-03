@@ -53,6 +53,10 @@ void Entity::accelerate(const vec3 &v) { mSpeed += v; }
 
 bool Entity::isOnGround(void) const { return mIsOnGround; }
 
+void Entity::collect(LightCollection &lights) {
+	// Dummy
+}
+
 void Entity::update(sptr<Collidable> terrain, double time) {
 	Message message;
 	while (readMessage(message))

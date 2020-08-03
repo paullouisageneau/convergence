@@ -18,56 +18,33 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef CONVERGENCE_ENTITY_H
-#define CONVERGENCE_ENTITY_H
+#ifndef CONVERGENCE_LIGHT_H
+#define CONVERGENCE_LIGHT_H
 
 #include "src/include.hpp"
-#include "src/light.hpp"
-#include "src/messagebus.hpp"
-
-#include "pla/collidable.hpp"
-#include "pla/context.hpp"
-#include "pla/object.hpp"
 
 namespace convergence {
 
-using pla::Collidable;
-using pla::Context;
-using pla::Object;
+struct Light {
+	vec3 position;
+	vec4 color;
+	float power = 1.f;
+};
 
-class Entity : public MessageBus::AsyncListener {
+class LightCollection {
 public:
-	Entity(sptr<MessageBus> messageBus, identifier id);
-	virtual ~Entity();
+	LightCollection();
 
-	identifier id() const;
-	vec3 getPosition() const;
-	vec3 getDirection() const;
-	mat4 getTransform() const;
+	void add(Light light);
 
-	void setTransform(mat4 m);
-	void transform(const mat4 &m);
-	void accelerate(const vec3 &v);
+	int count() const;
 
-	bool isOnGround(void) const;
+	std::vector<vec3> positions() const;
+	std::vector<vec4> colors() const;
+	std::vector<float> powers() const;
 
-	virtual float getRadius() const;
-	virtual vec3 getSpeed() const;
-
-	virtual void collect(LightCollection &lights);
-	virtual void update(sptr<Collidable> terrain, double time);
-	virtual int draw(const Context &context);
-
-protected:
-	virtual void handleCollision(const vec3 &normal);
-	virtual void processMessage(const Message &message);
-	void sendTransform() const;
-
-	sptr<MessageBus> mMessageBus;
-	identifier mId;
-	mat4 mTransform;
-	vec3 mSpeed;
-	bool mIsOnGround;
+private:
+	std::vector<Light> mLights;
 };
 
 } // namespace convergence

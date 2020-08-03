@@ -19,7 +19,7 @@
  ***************************************************************************/
 
 #include "src/game.hpp"
-#include "glm/ext/matrix_transform.hpp"
+#include "src/light.hpp"
 #include "src/player.hpp"
 
 #include <vector>
@@ -126,18 +126,12 @@ int Game::onDraw(Engine *engine) {
 	Context context(proj, mWorld->localPlayer()->getTransform());
 	context.setUniform("border", 0.02f);
 
-	static float a = 0.f;
-	a += 0.2f;
-
-	std::vector<vec3> lightsPositions = {vec3(0.f, std::sin(a) * 0.2f, 0.f),
-	                                     vec3(20.f, std::sin(a * 0.7f) * 0.15f, 0.f)};
-	std::vector<vec4> lightsColors = {vec4(1.f, 0.8f, 0.5f, 1.f), vec4(1.f, 0.9f, 0.6f, 1.f)};
-	std::vector<float> lightsPowers = {4.f, 8.f};
-
-	context.setUniform("lightsCount", 2);
-	context.setUniform("lightsPositions", std::move(lightsPositions));
-	context.setUniform("lightsColors", std::move(lightsColors));
-	context.setUniform("lightsPowers", std::move(lightsPowers));
+	LightCollection lights;
+	mWorld->collect(lights);
+	context.setUniform("lightsCount", lights.count());
+	context.setUniform("lightsPositions", lights.positions());
+	context.setUniform("lightsColors", lights.colors());
+	context.setUniform("lightsPowers", lights.powers());
 
 	count += mWorld->draw(context);
 
