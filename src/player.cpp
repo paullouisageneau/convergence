@@ -81,6 +81,23 @@ void Player::jolt(float force) {
 
 void Player::action(double frame) { mAction = frame; }
 
+void Player::pick(sptr<Entity> entity) {
+	if (!entity->isPicked()) {
+		mPicked = entity;
+		entity->setPicked(true);
+	}
+}
+
+void Player::release() {
+	if (mPicked) {
+		mPicked->setPicked(false);
+		mPicked->accelerate(getDirection() * 10.f);
+		mPicked = nullptr;
+	}
+}
+
+bool Player::isPicking() const { return mPicked != nullptr; }
+
 float Player::getRadius() const { return 1.f; }
 
 vec3 Player::getSpeed() const {
@@ -95,23 +112,28 @@ void Player::update(sptr<Collidable> terrain, double time) {
 
 	if (isOnGround())
 		mIsJumping = false;
-}
 
-int Player::draw(const Context &context) {
 	float t = mAction >= 0. ? (mAction < .9 ? (1. + mAction) / 1.8 : 1. - (mAction - .9) / 0.10)
 	                        : (1. + mAction) / 1.8;
 
-	mat4 toolTransform = glm::translate(mat4(1.0f), vec3(0.45f, -0.6f - mPitch * 0.1f, -1.f));
-	toolTransform = glm::rotate(toolTransform, mPitch * 0.1f + Pi * 0.75f, vec3(1, 0, 0));
-	toolTransform = glm::rotate(toolTransform, -Pi / 8, vec3(0, 0, 1));
-	toolTransform = glm::rotate(toolTransform, t * Pi / 2, vec3(1.f, -0.f, 0.3f));
-	toolTransform = glm::translate(toolTransform, vec3(0.f, -0.4f, 0.f));
+	mat4 handTransform = getTransform();
+	handTransform = glm::translate(handTransform, vec3(0.45f, -0.6f - mPitch * 0.1f, -1.f));
+	handTransform = glm::rotate(handTransform, mPitch * 0.1f + Pi * 0.75f, vec3(1, 0, 0));
+	handTransform = glm::rotate(handTransform, -Pi / 8, vec3(0, 0, 1));
+	handTransform = glm::rotate(handTransform, t * Pi / 2, vec3(1.f, -0.f, 0.3f));
+	handTransform = glm::translate(handTransform, vec3(0.f, -0.4f, 0.f));
 
+	if (mPicked)
+		mPicked->setTransform(std::move(handTransform));
+}
+
+int Player::draw(const Context &context) {
 	int count = 0;
 	// count += mObject->draw(subContext);
 
-	Context subContext = context.transform(getTransform() * toolTransform);
-	// count += mTool->draw(subContext);
+	if (mPicked)
+		mPicked->draw(context);
+
 	return count;
 }
 

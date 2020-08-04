@@ -21,6 +21,8 @@
 #include "src/world.hpp"
 #include "src/firefly.hpp"
 
+#include <map>
+
 namespace convergence {
 
 using pla::to_hex;
@@ -45,11 +47,28 @@ World::World(sptr<MessageBus> messageBus) : mMessageBus(messageBus) {
 	// mObjects[identifier()] = factory.build();
 }
 
-World::~World(void) {}
+World::~World() {}
 
-sptr<Player> World::localPlayer(void) const { return mLocalPlayer; }
+sptr<Terrain> World::terrain() const { return mTerrain; }
 
-sptr<Terrain> World::terrain(void) const { return mTerrain; }
+sptr<Player> World::localPlayer() const { return mLocalPlayer; }
+
+void World::localPick() {
+	vec3 position = mLocalPlayer->getPosition();
+	std::multimap<float, shared_ptr<Entity>> ordered;
+	for (const auto &[id, entity] : mEntities) {
+		float distance = glm::distance(entity->getPosition(), position);
+		ordered.emplace(distance, entity);
+	}
+
+	for (const auto &[distance, entity] : ordered) {
+		if (!entity->isPicked()) {
+			if (distance <= 2.f)
+				mLocalPlayer->pick(entity);
+		}
+		break;
+	}
+}
 
 void World::collect(LightCollection &lights) {
 	for (auto &[id, player] : mPlayers)
@@ -81,7 +100,8 @@ int World::draw(Context &context) {
 		count += player->draw(context);
 
 	for (const auto &[id, entity] : mEntities)
-		count += entity->draw(context);
+		if (!entity->isPicked())
+			count += entity->draw(context);
 
 	return count;
 }

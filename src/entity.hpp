@@ -49,7 +49,10 @@ public:
 	void transform(const mat4 &m);
 	void accelerate(const vec3 &v);
 
-	bool isOnGround(void) const;
+	bool isOnGround() const;
+
+	bool isPicked() const { return mIsPicked; }
+	void setPicked(bool picked) { mIsPicked = picked; }
 
 	virtual float getRadius() const;
 	virtual vec3 getSpeed() const;
@@ -68,6 +71,8 @@ protected:
 	mat4 mTransform;
 	vec3 mSpeed;
 	bool mIsOnGround;
+
+	bool mIsPicked = false;
 };
 
 } // namespace convergence

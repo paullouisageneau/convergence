@@ -38,6 +38,9 @@ public:
 	void jump();
 	void jolt(float force);
 	void action(double frame);
+	void pick(sptr<Entity> entity);
+	void release();
+	bool isPicking() const;
 
 	virtual float getRadius() const;
 	virtual vec3 getSpeed() const;
@@ -56,6 +59,7 @@ protected:
 	bool mIsJumping;
 
 	sptr<Object> mObject, mTool;
+	sptr<Entity> mPicked;
 };
 
 } // namespace convergence

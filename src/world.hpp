@@ -42,10 +42,12 @@ using pla::Object;
 class World final : public MessageBus::AsyncListener {
 public:
 	World(shared_ptr<MessageBus> messageBus);
-	~World(void);
+	~World();
 
-	sptr<Player> localPlayer(void) const;
-	sptr<Terrain> terrain(void) const;
+	sptr<Terrain> terrain() const;
+	sptr<Player> localPlayer() const;
+
+	void localPick();
 
 	void collect(LightCollection &lights);
 	void update(double time);

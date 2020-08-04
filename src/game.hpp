@@ -64,6 +64,7 @@ private:
 
 	float mYaw, mPitch;
 	double mAccumulator;
+	bool mReturnPressed = false;
 
 	unsigned mUpdateCount;
 };

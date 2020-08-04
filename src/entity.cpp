@@ -62,19 +62,21 @@ void Entity::update(sptr<Collidable> terrain, double time) {
 	while (readMessage(message))
 		processMessage(message);
 
-	mSpeed -= vec3(0.f, 0.f, 10.f) * float(time); // gravity
-	mIsOnGround = false;
+	if (!mIsPicked) {
+		mSpeed -= vec3(0.f, 0.f, 10.f) * float(time); // gravity
+		mIsOnGround = false;
 
-	vec3 vect = getSpeed() * float(time);
-	vec3 newvect, intersection, normal;
-	if (terrain->collide(getPosition(), vect, getRadius(), &newvect, &intersection, &normal)) {
-		vect = newvect;
-		if (normal.z > 0.f)
-			mIsOnGround = true;
-		handleCollision(normal);
+		vec3 vect = getSpeed() * float(time);
+		vec3 newvect, intersection, normal;
+		if (terrain->collide(getPosition(), vect, getRadius(), &newvect, &intersection, &normal)) {
+			vect = newvect;
+			if (normal.z > 0.f)
+				mIsOnGround = true;
+			handleCollision(normal);
+		}
+
+		mTransform = glm::translate(vect) * mTransform;
 	}
-
-	mTransform = glm::translate(vect) * mTransform;
 }
 
 float Entity::getRadius() const { return 1.f; }
@@ -88,7 +90,7 @@ int Entity::draw(const Context &context) {
 
 void Entity::handleCollision(const vec3 &normal) {
 	mSpeed -= normal * glm::dot(normal, mSpeed);
-	mSpeed *= 0.999f;
+	mSpeed *= 0.9f;
 }
 
 void Entity::processMessage(const Message &message) {

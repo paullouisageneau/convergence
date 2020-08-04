@@ -84,6 +84,18 @@ bool Game::onUpdate(Engine *engine, double time) {
 	if (engine->isKeyDown(KEY_SPACE))
 		localPlayer->jump();
 
+	if (engine->isKeyDown(KEY_RETURN)) {
+		if (!mReturnPressed) {
+			mReturnPressed = true;
+			if (!localPlayer->isPicking())
+				mWorld->localPick();
+			else
+				localPlayer->release();
+		}
+	} else {
+		mReturnPressed = false;
+	}
+
 	mWorld->update(time);
 
 	if (engine->isMouseButtonDown(MOUSE_BUTTON_LEFT) || mAccumulator >= 0.5) {
