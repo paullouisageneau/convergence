@@ -7,7 +7,6 @@ in vec3 fragNormal;
 in vec3 fragLight;
 in vec3 fragAmbient;
 in vec3 fragDiffuse;
-in vec3 fragSmoothness;
 
 out vec4 fragColor;
 

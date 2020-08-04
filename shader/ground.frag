@@ -19,15 +19,21 @@ out vec4 fragColor;
 
 void main()
 {
+	vec3 normal = normalize(fragNormal);
+
 	vec4 lightColor = vec4(0.0, 0.0, 0.0, 0.0);
 	for(int i = 0; i < lightsCount; ++i) {
 		vec3 v = fragPosition - lightsPositions[i];
-		float l = clamp(dot(fragNormal, -v), 0.0, 1.0);
-		l *= min(exp2(-length(v) / lightsPowers[i]), 1.0);
-		if(l < 0.1) l = 0.0;
-		else if(l < 0.4) l = 0.4;
-		else if(l < 0.7) l = 0.7;
-		else l = 1.0;
+		float d = dot(normal, -normalize(v));
+		float l;
+		if(d < 0.0) l = 0.0;
+		else {
+			l = min(exp2(-length(v) / lightsPowers[i]), 1.0) * (1.0 + d) * 0.5;
+			if(l < 0.1) l = 0.0;
+			else if(l < 0.3) l = 0.3;
+			else if(l < 0.5) l = 0.5;
+			else l = 1.0;
+		}
 		lightColor = min(lightColor + lightsColors[i] * l, vec4(1.0));
 	}
 

@@ -27,22 +27,24 @@ namespace convergence {
 
 using pla::FragmentShader;
 using pla::Program;
+using pla::Sphere;
 using pla::VertexShader;
 
 Firefly::Firefly(sptr<MessageBus> messageBus, identifier id) : Entity(messageBus, std::move(id)) {
 
 	auto program = std::make_shared<Program>(std::make_shared<VertexShader>("shader/color.vect"),
 	                                         std::make_shared<FragmentShader>("shader/color.frag"));
+	mObject = std::make_shared<Sphere>(64, program);
 }
 
-Firefly::~Firefly(void) {}
+Firefly::~Firefly() {}
 
 float Firefly::getRadius() const { return 0.5f; }
 
 vec3 Firefly::getSpeed() const { return Entity::getSpeed(); }
 
 void Firefly::collect(LightCollection &lights) {
-	lights.add({getPosition(), vec4(1.f, 0.9f, 0.6f, 1.f), 8.f});
+	lights.add({getPosition(), vec4(1.f, 0.9f, 0.6f, 1.f), 16.f});
 }
 
 void Firefly::update(sptr<Collidable> terrain, double time) { Entity::update(terrain, time); }
@@ -50,7 +52,7 @@ void Firefly::update(sptr<Collidable> terrain, double time) { Entity::update(ter
 int Firefly::draw(const Context &context) {
 	int count = 0;
 	Context subContext = context.transform(getTransform());
-	// count += mObject->draw(subContext);
+	count += mObject->draw(subContext);
 	return count;
 }
 

@@ -16,16 +16,14 @@ out vec3 fragNormal;
 out vec3 fragLight;
 out vec3 fragAmbient;
 out vec3 fragDiffuse;
-out vec3 fragSmoothness;
 
 void main()
 {
 	vec3 fragPosition = vec3(model*vec4(position, 1.0));
 	fragNormal = normalize(vec3(model*vec4(normal, 0.0)));
 	fragLight = normalize(fragPosition - lightPosition);
-	fragAmbient = ambient;
-	fragDiffuse = diffuse;
-	fragSmoothness = smoothness;
+	fragAmbient = vec3(1.0, 1.0, 0.2); //ambient;
+	fragDiffuse = vec3(1.0, 1.0, 0.2); //diffuse;
 	gl_Position = transform * vec4(position, 1.0);
 }
 

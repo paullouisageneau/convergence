@@ -111,7 +111,7 @@ int Player::draw(const Context &context) {
 	// count += mObject->draw(subContext);
 
 	Context subContext = context.transform(getTransform() * toolTransform);
-	count += mTool->draw(subContext);
+	// count += mTool->draw(subContext);
 	return count;
 }
 

@@ -26,6 +26,8 @@
 #include "pla/mesh.hpp"
 #include "pla/program.hpp"
 
+#include <unordered_map>
+
 namespace pla {
 
 class Object {
@@ -46,6 +48,15 @@ public:
 protected:
 	sptr<Mesh> mMesh;
 	std::map<size_t, sptr<Program>> mPrograms;
+};
+
+class Sphere : public Object {
+public:
+	Sphere(int resolution, sptr<Program> program = nullptr);
+
+private:
+	static sptr<Mesh> Build(int resolution);
+	static std::unordered_map<int, sptr<Mesh>> Cache;
 };
 
 } // namespace pla
