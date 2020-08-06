@@ -21,40 +21,64 @@
 #include "src/light.hpp"
 
 #include <algorithm>
+#include <vector>
 
 namespace convergence {
 
-using std::vector;
-
 const size_t MaxLightsCount = 16;
 
-LightCollection::LightCollection() { mLights.reserve(MaxLightsCount); }
+Light::Light(vec4 color, float power, vec3 position)
+    : mColor(std::move(color)), mPower(std::move(power)), mPosition(std::move(position)),
+      mDepthCubeMap(std::make_shared<DepthCubeMap>(2048)) {}
 
-int LightCollection::count() const { return int(mLights.size()); }
+vec4 Light::color() const { return mColor; }
 
-void LightCollection::add(Light light) {
+float Light::power() const { return mPower; }
+
+vec3 Light::position() const { return mPosition; }
+
+void Light::setPosition(vec3 position) { mPosition = position; }
+
+void Light::bindDepth(int face) { mDepthCubeMap->bindFramebuffer(face); }
+
+void Light::unbindDepth() { mDepthCubeMap->unbindFramebuffer(); }
+
+Light::Collection::Collection() { mLights.reserve(MaxLightsCount); }
+
+void Light::Collection::add(sptr<Light> light) {
 	if (mLights.size() < MaxLightsCount)
 		mLights.emplace_back(std::move(light));
 }
 
-vector<vec3> LightCollection::positions() const {
-	vector<vec3> result(mLights.size());
+const std::vector<sptr<Light>> &Light::Collection::vector() const { return mLights; }
+
+int Light::Collection::count() const { return int(mLights.size()); }
+
+std::vector<vec3> Light::Collection::positions() const {
+	std::vector<vec3> result(mLights.size());
 	std::transform(mLights.begin(), mLights.end(), result.begin(),
-	               [](const auto &light) { return light.position; });
+	               [](const auto &light) { return light->mPosition; });
 	return result;
 }
 
-vector<vec4> LightCollection::colors() const {
-	vector<vec4> result(mLights.size());
+std::vector<vec4> Light::Collection::colors() const {
+	std::vector<vec4> result(mLights.size());
 	std::transform(mLights.begin(), mLights.end(), result.begin(),
-	               [](const auto &light) { return light.color; });
+	               [](const auto &light) { return light->mColor; });
 	return result;
 }
 
-vector<float> LightCollection::powers() const {
-	vector<float> result(mLights.size());
+std::vector<float> Light::Collection::powers() const {
+	std::vector<float> result(mLights.size());
 	std::transform(mLights.begin(), mLights.end(), result.begin(),
-	               [](const auto &light) { return light.power; });
+	               [](const auto &light) { return light->mPower; });
+	return result;
+}
+
+std::vector<sptr<Texture>> Light::Collection::depthCubeMaps() const {
+	std::vector<sptr<Texture>> result(mLights.size());
+	std::transform(mLights.begin(), mLights.end(), result.begin(),
+	               [](const auto &light) { return light->mDepthCubeMap; });
 	return result;
 }
 

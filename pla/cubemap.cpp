@@ -18,45 +18,39 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef PLA_TEXTURE_H
-#define PLA_TEXTURE_H
-
-#include "pla/image.hpp"
-#include "pla/include.hpp"
-#include "pla/linalg.hpp"
-#include "pla/opengl.hpp"
-
-#include <string>
+#include "pla/cubemap.hpp"
 
 namespace pla {
 
-class Texture {
-public:
-	Texture(GLenum type = GL_TEXTURE_2D);
-	Texture(shared_ptr<Image> img, GLenum type = GL_TEXTURE_2D);
-	Texture(const std::string &filename, GLenum type = GL_TEXTURE_2D);
-	virtual ~Texture();
+DepthCubeMap::DepthCubeMap(size_t size) : Texture(GL_TEXTURE_CUBE_MAP), mSize(size) {
+	bind();
+	for (int i = 0; i < 6; ++i)
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT24, mSize, mSize, 0,
+		             GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
-	void activate(int unit) const;
-	void deactivate(int unit) const;
+	glTexParameteri(mType, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
+	unbind();
 
-	void bind() const;
-	void unbind() const;
+	glGenFramebuffers(1, &mFramebuffer);
+}
 
-	void enableClamping(bool enabled);
+DepthCubeMap::~DepthCubeMap() { glDeleteFramebuffers(1, &mFramebuffer); }
 
-	void setImage(shared_ptr<Image> img);
-	void setImage(const uint8_t *data, size_t width, size_t height);
-	void setImage(const uint8_t *data, size_t width, size_t height, size_t depth);
+void DepthCubeMap::bindFramebuffer(int face) {
+	glBindFramebuffer(GL_FRAMEBUFFER, mFramebuffer);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+	                       GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, mTexture, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
 
-protected:
-	GLuint mTexture;
-	GLenum mType;
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		throw std::runtime_error("Framebuffer status check failed");
 
-private:
-	bool mClampingEnabled;
-};
+	glViewport(0, 0, mSize, mSize);
+	glClearDepth(1.0);
+	glClear(GL_DEPTH_BUFFER_BIT);
+}
+
+void DepthCubeMap::unbindFramebuffer() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 
 } // namespace pla
-
-#endif // PLA_TEXTURE_H

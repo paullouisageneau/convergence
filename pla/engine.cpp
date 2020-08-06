@@ -132,12 +132,16 @@ void Engine::getWindowSize(int *width, int *height) const {
 	glfwGetWindowSize(mWindow, width, height);
 }
 
-void Engine::clear(const vec4 &color) {
+void Engine::clear(const vec4 &color, float depth) {
 	glClearColor(color.x, color.y, color.z, color.w);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClearDepth(depth);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void Engine::clearDepth(void) { glClear(GL_DEPTH_BUFFER_BIT); }
+void Engine::clearDepth(float depth) {
+	glClearDepth(depth);
+	glClear(GL_DEPTH_BUFFER_BIT);
+}
 
 void Engine::changeState(sptr<State> state) {
 	popState();
@@ -198,9 +202,6 @@ bool Engine::update(void) {
 	}
 
 	getMousePosition(&mOldCursorx, &mOldCursory);
-
-	// Process sound
-	// Sound::Process();
 	return true;
 }
 

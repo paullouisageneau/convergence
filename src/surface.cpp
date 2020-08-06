@@ -78,20 +78,19 @@ int Surface::draw(const Context &context) {
 
 	int count = 0;
 
-	context.prepare(mProgram);
-	mProgram->bind();
-	for (auto blk : blocks)
-	    count += blk->drawElements();
-	mProgram->unbind();
+	    context.render(mProgram, [&]() {
+	        for (auto blk : blocks)
+	            count += blk->drawElements();
+	    });
 
-	Context inkContext = context;
-	inkContext.enableReverseCulling(true);
-	inkContext.prepare(mInkProgram);
-	mInkProgram->bind();
-	for (auto blk : blocks)
-		count += blk->drawElements();
-	mInkProgram->unbind();
-
+	if (!context.overrideProgram()) {
+		Context inkContext = context;
+		inkContext.enableReverseCulling(true);
+		inkContext.render(mInkProgram, [&]() {
+			for (auto blk : blocks)
+				count += blk->drawElements();
+		});
+	}
 	return count;
 }
 

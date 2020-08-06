@@ -48,11 +48,25 @@ const vec3 &Context::cameraPosition(void) const { return mCameraPosition; }
 
 const Frustum &Context::frustum(void) const { return mFrustum; }
 
+sptr<Program> Context::overrideProgram() const { return mOverrideProgram; }
+
 void Context::enableDepthTest(bool enabled) { mDepthTestEnabled = enabled; }
 
 void Context::enableBlending(bool enabled) { mBlendingEnabled = enabled; }
 
 void Context::enableReverseCulling(bool enabled) { mReverseCullingEnabled = enabled; }
+
+void Context::setOverrideProgram(sptr<Program> program) { mOverrideProgram = program; }
+
+void Context::render(sptr<Program> program, std::function<void()> func) const {
+	if (mOverrideProgram)
+		program = mOverrideProgram;
+
+	prepare(program);
+	program->bind();
+	func();
+	program->unbind();
+}
 
 void Context::prepare(sptr<Program> program) const {
 	int unit = program->nextTextureUnit();

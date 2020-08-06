@@ -32,6 +32,8 @@ using pla::VertexShader;
 
 Firefly::Firefly(sptr<MessageBus> messageBus, identifier id) : Entity(messageBus, std::move(id)) {
 
+	mLight = std::make_shared<Light>(vec4(1.f, 0.9f, 0.6f, 1.f), 16.f);
+
 	auto program = std::make_shared<Program>(std::make_shared<VertexShader>("shader/color.vect"),
 	                                         std::make_shared<FragmentShader>("shader/color.frag"));
 	mObject = std::make_shared<Sphere>(64, program);
@@ -43,16 +45,19 @@ float Firefly::getRadius() const { return 0.5f; }
 
 vec3 Firefly::getSpeed() const { return Entity::getSpeed(); }
 
-void Firefly::collect(LightCollection &lights) {
-	lights.add({getPosition(), vec4(1.f, 0.9f, 0.6f, 1.f), 16.f});
-}
+void Firefly::collect(Light::Collection &lights) { lights.add(mLight); }
 
-void Firefly::update(sptr<Collidable> terrain, double time) { Entity::update(terrain, time); }
+void Firefly::update(sptr<Collidable> terrain, double time) {
+	Entity::update(terrain, time);
+	mLight->setPosition(getPosition());
+}
 
 int Firefly::draw(const Context &context) {
 	int count = 0;
-	Context subContext = context.transform(getTransform());
-	count += mObject->draw(subContext);
+	if (!context.overrideProgram()) {
+		Context subContext = context.transform(getTransform());
+	    count += mObject->draw(subContext);
+	}
 	return count;
 }
 

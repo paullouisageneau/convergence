@@ -49,7 +49,7 @@ public:
 
 	void localPick();
 
-	void collect(LightCollection &lights);
+	void collect(Light::Collection &lights);
 	void update(double time);
 	int draw(Context &context);
 

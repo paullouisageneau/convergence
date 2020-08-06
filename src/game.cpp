@@ -22,9 +22,13 @@
 #include "src/light.hpp"
 #include "src/player.hpp"
 
+#include <array>
 #include <vector>
 
 namespace convergence {
+
+using pla::Quad;
+using std::vector;
 
 Game::Game(void) {
 	mYaw = 0.f;
@@ -52,6 +56,10 @@ void Game::onInit(Engine *engine) {
 
 	auto font = std::make_shared<Font>("res/ttf/DejaVuSansMono.ttf");
 	mMessages.push_back(std::make_shared<Text>(font, program, "Hello world"));
+
+	mDepthProgram =
+	    std::make_shared<Program>(std::make_shared<VertexShader>("shader/depth.vect"),
+	                              std::make_shared<FragmentShader>("shader/depth.frag"));
 }
 
 void Game::onCleanup(Engine *engine) {
@@ -127,23 +135,54 @@ bool Game::onUpdate(Engine *engine, double time) {
 
 int Game::onDraw(Engine *engine) {
 	int count = 0;
+	Light::Collection lights;
+	mWorld->collect(lights);
+	for (auto l : lights.vector()) {
+		vec3 pos = l->position();
+		vector<mat4> transforms(6);
+		transforms[0] = glm::lookAt(pos, pos + vec3(1.f, 0.f, 0.f), vec3(0.f, -1.f, 0.f));
+		transforms[1] = glm::lookAt(pos, pos + vec3(-1.f, 0.f, 0.f), vec3(0.f, -1.f, 0.f));
+		transforms[2] = glm::lookAt(pos, pos + vec3(0.f, 1.f, 0.f), vec3(0.f, 0.f, 1.f));
+		transforms[3] = glm::lookAt(pos, pos + vec3(0.f, -1.f, 0.f), vec3(0.f, 0.f, -1.f));
+		transforms[4] = glm::lookAt(pos, pos + vec3(0.f, 0.f, 1.f), vec3(0.f, -1.f, 0.f));
+		transforms[5] = glm::lookAt(pos, pos + vec3(0.f, 0.f, -1.f), vec3(0.f, -1.f, 0.f));
+
+		for (int i = 0; i < 6; ++i) {
+			l->bindDepth(i);
+			engine->clear(vec4(0.f, 0.f, 0.f, 1.f));
+
+			mat4 proj = glm::perspective(glm::radians(90.0f), 1.f, 0.01f, 10.f);
+			mat4 camera = glm::inverse(transforms[i]);
+			Context context(proj, camera);
+			context.setOverrideProgram(mDepthProgram);
+			context.setUniform("nearPlane", 0.01f);
+			context.setUniform("farPlane", 10.f);
+			context.setUniform("lightPosition", l->position());
+
+			count += mWorld->draw(context);
+
+			l->unbindDepth();
+		}
+	}
 
 	engine->clear(vec4(0.f, 0.f, 0.f, 1.f));
 
 	int width, height;
 	engine->getWindowSize(&width, &height);
 
+	glViewport(0, 0, width, height);
 	float ratio = float(width) / float(height);
-	mat4 proj = glm::perspective(glm::radians(45.0f), ratio, 0.01f, 40.0f);
+	mat4 proj = glm::perspective(glm::radians(45.0f), ratio, 0.01f, 40.f);
 	Context context(proj, mWorld->localPlayer()->getTransform());
+	context.setUniform("nearPlane", 0.01f);
+	context.setUniform("farPlane", 10.f);
 	context.setUniform("border", 0.02f);
 
-	LightCollection lights;
-	mWorld->collect(lights);
 	context.setUniform("lightsCount", lights.count());
 	context.setUniform("lightsPositions", lights.positions());
 	context.setUniform("lightsColors", lights.colors());
 	context.setUniform("lightsPowers", lights.powers());
+	context.setUniform("lightsDepthCubeMaps", lights.depthCubeMaps());
 
 	count += mWorld->draw(context);
 
@@ -156,6 +195,7 @@ int Game::onDraw(Engine *engine) {
 	for (auto text : mMessages) {
 		text->draw(hudContext.transform(glm::translate(glm::mat4(1.f), glm::vec3(0.5f, 1.f, 0.f))));
 	}
+
 	return count;
 }
 

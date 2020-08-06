@@ -12,6 +12,7 @@ layout(location = 2) in vec3 ambient;
 layout(location = 3) in vec3 diffuse;
 layout(location = 4) in vec3 smoothness;
 
+out vec3 fragPosition;
 out vec3 fragNormal;
 out vec3 fragLight;
 out vec3 fragAmbient;
@@ -19,8 +20,8 @@ out vec3 fragDiffuse;
 
 void main()
 {
-	vec3 fragPosition = vec3(model*vec4(position, 1.0));
-	fragNormal = normalize(vec3(model*vec4(normal, 0.0)));
+	fragPosition = (model*vec4(position, 1.0)).xyz;
+	fragNormal = normalize((model*vec4(normal, 0.0)).xyz);
 	fragLight = normalize(fragPosition - lightPosition);
 	fragAmbient = vec3(1.0, 1.0, 0.2); //ambient;
 	fragDiffuse = vec3(1.0, 1.0, 0.2); //diffuse;

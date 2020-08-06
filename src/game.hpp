@@ -59,6 +59,7 @@ private:
 	sptr<MessageBus> mMessageBus;
 	sptr<Networking> mNetworking;
 	sptr<World> mWorld;
+	sptr<Program> mDepthProgram;
 
 	std::list<sptr<Text>> mMessages;
 

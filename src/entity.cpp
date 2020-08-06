@@ -53,7 +53,7 @@ void Entity::accelerate(const vec3 &v) { mSpeed += v; }
 
 bool Entity::isOnGround(void) const { return mIsOnGround; }
 
-void Entity::collect(LightCollection &lights) {
+void Entity::collect(Light::Collection &lights) {
 	// Dummy
 }
 

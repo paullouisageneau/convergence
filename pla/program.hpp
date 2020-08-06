@@ -59,7 +59,7 @@ public:
 	void setUniform(const string &name, const vec3 *value, int count);
 	void setUniform(const string &name, const vec4 *value, int count);
 	void setUniform(const string &name, const mat4 *value, int count);
-	void setUniform(const string &name, shared_ptr<Texture> texture);
+	void setUniform(const string &name, sptr<Texture> texture);
 
 	void setVertexAttrib(const string &name, float value);
 	void setVertexAttrib(const string &name, const float *values);

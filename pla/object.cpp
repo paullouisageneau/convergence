@@ -20,6 +20,8 @@
 
 #include "pla/object.hpp"
 
+#include <unordered_map>
+
 namespace pla {
 
 Object::Object(sptr<Mesh> mesh, sptr<Program> program) : mMesh(mesh) {
@@ -60,22 +62,19 @@ int Object::draw(const Context &context) const {
 				last = it->first;
 
 			if (program) {
-				context.prepare(program);
-				program->bind();
-				count += mMesh->drawElements(first, last - first);
-				program->unbind();
+				context.render(program, [&] { count += mMesh->drawElements(first, last - first); });
 			}
 		}
 	}
 	return count;
 }
 
-std::unordered_map<int, sptr<Mesh>> Sphere::Cache;
-
 Sphere::Sphere(int resolution, sptr<Program> program) : Object(Build(resolution), program) {}
 
 sptr<Mesh> Sphere::Build(int resolution) {
-	if (auto it = Cache.find(resolution); it != Cache.end())
+	static std::unordered_map<int, sptr<Mesh>> cache;
+
+	if (auto it = cache.find(resolution); it != cache.end())
 		return it->second;
 
 	std::vector<index_t> indices;
@@ -127,7 +126,17 @@ sptr<Mesh> Sphere::Build(int resolution) {
 	mesh->setVertexAttrib(1, normals.data(), normals.size(), 3);
 	mesh->setVertexAttrib(2, texcoords.data(), texcoords.size(), 2);
 
-	Cache.emplace(resolution, mesh);
+	cache.emplace(resolution, mesh);
+	return mesh;
+}
+
+Quad::Quad(sptr<Program> program) : Object(Build(), program) {}
+
+sptr<Mesh> Quad::Build() {
+	static const float vertices[] = {-1.f, -1.f, 0.f, 1.f,  -1.f, 0.f,
+	                                 1.f,  1.f,  0.f, -1.f, 1.f,  0.f};
+	static const index_t indices[] = {0, 1, 2, 2, 3, 0};
+	static const sptr<Mesh> mesh = std::make_shared<Mesh>(indices, 2 * 3, vertices, 2 * 3);
 	return mesh;
 }
 

@@ -27,6 +27,7 @@
 #include "pla/program.hpp"
 #include "pla/texture.hpp"
 
+#include <functional>
 #include <vector>
 
 namespace pla {
@@ -35,19 +36,22 @@ namespace pla {
 class Context {
 public:
 	Context(const mat4 &projection, const mat4 &camera);
-	~Context(void);
+	~Context();
 
-	const mat4 &projection(void) const;
-	const mat4 &view(void) const;
-	const mat4 &model(void) const;
-	const mat4 &transform(void) const;
-	const vec3 &cameraPosition(void) const;
-	const Frustum &frustum(void) const;
-	void prepare(sptr<Program> program) const; // set uniforms in program
+	const mat4 &projection() const;
+	const mat4 &view() const;
+	const mat4 &model() const;
+	const mat4 &transform() const;
+	const vec3 &cameraPosition() const;
+	const Frustum &frustum() const;
+	sptr<Program> overrideProgram() const;
 
 	void enableDepthTest(bool enabled);
 	void enableBlending(bool enabled);
 	void enableReverseCulling(bool enabled);
+	void setOverrideProgram(sptr<Program> program);
+
+	void render(sptr<Program> program, std::function<void()> func) const;
 
 	Context transform(const mat4 &matrix) const;
 
@@ -56,12 +60,15 @@ public:
 	template <typename T> void setUniform(const string &name, std::vector<T> values);
 
 private:
+	void prepare(sptr<Program> program) const; // set uniforms in program
+
 	mat4 mProjection, mView, mModel, mTransform;
 	vec3 mCameraPosition;
 	Frustum mFrustum;
 	bool mDepthTestEnabled;
 	bool mBlendingEnabled;
 	bool mReverseCullingEnabled;
+	sptr<Program> mOverrideProgram;
 
 	class UniformContainer {
 	public:
@@ -97,9 +104,9 @@ private:
 };
 
 template <>
-class Context::UniformContainerImpl<shared_ptr<Texture>> final : public Context::UniformContainer {
+class Context::UniformContainerImpl<sptr<Texture>> final : public Context::UniformContainer {
 public:
-	UniformContainerImpl(shared_ptr<Texture> t) { texture = t; }
+	UniformContainerImpl(sptr<Texture> t) { texture = std::move(t); }
 	void apply(const string &name, sptr<Program> program, int &unit) const {
 		texture->activate(unit);
 		program->setUniform(name, unit);
@@ -108,6 +115,26 @@ public:
 
 private:
 	shared_ptr<Texture> texture;
+};
+
+template <>
+class Context::UniformContainerImpl<std::vector<sptr<Texture>>> final
+    : public Context::UniformContainer {
+public:
+	UniformContainerImpl(std::vector<sptr<Texture>> t) { textures = std::move(t); }
+	void apply(const string &name, sptr<Program> program, int &unit) const {
+		std::vector<int> units;
+		units.reserve(textures.size());
+		for (const auto &t : textures) {
+			t->activate(unit);
+			units.push_back(unit);
+			++unit;
+		}
+		program->setUniform(name, units.data(), units.size());
+	}
+
+private:
+	std::vector<shared_ptr<Texture>> textures;
 };
 
 template <typename T> void Context::setUniform(const string &name, const T &value) {

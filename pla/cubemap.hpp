@@ -18,45 +18,27 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef PLA_TEXTURE_H
-#define PLA_TEXTURE_H
+#ifndef PLA_CUBEMAP_H
+#define PLA_CUBEMAP_H
 
-#include "pla/image.hpp"
 #include "pla/include.hpp"
-#include "pla/linalg.hpp"
-#include "pla/opengl.hpp"
-
-#include <string>
+#include "pla/texture.hpp"
 
 namespace pla {
 
-class Texture {
+class DepthCubeMap final : public Texture {
 public:
-	Texture(GLenum type = GL_TEXTURE_2D);
-	Texture(shared_ptr<Image> img, GLenum type = GL_TEXTURE_2D);
-	Texture(const std::string &filename, GLenum type = GL_TEXTURE_2D);
-	virtual ~Texture();
+	DepthCubeMap(size_t size = 1024);
+	virtual ~DepthCubeMap();
 
-	void activate(int unit) const;
-	void deactivate(int unit) const;
-
-	void bind() const;
-	void unbind() const;
-
-	void enableClamping(bool enabled);
-
-	void setImage(shared_ptr<Image> img);
-	void setImage(const uint8_t *data, size_t width, size_t height);
-	void setImage(const uint8_t *data, size_t width, size_t height, size_t depth);
-
-protected:
-	GLuint mTexture;
-	GLenum mType;
+	void bindFramebuffer(int face);
+	void unbindFramebuffer();
 
 private:
-	bool mClampingEnabled;
+	GLuint mFramebuffer;
+	size_t mSize;
 };
 
 } // namespace pla
 
-#endif // PLA_TEXTURE_H
+#endif

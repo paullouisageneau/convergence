@@ -70,7 +70,7 @@ void World::localPick() {
 	}
 }
 
-void World::collect(LightCollection &lights) {
+void World::collect(Light::Collection &lights) {
 	for (auto &[id, player] : mPlayers)
 		player->collect(lights);
 

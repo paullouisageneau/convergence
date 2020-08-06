@@ -45,8 +45,12 @@ void Texture::deactivate(int unit) const {
 
 void Texture::bind() const {
 	glBindTexture(mType, mTexture);
-	glTexParameteri(mType, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(mType, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	// glTexParameteri(mType, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// glTexParameteri(mType, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+	// WARNING: NEEDED for depth textures!
+	glTexParameteri(mType, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(mType, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 	if (mClampingEnabled) {
 		glTexParameteri(mType, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);

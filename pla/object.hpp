@@ -26,8 +26,6 @@
 #include "pla/mesh.hpp"
 #include "pla/program.hpp"
 
-#include <unordered_map>
-
 namespace pla {
 
 class Object {
@@ -56,7 +54,14 @@ public:
 
 private:
 	static sptr<Mesh> Build(int resolution);
-	static std::unordered_map<int, sptr<Mesh>> Cache;
+};
+
+class Quad : public Object {
+public:
+	Quad(sptr<Program> program = nullptr);
+
+private:
+	static sptr<Mesh> Build();
 };
 
 } // namespace pla

@@ -57,7 +57,7 @@ public:
 	virtual float getRadius() const;
 	virtual vec3 getSpeed() const;
 
-	virtual void collect(LightCollection &lights);
+	virtual void collect(Light::Collection &lights);
 	virtual void update(sptr<Collidable> terrain, double time);
 	virtual int draw(const Context &context);
 

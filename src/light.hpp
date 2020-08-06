@@ -23,28 +23,50 @@
 
 #include "src/include.hpp"
 
+#include "pla/cubemap.hpp"
+#include "pla/texture.hpp"
+
 namespace convergence {
 
-struct Light {
-	vec3 position;
-	vec4 color;
-	float power = 1.f;
-};
+using pla::DepthCubeMap;
+using pla::Texture;
 
-class LightCollection {
+class Light {
 public:
-	LightCollection();
+	Light(vec4 color = vec4(1.f), float power = 1.f, vec3 position = vec3(0.f));
 
-	void add(Light light);
+	vec4 color() const;
+	float power() const;
 
-	int count() const;
+	vec3 position() const;
+	void setPosition(vec3 position);
 
-	std::vector<vec3> positions() const;
-	std::vector<vec4> colors() const;
-	std::vector<float> powers() const;
+	void bindDepth(int face);
+	void unbindDepth();
+
+	class Collection {
+	public:
+		Collection();
+
+		void add(sptr<Light> light);
+		const std::vector<sptr<Light>> &vector() const;
+		int count() const;
+
+		std::vector<vec3> positions() const;
+		std::vector<vec4> colors() const;
+		std::vector<float> powers() const;
+		std::vector<sptr<Texture>> depthCubeMaps() const;
+
+	private:
+		std::vector<sptr<Light>> mLights;
+	};
 
 private:
-	std::vector<Light> mLights;
+	vec4 mColor;
+	float mPower;
+	vec3 mPosition;
+
+	sptr<DepthCubeMap> mDepthCubeMap;
 };
 
 } // namespace convergence
