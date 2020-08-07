@@ -63,9 +63,8 @@ void Context::render(sptr<Program> program, std::function<void()> func) const {
 		program = mOverrideProgram;
 
 	prepare(program);
-	program->bind();
+	bind_guard<Program> guard(program);
 	func();
-	program->unbind();
 }
 
 void Context::prepare(sptr<Program> program) const {

@@ -72,6 +72,10 @@ void Engine::openWindow(const string &title, int width, int height) {
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 1);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #endif
+
+	// Antialising
+	glfwWindowHint(GLFW_SAMPLES, 4);
+
 	mWindow = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
 	if (!mWindow)
 		throw std::runtime_error("Window creation failed");
@@ -217,6 +221,11 @@ int Engine::display(void) {
 
 	glDepthFunc(GL_LESS);
 	glEnable(GL_DEPTH_TEST);
+
+	// Antialising
+#ifndef USE_OPENGL_ES
+	glEnable(GL_MULTISAMPLE);
+#endif
 
 	int count = mStates.top()->onDraw(this);
 	glfwSwapBuffers(mWindow);

@@ -109,14 +109,16 @@ sptr<Mesh> Sphere::Build(int resolution) {
 			normals.push_back(n.z);
 			texcoords.push_back(t.x);
 			texcoords.push_back(t.y);
+			if (j != 0) {
+				auto l = (k + M) % (N * M);
+				indices.push_back(k - 1);
+				indices.push_back(k);
+				indices.push_back(l);
+				indices.push_back(l);
+				indices.push_back(l - 1);
+				indices.push_back(k - 1);
+			}
 			++k;
-			auto l = (k + M) % (N * M);
-			indices.push_back(k - 1);
-			indices.push_back(k);
-			indices.push_back(l);
-			indices.push_back(l);
-			indices.push_back(l - 1);
-			indices.push_back(k - 1);
 		}
 	}
 

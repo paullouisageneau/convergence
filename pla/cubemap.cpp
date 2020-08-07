@@ -25,10 +25,14 @@ namespace pla {
 DepthCubeMap::DepthCubeMap(size_t size) : Texture(GL_TEXTURE_CUBE_MAP), mSize(size) {
 	bind();
 	for (int i = 0; i < 6; ++i)
+#ifdef USE_OPENGL_ES
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT32F, mSize, mSize, 0,
+		             GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+#else
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT24, mSize, mSize, 0,
 		             GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+#endif
 
-	glTexParameteri(mType, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
 	unbind();
 
 	glGenFramebuffers(1, &mFramebuffer);
@@ -40,8 +44,10 @@ void DepthCubeMap::bindFramebuffer(int face) {
 	glBindFramebuffer(GL_FRAMEBUFFER, mFramebuffer);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
 	                       GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, mTexture, 0);
+#ifndef USE_OPENGL_ES
 	glDrawBuffer(GL_NONE);
 	glReadBuffer(GL_NONE);
+#endif
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		throw std::runtime_error("Framebuffer status check failed");

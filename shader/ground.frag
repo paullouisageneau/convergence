@@ -58,7 +58,7 @@ float lightDepthCubeMapShadow(int i, vec3 l) {
 	float bias = 0.5;
 	float result = 0.0;
 	for(int k=0; k<8; ++k) {
-		vec2 p = poissonDisk[k] / 100.0;
+		vec2 p = poissonDisk[k] / 50.0;
 		if(d < lightDepthCubeMap(i, l + u*p.x + v*p.y) + bias)
 			result+= 0.125f;
 	}

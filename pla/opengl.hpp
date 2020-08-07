@@ -31,6 +31,10 @@
 
 #include <memory>
 
+#ifdef USE_OPENGL_ES
+#define glClearDepth glClearDepthf
+#endif
+
 namespace pla {
 
 template <typename T> class bind_guard {
