@@ -37,7 +37,13 @@ if(CMAKE_SYSTEM_NAME MATCHES "Emscripten")
 
 	set_target_properties(convergence PROPERTIES OUTPUT_NAME "convergence")
 	set_target_properties(convergence PROPERTIES SUFFIX ".html")
+
 else()
+	set(OPTS -O2 -g)
+
+	target_compile_options(convergence PRIVATE ${OPTS})
+	target_link_options(convergence PRIVATE ${OPTS})
+
 	cmake_policy(SET CMP0072 NEW)
 	find_package(OpenGL REQUIRED)
 	find_package(GLEW REQUIRED)

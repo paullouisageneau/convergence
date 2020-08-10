@@ -39,7 +39,7 @@ float lightDepthCubeMap(int i, vec3 v) {
 	return map(d, 0.0, 1.0, nearPlane, farPlane);
 }
 
-vec2 poissonDisk[8] = vec2[](
+vec2 poissonDisk[16] = vec2[](
 	vec2(-0.613392, 0.617481),
 	vec2(0.170019, -0.040254),
 	vec2(-0.299417, 0.791925),
@@ -47,7 +47,15 @@ vec2 poissonDisk[8] = vec2[](
 	vec2(-0.651784, 0.717887),
 	vec2(0.421003, 0.027070),
 	vec2(-0.817194, -0.271096),
-	vec2(-0.705374, -0.668203)
+	vec2(-0.705374, -0.668203),
+	vec2(0.977050, -0.108615),
+	vec2(0.063326, 0.142369),
+	vec2(0.203528, 0.214331),
+	vec2(-0.667531, 0.326090),
+	vec2(-0.098422, -0.295755),
+	vec2(-0.885922, 0.215369),
+	vec2(0.566637, 0.605213),
+	vec2(0.039766, -0.396100)
 );
 
 float lightDepthCubeMapShadow(int i, vec3 l) {
@@ -57,10 +65,10 @@ float lightDepthCubeMapShadow(int i, vec3 l) {
 	float d = length(l);
 	float bias = 0.5;
 	float result = 0.0;
-	for(int k=0; k<8; ++k) {
+	for(int k=0; k<16; ++k) {
 		vec2 p = poissonDisk[k] / 50.0;
 		if(d < lightDepthCubeMap(i, l + u*p.x + v*p.y) + bias)
-			result+= 0.125f;
+			result+= 1.0/16.0;
 	}
 	return result;
 }

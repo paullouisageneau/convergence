@@ -29,7 +29,7 @@ const size_t MaxLightsCount = 16;
 
 Light::Light(vec4 color, float power, vec3 position)
     : mColor(std::move(color)), mPower(std::move(power)), mPosition(std::move(position)),
-      mDepthCubeMap(std::make_shared<DepthCubeMap>(256)) {}
+      mDepthCubeMap(std::make_shared<DepthCubeMap>(1024)) {}
 
 vec4 Light::color() const { return mColor; }
 
