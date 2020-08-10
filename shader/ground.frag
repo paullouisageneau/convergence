@@ -83,11 +83,13 @@ void main()
 		float light = dot(normal, -normalize(fragToLight));
 		float cutoff = min(exp2(-length(fragToLight) / lightsPowers[i]), 1.0);
 		light = light * cutoff;
-		if(light < 0.10) {
+		if(light < 0.01) {
 			light = 0.0;
 		} else {
 			float d = 0.01;
-			if(light < 0.1 + d) light = map(light, 0.1, 0.1 + d, 0.0, 0.3);
+			if(light < 0.01 + d) light = map(light, 0.01, 0.01 + d, 0.01, 0.1);
+			else if(light < 0.1) light = 0.1;
+			else if(light < 0.1 + d) light = map(light, 0.1, 0.1 + d, 0.1, 0.3);
 			else if(light < 0.3) light = 0.3;
 			else if(light < 0.3 + d) light = map(light, 0.3, 0.3 + d, 0.3, 0.5);
 			else if(light < 0.5) light = 0.5;
@@ -101,8 +103,7 @@ void main()
 	float z = gl_FragCoord.z/gl_FragCoord.w;
 	float fog = min((exp2(0.2 * z) - 1.0) * 0.02, 1.0);
 	vec4 color = fragAmbient + fragDiffuse * lightColor;
-	// fragPosition - position
-	// texture(detail, texcoord).xyz
+	//texture(detail, texcoord).xyz
 	fragColor = vec4(color.xyz * (1.0 - fog), color.w);
 }
 
