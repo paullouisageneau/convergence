@@ -81,15 +81,18 @@ void main()
 	for(int i = 0; i < lightsCount; ++i) {
 		vec3 fragToLight = fragPosition - lightsPositions[i];
 		float light = dot(normal, -normalize(fragToLight));
-		if(light <= 0.0) light = 0.0;
-		else {
-			float cutoff = min(exp2(-length(fragToLight) / lightsPowers[i]), 1.0);
-			light = cutoff * (1.0 + light) * 0.5;
-			if(light < 0.1) light = 0.0;
+		float cutoff = min(exp2(-length(fragToLight) / lightsPowers[i]), 1.0);
+		light = light * cutoff;
+		if(light < 0.10) {
+			light = 0.0;
+		} else {
+			float d = 0.01;
+			if(light < 0.1 + d) light = map(light, 0.1, 0.1 + d, 0.0, 0.3);
 			else if(light < 0.3) light = 0.3;
+			else if(light < 0.3 + d) light = map(light, 0.3, 0.3 + d, 0.3, 0.5);
 			else if(light < 0.5) light = 0.5;
+			else if(light < 0.5 + d) light = map(light, 0.5, 0.5 + d, 0.5, 1.0);
 			else light = 1.0;
-
 			light *= lightDepthCubeMapShadow(i, fragToLight);
 		}
 		lightColor = min(lightColor + lightsColors[i] * light, vec4(1.0));
