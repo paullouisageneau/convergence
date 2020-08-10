@@ -16,10 +16,11 @@ target_include_directories(convergence PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/)
 
 if(CMAKE_SYSTEM_NAME MATCHES "Emscripten")
 	set(WASM_OPTS
+		-O3 -flto -fno-rtti
 		"SHELL:-s WASM=1"
 		"SHELL:-s BINARYEN_METHOD=native-wasm"
 		"SHELL:-s TOTAL_MEMORY=256MB"
-		"SHELL:-s DISABLE_EXCEPTION_CATCHING=0"
+		"SHELL:-s DISABLE_EXCEPTION_CATCHING=1"
 		"SHELL:-s USE_PTHREADS=0"
 		"SHELL:-s USE_WEBGL2=1"
 		"SHELL:-s USE_GLFW=3"
@@ -28,11 +29,11 @@ if(CMAKE_SYSTEM_NAME MATCHES "Emscripten")
 
 	target_compile_options(convergence PRIVATE ${WASM_OPTS} -DUSE_OPENGL_ES)
 	target_link_options(convergence PRIVATE ${WASM_OPTS}
-		"SHELL:--shell-file ${CMAKE_CURRENT_SOURCE_DIR}/html/index.html"
+		--closure 1
+		--use-preload-plugins
 		"SHELL:--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/shader@shader"
 		"SHELL:--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/res@res"
-		--use-preload-plugins
-		--closure 1)
+		"SHELL:--shell-file ${CMAKE_CURRENT_SOURCE_DIR}/html/index.html")
 
 	set_target_properties(convergence PROPERTIES OUTPUT_NAME "convergence")
 	set_target_properties(convergence PROPERTIES SUFFIX ".html")
