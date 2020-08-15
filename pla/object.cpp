@@ -137,8 +137,19 @@ Quad::Quad(sptr<Program> program) : Object(Build(), program) {}
 sptr<Mesh> Quad::Build() {
 	static const float vertices[] = {-1.f, -1.f, 0.f, 1.f,  -1.f, 0.f,
 	                                 1.f,  1.f,  0.f, -1.f, 1.f,  0.f};
+	static const float normals[] = {0.f, 0.f, -1.f, 0.f, 0.f, -1.f, 0.f, 0.f, -1.f, 0.f, 0.f, -1.f};
+	static const float texCoords[] = {0.f, 0.f, 1.f, 0.f, 1.f, 1.f, 0.f, 1.f};
 	static const index_t indices[] = {0, 1, 2, 2, 3, 0};
-	static const sptr<Mesh> mesh = std::make_shared<Mesh>(indices, 2 * 3, vertices, 2 * 3);
+
+	static sptr<Mesh> mesh;
+	if (mesh)
+		return mesh;
+
+	mesh = std::make_shared<Mesh>();
+	mesh->setIndices(indices, 2 * 3);
+	mesh->setVertexAttrib(0, vertices, 4 * 3);
+	mesh->setVertexAttrib(1, normals, 4 * 3);
+	mesh->setVertexAttrib(2, texCoords, 4 * 2);
 	return mesh;
 }
 
