@@ -244,14 +244,9 @@ template <typename T> unsigned int bitcount(T n) {
 }
 
 inline void memxor(void *a, const void *b, size_t size) {
-	auto *la = reinterpret_cast<unsigned long *>(a);
-	auto *lb = reinterpret_cast<const unsigned long *>(b);
-	const size_t n = size / sizeof(unsigned long);
-	for (size_t i = 0; i < n; ++i)
-		la[i] ^= lb[i];
 	auto ca = reinterpret_cast<unsigned char *>(a);
 	auto cb = reinterpret_cast<const unsigned char *>(b);
-	for (size_t i = n * sizeof(unsigned long); i < size; ++i)
+	for (size_t i = 0; i < size; ++i)
 		ca[i] ^= cb[i];
 }
 
