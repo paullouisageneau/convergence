@@ -21,6 +21,7 @@
 #ifndef CONVERGENCE_MESSAGE_H
 #define CONVERGENCE_MESSAGE_H
 
+#include "src/identifier.hpp"
 #include "src/include.hpp"
 
 namespace convergence {

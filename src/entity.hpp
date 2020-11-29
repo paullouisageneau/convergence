@@ -21,6 +21,7 @@
 #ifndef CONVERGENCE_ENTITY_H
 #define CONVERGENCE_ENTITY_H
 
+#include "src/identifier.hpp"
 #include "src/include.hpp"
 #include "src/light.hpp"
 #include "src/messagebus.hpp"
@@ -37,6 +38,11 @@ using pla::Object;
 
 class Entity : public MessageBus::AsyncListener {
 public:
+	struct Init {
+		unsigned int type;
+		mat4 transform;
+	};
+
 	Entity(sptr<MessageBus> messageBus, identifier id);
 	virtual ~Entity();
 

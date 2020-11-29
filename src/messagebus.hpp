@@ -21,6 +21,7 @@
 #ifndef CONVERGENCE_MESSAGEBUS_H
 #define CONVERGENCE_MESSAGEBUS_H
 
+#include "src/identifier.hpp"
 #include "src/include.hpp"
 #include "src/message.hpp"
 

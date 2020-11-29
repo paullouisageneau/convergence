@@ -94,17 +94,6 @@ using pla::Epsilon;
 using pla::Pi;
 using pla::Sqrt2;
 
-class identifier : public binary {
-public:
-	identifier(void) : binary(8, byte(0)) {}
-
-	inline bool isNull(void) const {
-		return std::all_of(begin(), end(), [](byte b) { return b == byte(0); });
-	}
-
-	inline void clear(void) { assign(8, byte(0)); }
-};
-
 } // namespace convergence
 
 #endif

@@ -53,6 +53,21 @@ sptr<Terrain> World::terrain() const { return mTerrain; }
 
 sptr<Player> World::localPlayer() const { return mLocalPlayer; }
 
+sptr<Player> World::createPlayer(identifier id, Entity::Init init) {
+	auto player = std::make_shared<Player>(mMessageBus, std::move(id));
+	mMessageBus->registerListener(id, player);
+	player->transform(init.transform);
+	return player;
+}
+
+sptr<Entity> World::createEntity(identifier id, Entity::Init init) {
+	// TODO: factory
+	auto entity = std::make_shared<Firefly>(mMessageBus, std::move(id));
+	mMessageBus->registerListener(id, entity);
+	entity->transform(init.transform);
+	return entity;
+}
+
 void World::localPick() {
 	vec3 position = mLocalPlayer->getPosition();
 	std::multimap<float, shared_ptr<Entity>> ordered;
@@ -111,17 +126,12 @@ void World::processMessage(const Message &message) {
 		const identifier &id = message.source;
 		if (mPlayers.find(id) == mPlayers.end()) {
 			std::cout << "New player: " << to_hex(id) << std::endl;
-			mPlayers[id] = createPlayer(id);
+			// TODO
+			mPlayers[id] = createPlayer(id, {});
 
 			mTerrain->broadcast();
 		}
 	}
-}
-
-shared_ptr<Player> World::createPlayer(const identifier &id) {
-	auto player = std::make_shared<Player>(mMessageBus, id);
-	mMessageBus->registerListener(id, player);
-	return player;
 }
 
 } // namespace convergence

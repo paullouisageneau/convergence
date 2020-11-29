@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2017-2018 by Paul-Louis Ageneau                         *
+ *   Copyright (C) 2017-2020 by Paul-Louis Ageneau                         *
  *   paul-louis (at) ageneau (dot) org                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -18,54 +18,34 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef CONVERGENCE_WORLD_H
-#define CONVERGENCE_WORLD_H
+#ifndef CONVERGENCE_IDENTIFIER_H
+#define CONVERGENCE_IDENTIFIER_H
 
 #include "src/include.hpp"
-#include "src/light.hpp"
-#include "src/localplayer.hpp"
-#include "src/messagebus.hpp"
-#include "src/player.hpp"
-#include "src/store.hpp"
-#include "src/terrain.hpp"
+#include "src/types.hpp"
 
-#include "pla/context.hpp"
-#include "pla/object.hpp"
-
-#include <map>
+#include "pla/binary.hpp"
+#include "pla/binaryformatter.hpp"
 
 namespace convergence {
 
-using pla::Context;
-using pla::Object;
-
-class World final : public MessageBus::AsyncListener {
+class identifier : public binary {
 public:
-	World(shared_ptr<MessageBus> messageBus);
-	~World();
+	static identifier generate(const int3 &p, uint32_t id) {
+		pla::BinaryFormatter formatter;
+		formatter << int32_t(p.x) << int32_t(p.y) << int32_t(p.z) << id;
+		return formatter.data();
+	}
 
-	sptr<Terrain> terrain() const;
-	sptr<Player> localPlayer() const;
+	identifier(binary b = binary(16, byte(0))) : binary(std::move(b)) {}
 
-	sptr<Player> createPlayer(identifier id, Entity::Init init);
-	sptr<Entity> createEntity(identifier id, Entity::Init init);
+	inline bool isNull() const {
+		return std::all_of(begin(), end(), [](byte b) { return b == byte(0); });
+	}
 
-	void localPick();
-
-	void collect(Light::Collection &lights);
-	void update(double time);
-	int draw(Context &context);
-
-private:
-	void processMessage(const Message &message);
-
-	sptr<MessageBus> mMessageBus;
-	sptr<Store> mStore;
-	sptr<Terrain> mTerrain;
-	sptr<LocalPlayer> mLocalPlayer;
-	std::map<identifier, sptr<Player>> mPlayers;
-	std::map<identifier, sptr<Entity>> mEntities; // Non-player entities
+	inline void clear() { assign(16, byte(0)); }
 };
+
 } // namespace convergence
 
 #endif

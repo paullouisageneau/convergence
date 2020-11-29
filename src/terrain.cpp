@@ -228,6 +228,9 @@ void Terrain::populateBlock(shared_ptr<Block> block) {
 			}
 		}
 	}
+
+	// TODO: push entities to world
+
 	block->markChanged();
 }
 
