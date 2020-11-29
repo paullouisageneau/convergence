@@ -33,6 +33,7 @@ if(CMAKE_SYSTEM_NAME MATCHES "Emscripten")
 		--use-preload-plugins
 		"SHELL:--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/shader@shader"
 		"SHELL:--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/res@res"
+		"SHELL:--pre-js ${CMAKE_CURRENT_SOURCE_DIR}/js/pre.js"
 		"SHELL:--shell-file ${CMAKE_CURRENT_SOURCE_DIR}/html/index.html")
 
 	set_target_properties(convergence PROPERTIES OUTPUT_NAME "convergence")
