@@ -22,6 +22,7 @@
 #include "pla/binary.hpp"
 
 #include <algorithm>
+#include <cctype>
 
 namespace pla {
 
@@ -101,7 +102,7 @@ string to_base64(const binary &data, bool safeMode) {
 	const char *tab = (safeMode ? safeTab : standardTab);
 
 	string out;
-	out.reserve(3 * ((data.size() + 3) / 4));
+	out.reserve(4 * ((data.size() + 2) / 3));
 	int i = 0;
 	while (data.size() - i >= 3) {
 		auto d0 = to_integer<uint8_t>(data[i]);
@@ -136,13 +137,15 @@ string to_base64(const binary &data, bool safeMode) {
 
 binary from_base64(const string &str) {
 	binary out;
-	out.reserve(4 * ((str.size() + 2) / 3));
+	out.reserve(3 * ((str.size() + 3) / 4));
 	int i = 0;
-	while (i < str.size()) {
+	while (i < str.size() && str[i] != '=') {
 		byte tab[4] = {};
 		int j = 0;
 		while (i < str.size() && j < 4) {
 			uint8_t c = str[i];
+			if (std::isspace(c))
+				continue;
 			if (c == '=')
 				break;
 
@@ -163,17 +166,14 @@ binary from_base64(const string &str) {
 			++j;
 		}
 
-		if (j) {
+		if (j > 0) {
 			out.push_back((tab[0] << 2) | (tab[1] >> 4));
-			if (j > 2) {
+			if (j > 1) {
 				out.push_back((tab[1] << 4) | (tab[2] >> 2));
-				if (j > 3)
+				if (j > 2)
 					out.push_back((tab[2] << 6) | (tab[3]));
 			}
 		}
-
-		if (i < str.size() && str[i] == '=')
-			break;
 	}
 
 	return out;
