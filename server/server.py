@@ -17,12 +17,12 @@ async def handle(websocket, path):
 		while True:
 			message = await websocket.recv()
 			header = message[:8]
-			source = message[8:16]
-			destination = message[16:24]
-			payload = message[24:]
+			source = message[8:24]
+			destination = message[24:40]
+			payload = message[40:]
 			type, size = struct.unpack('>II', header);
 			print('Message {} from {}'.format(type, binascii.hexlify(source)))
-			
+
 			if type == 1:
 				peerId = source
 				peers[peerId] = websocket;
@@ -31,8 +31,8 @@ async def handle(websocket, path):
 				for peer in peers:
 					if peer != source:
 						peerList.extend(peer)
-				
-				await websocket.send(struct.pack('>II', 2, len(peerList)) + bytearray(8) + source + peerList);
+
+				await websocket.send(struct.pack('>II', 2, len(peerList)) + bytearray(16) + source + peerList);
 			else:
 				if destination in peers:
 					await peers[destination].send(message)
