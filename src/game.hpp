@@ -23,7 +23,6 @@
 
 #include "src/include.hpp"
 #include "src/messagebus.hpp"
-#include "src/networking.hpp"
 #include "src/world.hpp"
 
 #include "pla/context.hpp"
@@ -57,7 +56,6 @@ public:
 
 private:
 	sptr<MessageBus> mMessageBus;
-	sptr<Networking> mNetworking;
 	sptr<World> mWorld;
 	sptr<Program> mDepthProgram;
 

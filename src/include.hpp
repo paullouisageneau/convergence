@@ -33,6 +33,7 @@
 #include <optional>
 #include <shared_mutex>
 #include <tuple>
+#include <variant>
 
 namespace convergence {
 
@@ -44,9 +45,11 @@ template <typename T> using wptr = weak_ptr<T>;
 template <typename T> using uptr = unique_ptr<T>;
 
 using std::nullopt;
+using std::nullptr_t;
 using std::optional;
 using std::pair;
 using std::tuple;
+using std::variant;
 
 using std::mutex;
 using std::recursive_mutex;

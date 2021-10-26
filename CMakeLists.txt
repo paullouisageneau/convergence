@@ -14,6 +14,13 @@ set_target_properties(convergence PROPERTIES CXX_STANDARD 17)
 
 target_include_directories(convergence PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/)
 
+add_subdirectory(deps/legio EXCLUDE_FROM_ALL)
+target_link_libraries(convergence legio)
+
+option(BUILD_SHARED_LIBS "Build shared library" OFF)
+add_subdirectory(deps/glm EXCLUDE_FROM_ALL)
+target_link_libraries(convergence glm)
+
 if(CMAKE_SYSTEM_NAME MATCHES "Emscripten")
 	set(WASM_OPTS
 		-O3 -flto -fno-rtti
@@ -38,9 +45,6 @@ if(CMAKE_SYSTEM_NAME MATCHES "Emscripten")
 
 	set_target_properties(convergence PROPERTIES OUTPUT_NAME "convergence")
 	set_target_properties(convergence PROPERTIES SUFFIX ".html")
-
-	add_subdirectory(deps/datachannel-wasm EXCLUDE_FROM_ALL)
-	target_link_libraries(convergence datachannel-wasm)
 else()
 	set(OPTS -O2 -g)
 
@@ -61,13 +65,5 @@ else()
 			IMPORTED_LINK_INTERFACE_LANGUAGES C)
 	endif()
 	target_link_libraries(convergence OpenGL::GL GLEW::GLEW GLFW::GLFW DevIL::IL Freetype::Freetype)
-
-	option(NO_MEDIA "Disable media support in libdatachannel" ON)
-	add_subdirectory(deps/libdatachannel EXCLUDE_FROM_ALL)
-	target_link_libraries(convergence datachannel-static)
 endif()
-
-option(BUILD_SHARED_LIBS "Build shared library" OFF)
-add_subdirectory(deps/glm EXCLUDE_FROM_ALL)
-target_link_libraries(convergence glm)
 

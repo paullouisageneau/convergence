@@ -59,11 +59,12 @@ public:
 	Message(Type _type = Dummy);
 	Message(const binary &data);
 
+	optional<identifier> source;
+	optional<identifier> destination;
+
 	operator binary(void) const;
 
 	Type type;
-	identifier source;
-	identifier destination;
 	binary payload;
 };
 

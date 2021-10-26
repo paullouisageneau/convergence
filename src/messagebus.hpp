@@ -25,7 +25,7 @@
 #include "src/include.hpp"
 #include "src/message.hpp"
 
-#include "rtc/channel.hpp"
+#include "legio/legio.hpp"
 
 #include <map>
 #include <memory>
@@ -34,23 +34,14 @@
 
 namespace convergence {
 
-using rtc::Channel;
-
 class MessageBus {
 public:
-	enum class Priority : int { Default = 0, Relay = 1, Direct = 2 };
+	MessageBus();
+	virtual ~MessageBus();
 
-	MessageBus(void);
-	virtual ~MessageBus(void);
+	identifier localId() const;
 
-	identifier localId(void) const;
-
-	void addChannel(shared_ptr<Channel> channel, Priority priority);
-	void removeChannel(shared_ptr<Channel> channel);
-
-	void addRoute(const identifier &id, shared_ptr<Channel> channel, Priority priority);
-	void removeRoute(const identifier &id, shared_ptr<Channel> channel);
-	void removeAllRoutes(shared_ptr<Channel> channel);
+	void bootstrap(string url);
 
 	void send(Message &message);
 	void broadcast(Message &message);
@@ -72,21 +63,15 @@ public:
 		std::mutex mQueueMutex;
 	};
 
-	void registerTypeListener(Message::Type type, weak_ptr<Listener> listener);
-	void registerListener(const identifier &remoteId, weak_ptr<Listener> listener);
+	using listenerFilter = variant<nullptr_t, Message::Type, identifier>;
+	void registerListener(listenerFilter filter, weak_ptr<Listener> listener);
 
 private:
+	std::vector<shared_ptr<Listener>> getListeners(const listenerFilter &filter);
 	void dispatchPeer(const identifier &id);
-	void route(Message &message);
-	shared_ptr<Channel> findRoute(const identifier &remoteId);
 
-	identifier mLocalId;
-	std::set<shared_ptr<Channel>> mChannels;
-	std::mutex mChannelsMutex;
-	std::map<identifier, std::map<Priority, shared_ptr<Channel>>> mRoutes;
-	std::mutex mRoutesMutex;
-	std::multimap<Message::Type, weak_ptr<Listener>> mTypeListeners;
-	std::multimap<identifier, weak_ptr<Listener>> mListeners;
+	legio::Node mNode;
+	std::multimap<listenerFilter, weak_ptr<Listener>> mListeners;
 	std::mutex mListenersMutex;
 };
 

@@ -45,11 +45,8 @@ void Game::onInit(Engine *engine) {
 
 	mMessageBus = std::make_shared<MessageBus>();
 
-	mNetworking = std::make_shared<Networking>(mMessageBus, url);
-	mMessageBus->registerTypeListener(Message::Description, mNetworking);
-
 	mWorld = std::make_shared<World>(mMessageBus);
-	mMessageBus->registerTypeListener(Message::EntityTransform, mWorld);
+	mMessageBus->registerListener(Message::EntityTransform, mWorld);
 
 	auto program = std::make_shared<Program>(std::make_shared<VertexShader>("shader/font.vect"),
 	                                         std::make_shared<FragmentShader>("shader/font.frag"));
@@ -63,7 +60,6 @@ void Game::onInit(Engine *engine) {
 }
 
 void Game::onCleanup(Engine *engine) {
-	mNetworking.reset();
 	mWorld.reset();
 }
 

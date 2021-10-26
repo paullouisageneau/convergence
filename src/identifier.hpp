@@ -29,22 +29,7 @@
 
 namespace convergence {
 
-class identifier : public binary {
-public:
-	static identifier generate(const int3 &p, uint32_t id) {
-		pla::BinaryFormatter formatter;
-		formatter << int32_t(p.x) << int32_t(p.y) << int32_t(p.z) << id;
-		return formatter.data();
-	}
-
-	identifier(binary b = binary(16, byte(0))) : binary(std::move(b)) {}
-
-	inline bool isNull() const {
-		return std::all_of(begin(), end(), [](byte b) { return b == byte(0); });
-	}
-
-	inline void clear() { assign(16, byte(0)); }
-};
+using identifier = binary;
 
 } // namespace convergence
 

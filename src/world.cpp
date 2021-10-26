@@ -29,13 +29,13 @@ using pla::to_hex;
 
 World::World(sptr<MessageBus> messageBus) : mMessageBus(messageBus) {
 	mStore = std::make_shared<Store>(mMessageBus);
-	mMessageBus->registerTypeListener(Message::Store, mStore);
-	mMessageBus->registerTypeListener(Message::Request, mStore);
+	mMessageBus->registerListener(Message::Store, mStore);
+	mMessageBus->registerListener(Message::Request, mStore);
 
 	unsigned seed = 130;
 	mTerrain = std::make_shared<Terrain>(mMessageBus, mStore, seed);
-	mMessageBus->registerTypeListener(Message::TerrainRoot, mTerrain);
-	mMessageBus->registerTypeListener(Message::TerrainUpdate, mTerrain);
+	mMessageBus->registerListener(Message::TerrainRoot, mTerrain);
+	mMessageBus->registerListener(Message::TerrainUpdate, mTerrain);
 
 	mLocalPlayer = std::make_shared<LocalPlayer>(mMessageBus);
 	mMessageBus->registerListener(mLocalPlayer->id(), mLocalPlayer);
@@ -122,8 +122,8 @@ int World::draw(Context &context) {
 }
 
 void World::processMessage(const Message &message) {
-	if (!message.source.isNull()) {
-		const identifier &id = message.source;
+	if (message.source) {
+		const identifier &id = *message.source;
 		if (mPlayers.find(id) == mPlayers.end()) {
 			std::cout << "New player: " << to_hex(id) << std::endl;
 			// TODO
