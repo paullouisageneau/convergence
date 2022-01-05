@@ -46,9 +46,9 @@ MessageBus::~MessageBus(void) {}
 
 identifier MessageBus::localId(void) const { return mNode.id(); }
 
-void MessageBus::bootstrap(string url) {
-	mNode.connect(std::move(url));
-}
+string MessageBus::localUrl() const { return mNode.url(); }
+
+void MessageBus::bootstrap(string url) { mNode.connect(std::move(url)); }
 
 void MessageBus::send(Message &message) {
 	message.source = localId();

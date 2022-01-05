@@ -40,7 +40,7 @@ public:
 	virtual ~MessageBus();
 
 	identifier localId() const;
-
+	string localUrl() const;
 	void bootstrap(string url);
 
 	void send(Message &message);

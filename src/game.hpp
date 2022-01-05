@@ -59,7 +59,8 @@ private:
 	sptr<World> mWorld;
 	sptr<Program> mDepthProgram;
 
-	std::list<sptr<Text>> mMessages;
+	sptr<Text> mInfo;
+	std::vector<sptr<Text>> mMessages;
 
 	float mYaw, mPitch;
 	double mAccumulator;

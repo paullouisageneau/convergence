@@ -52,16 +52,15 @@ void Game::onInit(Engine *engine) {
 	                                         std::make_shared<FragmentShader>("shader/font.frag"));
 
 	auto font = std::make_shared<Font>("res/ttf/DejaVuSansMono.ttf");
-	mMessages.push_back(std::make_shared<Text>(font, program, "Hello world"));
+	mInfo = std::make_shared<Text>(font, program);
+	//mMessages.push_back(std::make_shared<Text>(font, program, "Hello world"));
 
 	mDepthProgram =
 	    std::make_shared<Program>(std::make_shared<VertexShader>("shader/depth.vect"),
 	                              std::make_shared<FragmentShader>("shader/depth.frag"));
 }
 
-void Game::onCleanup(Engine *engine) {
-	mWorld.reset();
-}
+void Game::onCleanup(Engine *engine) { mWorld.reset(); }
 
 bool Game::onUpdate(Engine *engine, double time) {
 	if (engine->isKeyDown(KEY_ESCAPE))
@@ -124,6 +123,8 @@ bool Game::onUpdate(Engine *engine, double time) {
 	}
 
 	localPlayer->action(mAccumulator);
+
+	mInfo->setContent(mMessageBus->localUrl());
 
 	++mUpdateCount;
 	return true;
@@ -188,9 +189,11 @@ int Game::onDraw(Engine *engine) {
 	const float size = 20.f; // em
 	mat4 hudProj = glm::ortho(-size * ratio, size * ratio, -size, size, -size, size);
 	Context hudContext(hudProj, glm::translate(glm::mat4(1.f), glm::vec3(size * ratio, size, 0.f)));
-	for (auto text : mMessages) {
-		text->draw(hudContext.transform(glm::translate(glm::mat4(1.f), glm::vec3(0.5f, 1.f, 0.f))));
-	}
+
+	mInfo->draw(hudContext.transform(glm::translate(glm::mat4(1.f), glm::vec3(0.5f, 1.f, 0.f))));
+	for (int i = 0; i < mMessages.size(); ++i)
+		mMessages[i]->draw(hudContext.transform(
+		    glm::translate(glm::mat4(1.f), glm::vec3(0.5f, (2 + i) * 1.f, 0.f))));
 
 	return count;
 }
