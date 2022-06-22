@@ -54,6 +54,8 @@ binary from_base64(const string &str);
 binary pack_strings(const std::vector<string> &strs);
 std::vector<string> unpack_strings(const binary &data);
 
+binary random_binary(size_t size);
+
 struct binary_hash {
 	std::size_t operator()(const binary &b) const noexcept;
 };

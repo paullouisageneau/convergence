@@ -23,10 +23,16 @@
 
 #include <algorithm>
 #include <cctype>
+#include <climits>
+#include <random>
 
 namespace pla {
 
 using std::to_integer;
+
+using std::random_device;
+using random_bytes_engine =
+    std::independent_bits_engine<std::default_random_engine, CHAR_BIT, unsigned short>;
 
 binary &operator^=(binary &a, const binary &b) {
 	a.resize(std::max(a.size(), b.size()), byte(0));
@@ -214,6 +220,13 @@ std::size_t binary_hash::operator()(const binary &data) const noexcept {
 	for (const byte b : data)
 		hash_combine(seed, b);
 	return seed;
+}
+
+binary random_binary(size_t size) {
+	binary result(size);
+	random_bytes_engine generator(random_device{}());
+	generate(result.begin(), result.end(), [&]() { return byte(generator()); });
+	return result;
 }
 
 } // namespace pla

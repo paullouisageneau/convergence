@@ -41,7 +41,11 @@ World::World(sptr<MessageBus> messageBus) : mMessageBus(messageBus) {
 	mMessageBus->registerListener(mLocalPlayer->id(), mLocalPlayer);
 	mPlayers[mLocalPlayer->id()] = mLocalPlayer;
 
-	mEntities[identifier()] = std::make_shared<Firefly>(mMessageBus, identifier());
+	// TODO
+	for(int i=0; i<4; ++i) {
+		auto id = make_identifier();
+		mEntities[id] = std::make_shared<Firefly>(mMessageBus, id);
+	}
 
 	// Factory factory("pickaxe", 1.f / 32.f, program);
 	// mObjects[identifier()] = factory.build();

@@ -29,7 +29,9 @@
 
 namespace convergence {
 
-using identifier = binary;
+using identifier = pla::binary;
+
+inline identifier make_identifier() { return pla::random_binary(16); }
 
 } // namespace convergence
 
