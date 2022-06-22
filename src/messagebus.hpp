@@ -63,11 +63,11 @@ public:
 		std::mutex mQueueMutex;
 	};
 
-	using listenerFilter = variant<nullptr_t, Message::Type, identifier>;
+	using listenerFilter = variant<std::monostate, Message::Type, identifier>;
 	void registerListener(listenerFilter filter, weak_ptr<Listener> listener);
 
 private:
-	std::vector<shared_ptr<Listener>> getListeners(const listenerFilter &filter);
+	std::vector<shared_ptr<Listener>> getListeners(const listenerFilter &filter = {});
 	void dispatchPeer(const identifier &id);
 
 	legio::Node mNode;

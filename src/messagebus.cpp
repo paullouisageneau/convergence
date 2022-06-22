@@ -75,7 +75,7 @@ void MessageBus::dispatch(const Message &message) {
 }
 
 void MessageBus::dispatchPeer(const identifier &id) {
-	for (auto l : getListeners(nullptr))
+	for (auto l : getListeners())
 		l->onPeer(id);
 }
 
@@ -88,7 +88,7 @@ std::vector<shared_ptr<MessageBus::Listener>>
 MessageBus::getListeners(const listenerFilter &filter) {
 	std::lock_guard<std::mutex> lock(mListenersMutex);
 	std::vector<shared_ptr<Listener>> listeners;
-	auto range = std::holds_alternative<nullptr_t>(filter)
+	auto range = std::holds_alternative<std::monostate>(filter)
 	                 ? mListeners.equal_range(filter)
 	                 : std::make_pair(mListeners.begin(), mListeners.end());
 	auto it = range.first;
