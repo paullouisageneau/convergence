@@ -17,9 +17,7 @@ target_include_directories(convergence PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/)
 if(CMAKE_SYSTEM_NAME MATCHES "Emscripten")
 	set(WASM_OPTS
 		-O3 -flto -fno-rtti
-		"SHELL:-s WASM=1"
-		"SHELL:-s BINARYEN_METHOD=native-wasm"
-		"SHELL:-s TOTAL_MEMORY=256MB"
+		"SHELL:-s INITIAL_MEMORY=256MB"
 		"SHELL:-s DISABLE_EXCEPTION_CATCHING=1"
 		"SHELL:-s USE_PTHREADS=0"
 		"SHELL:-s USE_WEBGL2=1"
@@ -27,7 +25,9 @@ if(CMAKE_SYSTEM_NAME MATCHES "Emscripten")
 		"SHELL:-s USE_SDL_IMAGE=2"
 		"SHELL:-s USE_FREETYPE=1")
 
-	target_compile_options(convergence PRIVATE ${WASM_OPTS} -DUSE_OPENGL_ES)
+	target_compile_options(convergence PRIVATE ${WASM_OPTS}
+		-Wno-unused-command-line-argument
+		-DUSE_OPENGL_ES)
 	target_link_options(convergence PRIVATE ${WASM_OPTS}
 		--closure 1
 		--use-preload-plugins
